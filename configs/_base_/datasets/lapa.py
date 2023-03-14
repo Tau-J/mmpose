@@ -122,118 +122,115 @@ dataset_info = dict(
         54:
         dict(name='kpt-54', id=54, color=[255, 0, 0], type='', swap=''),
         55:
-        dict(name='kpt-55', id=55, color=[255, 0, 0], type='', swap='kpt-59'),
+        dict(name='kpt-55', id=55, color=[255, 0, 0], type='', swap='kpt-65'),
         56:
-        dict(name='kpt-56', id=56, color=[255, 0, 0], type='', swap='kpt-58'),
+        dict(name='kpt-56', id=56, color=[255, 0, 0], type='', swap='kpt-64'),
         57:
-        dict(name='kpt-57', id=57, color=[255, 0, 0], type='', swap=''),
+        dict(name='kpt-57', id=57, color=[255, 0, 0], type='', swap='kpt-63'),
         58:
-        dict(name='kpt-58', id=58, color=[255, 0, 0], type='', swap='kpt-56'),
+        dict(name='kpt-58', id=58, color=[255, 0, 0], type='', swap='kpt-62'),
         59:
-        dict(name='kpt-59', id=59, color=[255, 0, 0], type='', swap='kpt-55'),
+        dict(name='kpt-59', id=59, color=[255, 0, 0], type='', swap='kpt-61'),
         60:
-        dict(name='kpt-60', id=60, color=[255, 0, 0], type='', swap='kpt-72'),
+        dict(name='kpt-60', id=60, color=[255, 0, 0], type='', swap=''),
         61:
-        dict(name='kpt-61', id=61, color=[255, 0, 0], type='', swap='kpt-71'),
+        dict(name='kpt-61', id=61, color=[255, 0, 0], type='', swap='kpt-59'),
         62:
-        dict(name='kpt-62', id=62, color=[255, 0, 0], type='', swap='kpt-70'),
+        dict(name='kpt-62', id=62, color=[255, 0, 0], type='', swap='kpt-58'),
         63:
-        dict(name='kpt-63', id=63, color=[255, 0, 0], type='', swap='kpt-69'),
+        dict(name='kpt-63', id=63, color=[255, 0, 0], type='', swap='kpt-57'),
         64:
-        dict(name='kpt-64', id=64, color=[255, 0, 0], type='', swap='kpt-68'),
+        dict(name='kpt-64', id=64, color=[255, 0, 0], type='', swap='kpt-56'),
         65:
-        dict(name='kpt-65', id=65, color=[255, 0, 0], type='', swap='kpt-75'),
+        dict(name='kpt-65', id=65, color=[255, 0, 0], type='', swap='kpt-55'),
         66:
-        dict(name='kpt-66', id=66, color=[255, 0, 0], type='', swap='kpt-74'),
+        dict(name='kpt-66', id=66, color=[255, 0, 0], type='', swap='kpt-79'),
         67:
-        dict(name='kpt-67', id=67, color=[255, 0, 0], type='', swap='kpt-73'),
+        dict(name='kpt-67', id=67, color=[255, 0, 0], type='', swap='kpt-78'),
         68:
-        dict(name='kpt-68', id=68, color=[255, 0, 0], type='', swap='kpt-64'),
+        dict(name='kpt-68', id=68, color=[255, 0, 0], type='', swap='kpt-77'),
         69:
-        dict(name='kpt-69', id=69, color=[255, 0, 0], type='', swap='kpt-63'),
+        dict(name='kpt-69', id=69, color=[255, 0, 0], type='', swap='kpt-76'),
         70:
-        dict(name='kpt-70', id=70, color=[255, 0, 0], type='', swap='kpt-62'),
+        dict(name='kpt-70', id=70, color=[255, 0, 0], type='', swap='kpt-75'),
         71:
-        dict(name='kpt-71', id=71, color=[255, 0, 0], type='', swap='kpt-61'),
+        dict(name='kpt-71', id=71, color=[255, 0, 0], type='', swap='kpt-82'),
         72:
-        dict(name='kpt-72', id=72, color=[255, 0, 0], type='', swap='kpt-60'),
+        dict(name='kpt-72', id=72, color=[255, 0, 0], type='', swap='kpt-81'),
         73:
-        dict(name='kpt-73', id=73, color=[255, 0, 0], type='', swap='kpt-67'),
+        dict(name='kpt-73', id=73, color=[255, 0, 0], type='', swap='kpt-80'),
         74:
-        dict(name='kpt-74', id=74, color=[255, 0, 0], type='', swap='kpt-66'),
+        dict(name='kpt-74', id=74, color=[255, 0, 0], type='', swap='kpt-83'),
         75:
-        dict(name='kpt-75', id=75, color=[255, 0, 0], type='', swap='kpt-65'),
+        dict(name='kpt-75', id=75, color=[255, 0, 0], type='', swap='kpt-70'),
         76:
-        dict(name='kpt-76', id=76, color=[255, 0, 0], type='', swap='kpt-82'),
+        dict(name='kpt-76', id=76, color=[255, 0, 0], type='', swap='kpt-69'),
         77:
-        dict(name='kpt-77', id=77, color=[255, 0, 0], type='', swap='kpt-81'),
+        dict(name='kpt-77', id=77, color=[255, 0, 0], type='', swap='kpt-68'),
         78:
-        dict(name='kpt-78', id=78, color=[255, 0, 0], type='', swap='kpt-80'),
+        dict(name='kpt-78', id=78, color=[255, 0, 0], type='', swap='kpt-67'),
         79:
-        dict(name='kpt-79', id=79, color=[255, 0, 0], type='', swap=''),
+        dict(name='kpt-79', id=79, color=[255, 0, 0], type='', swap='kpt-66'),
         80:
-        dict(name='kpt-80', id=80, color=[255, 0, 0], type='', swap='kpt-78'),
+        dict(name='kpt-80', id=80, color=[255, 0, 0], type='', swap='kpt-73'),
         81:
-        dict(name='kpt-81', id=81, color=[255, 0, 0], type='', swap='kpt-77'),
+        dict(name='kpt-81', id=81, color=[255, 0, 0], type='', swap='kpt-72'),
         82:
-        dict(name='kpt-82', id=82, color=[255, 0, 0], type='', swap='kpt-76'),
+        dict(name='kpt-82', id=82, color=[255, 0, 0], type='', swap='kpt-71'),
         83:
-        dict(name='kpt-83', id=83, color=[255, 0, 0], type='', swap='kpt-87'),
+        dict(name='kpt-83', id=83, color=[255, 0, 0], type='', swap='kpt-74'),
         84:
-        dict(name='kpt-84', id=84, color=[255, 0, 0], type='', swap='kpt-86'),
+        dict(name='kpt-84', id=84, color=[255, 0, 0], type='', swap='kpt-90'),
         85:
-        dict(name='kpt-85', id=85, color=[255, 0, 0], type='', swap=''),
+        dict(name='kpt-85', id=85, color=[255, 0, 0], type='', swap='kpt-89'),
         86:
-        dict(name='kpt-86', id=86, color=[255, 0, 0], type='', swap='kpt-84'),
+        dict(name='kpt-86', id=86, color=[255, 0, 0], type='', swap='kpt-88'),
         87:
-        dict(name='kpt-87', id=87, color=[255, 0, 0], type='', swap='kpt-83'),
+        dict(name='kpt-87', id=87, color=[255, 0, 0], type='', swap=''),
         88:
-        dict(name='kpt-88', id=88, color=[255, 0, 0], type='', swap='kpt-92'),
+        dict(name='kpt-88', id=88, color=[255, 0, 0], type='', swap='kpt-86'),
         89:
-        dict(name='kpt-89', id=89, color=[255, 0, 0], type='', swap='kpt-91'),
+        dict(name='kpt-89', id=89, color=[255, 0, 0], type='', swap='kpt-85'),
         90:
-        dict(name='kpt-90', id=90, color=[255, 0, 0], type='', swap=''),
+        dict(name='kpt-90', id=90, color=[255, 0, 0], type='', swap='kpt-84'),
         91:
-        dict(name='kpt-91', id=91, color=[255, 0, 0], type='', swap='kpt-89'),
+        dict(name='kpt-91', id=91, color=[255, 0, 0], type='', swap='kpt-95'),
         92:
-        dict(name='kpt-92', id=92, color=[255, 0, 0], type='', swap='kpt-88'),
+        dict(name='kpt-92', id=92, color=[255, 0, 0], type='', swap='kpt-94'),
         93:
-        dict(name='kpt-93', id=93, color=[255, 0, 0], type='', swap='kpt-95'),
+        dict(name='kpt-93', id=93, color=[255, 0, 0], type='', swap=''),
         94:
-        dict(name='kpt-94', id=94, color=[255, 0, 0], type='', swap=''),
+        dict(name='kpt-94', id=94, color=[255, 0, 0], type='', swap='kpt-92'),
         95:
-        dict(name='kpt-95', id=95, color=[255, 0, 0], type='', swap='kpt-93'),
+        dict(name='kpt-95', id=95, color=[255, 0, 0], type='', swap='kpt-91'),
         96:
-        dict(name='kpt-96', id=96, color=[255, 0, 0], type='', swap='kpt-105'),
+        dict(name='kpt-96', id=96, color=[255, 0, 0], type='', swap='kpt-100'),
         97:
-        dict(name='kpt-97', id=97, color=[255, 0, 0], type='', swap='kpt-96'),
+        dict(name='kpt-97', id=97, color=[255, 0, 0], type='', swap='kpt-99'),
         98:
-        dict(name='kpt-98', id=98, color=[255, 0, 0], type='', swap='kpt-98'),
+        dict(name='kpt-98', id=98, color=[255, 0, 0], type='', swap=''),
         99:
-        dict(name='kpt-99', id=99, color=[255, 0, 0], type='', swap='kpt-99'),
+        dict(name='kpt-99', id=99, color=[255, 0, 0], type='', swap='kpt-97'),
         100:
         dict(
-            name='kpt-100', id=100, color=[255, 0, 0], type='',
-            swap='kpt-100'),
+            name='kpt-100', id=100, color=[255, 0, 0], type='', swap='kpt-96'),
         101:
         dict(
             name='kpt-101', id=101, color=[255, 0, 0], type='',
-            swap='kpt-101'),
+            swap='kpt-103'),
         102:
-        dict(
-            name='kpt-102', id=102, color=[255, 0, 0], type='',
-            swap='kpt-102'),
+        dict(name='kpt-102', id=102, color=[255, 0, 0], type='', swap=''),
         103:
         dict(
             name='kpt-103', id=103, color=[255, 0, 0], type='',
-            swap='kpt-103'),
+            swap='kpt-101'),
         104:
         dict(
             name='kpt-104', id=104, color=[255, 0, 0], type='',
-            swap='kpt-104'),
+            swap='kpt-105'),
         105:
         dict(
-            name='kpt-105', id=105, color=[255, 0, 0], type='', swap='kpt-105')
+            name='kpt-105', id=105, color=[255, 0, 0], type='', swap='kpt-104')
     },
     skeleton_info={},
     joint_weights=[1.] * 106,
