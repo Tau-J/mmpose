@@ -32,6 +32,11 @@ def parse_args():
         help='phase of dataset to visualize, accept "train" "test" and "val".'
         ' Defaults to "train".')
     parser.add_argument(
+        '--show-kpt-idx',
+        action='store_true',
+        default=False,
+        help='Whether to show the index of keypoints')
+    parser.add_argument(
         '--show-interval',
         type=float,
         default=2,
@@ -153,6 +158,7 @@ def main():
             draw_pred=False,
             draw_bbox=(args.mode == 'original'),
             draw_heatmap=True,
+            show_kpt_idx=args.show_kpt_idx,
             show=not args.not_show,
             wait_time=args.show_interval,
             out_file=out_file)
