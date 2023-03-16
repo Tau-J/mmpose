@@ -914,8 +914,8 @@ class GenerateTarget(BaseTransform):
             rank, _ = get_dist_info()
             if rank == 0:
                 warnings.warn(
-                    'The argument `target_type` is deprecated in'
-                    ' GenerateTarget. The target type and encoded '
+                    'The argument `target_type` is deprecated in '
+                    'GenerateTarget. The target type and encoded '
                     'keys will be determined by encoder(s).',
                     DeprecationWarning)
 
