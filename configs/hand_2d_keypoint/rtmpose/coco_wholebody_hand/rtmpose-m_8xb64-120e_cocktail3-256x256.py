@@ -1,13 +1,13 @@
 _base_ = ['../../../_base_/default_runtime.py']
 
-# lapa coco wflw
+# coco-hand onehand10k freihand2d
 
 # runtime
-max_epochs = 60
-stage2_num_epochs = 10
+max_epochs = 120
+stage2_num_epochs = 30
 base_lr = 4e-3
 
-train_cfg = dict(max_epochs=max_epochs, val_interval=1)
+train_cfg = dict(max_epochs=max_epochs, val_interval=10)
 randomness = dict(seed=21)
 
 # optimizer
@@ -37,7 +37,7 @@ param_scheduler = [
 ]
 
 # automatically scaling LR based on the actual training batch size
-auto_scale_lr = dict(base_batch_size=512)
+auto_scale_lr = dict(base_batch_size=256)
 
 # codec settings
 codec = dict(
@@ -76,7 +76,7 @@ model = dict(
     head=dict(
         type='RTMCCHead',
         in_channels=768,
-        out_channels=106,
+        out_channels=21,
         input_size=codec['input_size'],
         in_featuremap_size=(8, 8),
         simcc_split_ratio=codec['simcc_split_ratio'],
@@ -99,7 +99,7 @@ model = dict(
     test_cfg=dict(flip_test=True, ))
 
 # base dataset settings
-dataset_type = 'LapaDataset'
+dataset_type = 'CocoWholeBodyHandDataset'
 data_mode = 'topdown'
 data_root = 'data/'
 
@@ -115,17 +115,18 @@ file_client_args = dict(
 train_pipeline = [
     dict(type='LoadImage', file_client_args=file_client_args),
     dict(type='GetBBoxCenterScale'),
-    dict(type='RandomFlip', direction='horizontal'),
     # dict(type='RandomHalfBody'),
     dict(
-        type='RandomBBoxTransform', scale_factor=[0.5, 1.5], rotate_factor=80),
+        type='RandomBBoxTransform', scale_factor=[0.5, 1.5],
+        rotate_factor=180),
+    dict(type='RandomFlip', direction='horizontal'),
     dict(type='TopdownAffine', input_size=codec['input_size']),
     dict(type='mmdet.YOLOXHSVRandomAug'),
     dict(
         type='Albumentation',
         transforms=[
-            dict(type='Blur', p=0.2),
-            dict(type='MedianBlur', p=0.2),
+            dict(type='Blur', p=0.1),
+            dict(type='MedianBlur', p=0.1),
             dict(
                 type='CoarseDropout',
                 max_holes=1,
@@ -149,13 +150,13 @@ val_pipeline = [
 train_pipeline_stage2 = [
     dict(type='LoadImage', file_client_args=file_client_args),
     dict(type='GetBBoxCenterScale'),
-    dict(type='RandomFlip', direction='horizontal'),
     # dict(type='RandomHalfBody'),
     dict(
         type='RandomBBoxTransform',
         shift_factor=0.,
         scale_factor=[0.75, 1.25],
-        rotate_factor=60),
+        rotate_factor=180),
+    dict(type='RandomFlip', direction='horizontal'),
     dict(type='TopdownAffine', input_size=codec['input_size']),
     dict(type='mmdet.YOLOXHSVRandomAug'),
     dict(
@@ -177,151 +178,32 @@ train_pipeline_stage2 = [
     dict(type='PackPoseInputs')
 ]
 
-# train dataset
-dataset_lapa = dict(
-    type=dataset_type,
-    data_root=data_root,
-    data_mode=data_mode,
-    ann_file='LaPa/annotations/lapa_train.json',
-    data_prefix=dict(img='pose/LaPa/train/images/'),
-    pipeline=[],
-)
-
+# train datasets
 dataset_coco = dict(
-    type='CocoWholeBodyFaceDataset',
+    type=dataset_type,
     data_root=data_root,
     data_mode=data_mode,
     ann_file='coco/annotations/coco_wholebody_train_v1.0.json',
     data_prefix=dict(img='detection/coco/train2017/'),
-    pipeline=[
-        dict(
-            type='KeypointConverter',
-            num_keypoints=106,
-            mapping=[
-                #
-                (0, 0),
-                (1, 2),
-                (2, 4),
-                (3, 6),
-                (4, 8),
-                (5, 10),
-                (6, 12),
-                (7, 14),
-                (8, 16),
-                (9, 18),
-                (10, 20),
-                (11, 22),
-                (12, 24),
-                (13, 26),
-                (14, 28),
-                (15, 30),
-                (16, 32),
-                #
-                (17, 33),
-                (18, 34),
-                (19, 35),
-                (20, 36),
-                (21, 37),
-                #
-                (22, 42),
-                (23, 43),
-                (24, 44),
-                (25, 45),
-                (26, 46),
-                #
-                (27, 51),
-                (28, 52),
-                (29, 53),
-                (30, 54),
-                #
-                (31, 58),
-                (32, 59),
-                (33, 60),
-                (34, 61),
-                (35, 62),
-                #
-                (36, 66),
-                (39, 70),
-                #
-                ((37, 38), 68),
-                ((40, 41), 72),
-                #
-                (42, 75),
-                (45, 79),
-                #
-                ((43, 44), 77),
-                ((46, 47), 81),
-                #
-                (48, 84),
-                (49, 85),
-                (50, 86),
-                (51, 87),
-                (52, 88),
-                (53, 89),
-                (54, 90),
-                (55, 91),
-                (56, 92),
-                (57, 93),
-                (58, 94),
-                (59, 95),
-                (60, 96),
-                (61, 97),
-                (62, 98),
-                (63, 99),
-                (64, 100),
-                (65, 101),
-                (66, 102),
-                (67, 103)
-            ])
-    ],
+    pipeline=[],
 )
 
-dataset_wflw = dict(
-    type='WFLWDataset',
+dataset_onehand10k = dict(
+    type='OneHand10KDataset',
     data_root=data_root,
     data_mode=data_mode,
-    ann_file='wflw/annotations/face_landmarks_wflw_train.json',
-    data_prefix=dict(img='pose/WFLW/images/'),
-    pipeline=[
-        dict(
-            type='KeypointConverter',
-            num_keypoints=106,
-            mapping=[
-                #
-                (0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6),
-                (7, 7), (8, 8), (9, 9), (10, 10), (11, 11), (12, 12),
-                (13, 13), (14, 14), (15, 15), (16, 16), (17, 17), (18, 18),
-                (19, 19), (20, 20), (21, 21), (22, 22), (23, 23), (24, 24),
-                (25, 25), (26, 26), (27, 27), (28, 28), (29, 29), (30, 30),
-                (31, 31), (32, 32)
-                #
-                (33, 33), (34, 34), (35, 35), (36, 36), (37, 37), (38, 38),
-                (39, 39), (40, 40), (41, 41),
-                #
-                (42, 42), (43, 43), (44, 44), (45, 45), (46, 46), (47, 47),
-                (48, 48), (49, 49), (50, 50),
-                #
-                (51, 51), (52, 52), (53, 53), (54, 54),
-                #
-                (55, 58), (56, 59), (57, 60), (58, 61), (59, 62),
-                #
-                (60, 66), (61, 67), (62, 68), (63, 69), (64, 70), (65, 71),
-                (66, 72), (67, 73),
-                #
-                (68, 75), (69, 76), (70, 77), (71, 78), (72, 79), (73, 80),
-                (74, 81), (75, 82),
-                #
-                (76, 84), (77, 85), (78, 86), (79, 87), (80, 88), (81, 89),
-                (82, 90), (83, 91), (84, 92), (85, 93), (86, 94), (87, 95),
-                (88, 96), (89, 97), (90, 98), (91, 99), (92, 100), (93, 101),
-                (94, 102), (95, 103),
-                #
-                (96, 104),
-                #
-                (97, 105)
-            ]
-        )
-    ],
+    ann_file='onehand10k/annotations/onehand10k_train.json',
+    data_prefix=dict(img='pose/OneHand10K/'),
+    pipeline=[],
+)
+
+dataset_freihand = dict(
+    type='FreiHandDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='freihand/annotations/freihand_train.json',
+    data_prefix=dict(img='pose/FreiHand/'),
+    pipeline=[],
 )
 
 # data loaders
@@ -332,8 +214,9 @@ train_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=dict(
         type='CombinedDataset',
-        metainfo=dict(from_file='configs/_base_/datasets/lapa.py'),
-        datasets=[dataset_lapa, dataset_coco, dataset_wflw],
+        metainfo=dict(
+            from_file='configs/_base_/datasets/coco_wholebody_hand.py'),
+        datasets=[dataset_coco, dataset_onehand10k, dataset_freihand],
         pipeline=train_pipeline,
         test_mode=False,
     ))
@@ -347,31 +230,16 @@ val_dataloader = dict(
         type=dataset_type,
         data_root=data_root,
         data_mode=data_mode,
-        ann_file='LaPa/annotations/lapa_val.json',
-        data_prefix=dict(img='pose/LaPa/val/images/'),
+        ann_file='coco/annotations/coco_wholebody_val_v1.0.json',
+        data_prefix=dict(img='detection/coco/val2017/'),
         test_mode=True,
         pipeline=val_pipeline,
     ))
-test_dataloader = dict(
-    batch_size=32,
-    num_workers=10,
-    persistent_workers=True,
-    drop_last=False,
-    sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
-    dataset=dict(
-        type=dataset_type,
-        data_root=data_root,
-        data_mode=data_mode,
-        ann_file='LaPa/annotations/lapa_test.json',
-        data_prefix=dict(img='pose/LaPa/test/images/'),
-        test_mode=True,
-        pipeline=val_pipeline,
-    ))
+test_dataloader = val_dataloader
 
 # hooks
 default_hooks = dict(
-    checkpoint=dict(
-        save_best='NME', rule='less', max_keep_ckpts=1, interval=1))
+    checkpoint=dict(save_best='AUC', rule='greater', max_keep_ckpts=1))
 
 custom_hooks = [
     dict(
@@ -387,8 +255,9 @@ custom_hooks = [
 ]
 
 # evaluators
-val_evaluator = dict(
-    type='NME',
-    norm_mode='keypoint_distance',
-)
+val_evaluator = [
+    dict(type='PCKAccuracy', thr=0.2),
+    dict(type='AUC'),
+    dict(type='EPE')
+]
 test_evaluator = val_evaluator

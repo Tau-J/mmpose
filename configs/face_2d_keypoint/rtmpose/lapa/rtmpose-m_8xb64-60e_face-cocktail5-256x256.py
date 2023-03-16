@@ -1,6 +1,6 @@
 _base_ = ['../../../_base_/default_runtime.py']
 
-# lapa coco wflw
+# lapa coco wflw 300w cofw
 
 # runtime
 max_epochs = 60
@@ -187,6 +187,82 @@ dataset_lapa = dict(
     pipeline=[],
 )
 
+kpt_68_to_106 = [
+    #
+    (0, 0),
+    (1, 2),
+    (2, 4),
+    (3, 6),
+    (4, 8),
+    (5, 10),
+    (6, 12),
+    (7, 14),
+    (8, 16),
+    (9, 18),
+    (10, 20),
+    (11, 22),
+    (12, 24),
+    (13, 26),
+    (14, 28),
+    (15, 30),
+    (16, 32),
+    #
+    (17, 33),
+    (18, 34),
+    (19, 35),
+    (20, 36),
+    (21, 37),
+    #
+    (22, 42),
+    (23, 43),
+    (24, 44),
+    (25, 45),
+    (26, 46),
+    #
+    (27, 51),
+    (28, 52),
+    (29, 53),
+    (30, 54),
+    #
+    (31, 58),
+    (32, 59),
+    (33, 60),
+    (34, 61),
+    (35, 62),
+    #
+    (36, 66),
+    (39, 70),
+    #
+    ((37, 38), 68),
+    ((40, 41), 72),
+    #
+    (42, 75),
+    (45, 79),
+    #
+    ((43, 44), 77),
+    ((46, 47), 81),
+    #
+    (48, 84),
+    (49, 85),
+    (50, 86),
+    (51, 87),
+    (52, 88),
+    (53, 89),
+    (54, 90),
+    (55, 91),
+    (56, 92),
+    (57, 93),
+    (58, 94),
+    (59, 95),
+    (60, 96),
+    (61, 97),
+    (62, 98),
+    (63, 99),
+    (64, 100),
+    (65, 101),
+    (66, 102),
+    (67, 103)
+]
 dataset_coco = dict(
     type='CocoWholeBodyFaceDataset',
     data_root=data_root,
@@ -195,84 +271,7 @@ dataset_coco = dict(
     data_prefix=dict(img='detection/coco/train2017/'),
     pipeline=[
         dict(
-            type='KeypointConverter',
-            num_keypoints=106,
-            mapping=[
-                #
-                (0, 0),
-                (1, 2),
-                (2, 4),
-                (3, 6),
-                (4, 8),
-                (5, 10),
-                (6, 12),
-                (7, 14),
-                (8, 16),
-                (9, 18),
-                (10, 20),
-                (11, 22),
-                (12, 24),
-                (13, 26),
-                (14, 28),
-                (15, 30),
-                (16, 32),
-                #
-                (17, 33),
-                (18, 34),
-                (19, 35),
-                (20, 36),
-                (21, 37),
-                #
-                (22, 42),
-                (23, 43),
-                (24, 44),
-                (25, 45),
-                (26, 46),
-                #
-                (27, 51),
-                (28, 52),
-                (29, 53),
-                (30, 54),
-                #
-                (31, 58),
-                (32, 59),
-                (33, 60),
-                (34, 61),
-                (35, 62),
-                #
-                (36, 66),
-                (39, 70),
-                #
-                ((37, 38), 68),
-                ((40, 41), 72),
-                #
-                (42, 75),
-                (45, 79),
-                #
-                ((43, 44), 77),
-                ((46, 47), 81),
-                #
-                (48, 84),
-                (49, 85),
-                (50, 86),
-                (51, 87),
-                (52, 88),
-                (53, 89),
-                (54, 90),
-                (55, 91),
-                (56, 92),
-                (57, 93),
-                (58, 94),
-                (59, 95),
-                (60, 96),
-                (61, 97),
-                (62, 98),
-                (63, 99),
-                (64, 100),
-                (65, 101),
-                (66, 102),
-                (67, 103)
-            ])
+            type='KeypointConverter', num_keypoints=106, mapping=kpt_68_to_106)
     ],
 )
 
@@ -324,6 +323,49 @@ dataset_wflw = dict(
     ],
 )
 
+dataset_300w = dict(
+    type='Face300WDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='300w/annotations/face_landmarks_300w_train.json',
+    data_prefix=dict(img='pose/300w/images/'),
+    pipeline=[
+        dict(
+            type='KeypointConverter', num_keypoints=106, mapping=kpt_68_to_106)
+    ],
+)
+
+
+dataset_cofw = dict(
+    type='COFWDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='cofw/annotations/cofw_train.json',
+    data_prefix=dict(img='pose/COFW/images/'),
+    pipeline=[
+        dict(
+            type='KeypointConverter',
+            num_keypoints=106,
+            mapping=[
+                #
+                (0, 33), (2, 38), (4, 35), (5, 40),
+                #
+                (1, 46), (3, 50), (6, 44), (7, 48),
+                #
+                (8, 60), (10, 64), (12, 62), (13, 66),
+                #
+                (9, 72), (11, 68), (14, 70), (15, 74),
+                #
+                (18, 57), (19, 63), (20, 54), (21, 60),
+                #
+                (22, 84), (23, 90), (24, 87), (25, 98), (26, 102), (27, 93)
+                #
+                (28, 16)
+            ]
+        )
+    ],
+)
+
 # data loaders
 train_dataloader = dict(
     batch_size=64,
@@ -333,7 +375,10 @@ train_dataloader = dict(
     dataset=dict(
         type='CombinedDataset',
         metainfo=dict(from_file='configs/_base_/datasets/lapa.py'),
-        datasets=[dataset_lapa, dataset_coco, dataset_wflw],
+        datasets=[
+            dataset_lapa, dataset_coco, dataset_wflw, dataset_300w,
+            dataset_cofw
+        ],
         pipeline=train_pipeline,
         test_mode=False,
     ))

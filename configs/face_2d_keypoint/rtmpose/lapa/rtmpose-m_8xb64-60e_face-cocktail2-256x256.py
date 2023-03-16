@@ -1,7 +1,5 @@
 _base_ = ['../../../_base_/default_runtime.py']
 
-# lapa coco wflw
-
 # runtime
 max_epochs = 60
 stage2_num_epochs = 10
@@ -275,55 +273,6 @@ dataset_coco = dict(
             ])
     ],
 )
-
-dataset_wflw = dict(
-    type='WFLWDataset',
-    data_root=data_root,
-    data_mode=data_mode,
-    ann_file='wflw/annotations/face_landmarks_wflw_train.json',
-    data_prefix=dict(img='pose/WFLW/images/'),
-    pipeline=[
-        dict(
-            type='KeypointConverter',
-            num_keypoints=106,
-            mapping=[
-                #
-                (0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6),
-                (7, 7), (8, 8), (9, 9), (10, 10), (11, 11), (12, 12),
-                (13, 13), (14, 14), (15, 15), (16, 16), (17, 17), (18, 18),
-                (19, 19), (20, 20), (21, 21), (22, 22), (23, 23), (24, 24),
-                (25, 25), (26, 26), (27, 27), (28, 28), (29, 29), (30, 30),
-                (31, 31), (32, 32)
-                #
-                (33, 33), (34, 34), (35, 35), (36, 36), (37, 37), (38, 38),
-                (39, 39), (40, 40), (41, 41),
-                #
-                (42, 42), (43, 43), (44, 44), (45, 45), (46, 46), (47, 47),
-                (48, 48), (49, 49), (50, 50),
-                #
-                (51, 51), (52, 52), (53, 53), (54, 54),
-                #
-                (55, 58), (56, 59), (57, 60), (58, 61), (59, 62),
-                #
-                (60, 66), (61, 67), (62, 68), (63, 69), (64, 70), (65, 71),
-                (66, 72), (67, 73),
-                #
-                (68, 75), (69, 76), (70, 77), (71, 78), (72, 79), (73, 80),
-                (74, 81), (75, 82),
-                #
-                (76, 84), (77, 85), (78, 86), (79, 87), (80, 88), (81, 89),
-                (82, 90), (83, 91), (84, 92), (85, 93), (86, 94), (87, 95),
-                (88, 96), (89, 97), (90, 98), (91, 99), (92, 100), (93, 101),
-                (94, 102), (95, 103),
-                #
-                (96, 104),
-                #
-                (97, 105)
-            ]
-        )
-    ],
-)
-
 # data loaders
 train_dataloader = dict(
     batch_size=64,
@@ -333,7 +282,7 @@ train_dataloader = dict(
     dataset=dict(
         type='CombinedDataset',
         metainfo=dict(from_file='configs/_base_/datasets/lapa.py'),
-        datasets=[dataset_lapa, dataset_coco, dataset_wflw],
+        datasets=[dataset_lapa, dataset_coco],
         pipeline=train_pipeline,
         test_mode=False,
     ))
