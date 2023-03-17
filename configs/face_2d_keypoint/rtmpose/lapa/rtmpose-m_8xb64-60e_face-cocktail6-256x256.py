@@ -410,7 +410,6 @@ dataset_300w = dict(
     ],
 )
 
-
 dataset_cofw = dict(
     type='COFWDataset',
     data_root=data_root,
@@ -423,21 +422,40 @@ dataset_cofw = dict(
             num_keypoints=106,
             mapping=[
                 #
-                (0, 33), (2, 38), (4, 35), (5, 40),
+                (0, 33),
+                (2, 38),
+                (4, 35),
+                (5, 40),
                 #
-                (1, 46), (3, 50), (6, 44), (7, 48),
+                (1, 46),
+                (3, 50),
+                (6, 44),
+                (7, 48),
                 #
-                (8, 60), (10, 64), (12, 62), (13, 66),
+                (8, 60),
+                (10, 64),
+                (12, 62),
+                (13, 66),
                 #
-                (9, 72), (11, 68), (14, 70), (15, 74),
+                (9, 72),
+                (11, 68),
+                (14, 70),
+                (15, 74),
                 #
-                (18, 57), (19, 63), (20, 54), (21, 60),
+                (18, 57),
+                (19, 63),
+                (20, 54),
+                (21, 60),
                 #
-                (22, 84), (23, 90), (24, 87), (25, 98), (26, 102), (27, 93)
+                (22, 84),
+                (23, 90),
+                (24, 87),
+                (25, 98),
+                (26, 102),
+                (27, 93),
                 #
                 (28, 16)
-            ]
-        )
+            ])
     ],
 )
 
@@ -445,8 +463,8 @@ dataset_halpe = dict(
     type='HalpeDataset',
     data_root=data_root,
     data_mode=data_mode,
-    ann_file='halpe/annotations/cofw_train.json',
-    data_prefix=dict(img='pose/Halpe/hico_20160224_det/images/'),
+    ann_file='halpe/annotations/halpe_train_133kpt.json',
+    data_prefix=dict(img='pose/Halpe/hico_20160224_det/images/train2015/'),
     pipeline=[
         dict(
             type='KeypointConverter',

@@ -1,10 +1,10 @@
 _base_ = ['../../../_base_/default_runtime.py']
 
-# lapa coco wflw 300w cofw
-
+# lapa coco wflw 300w cofw halpe
+#   28  113      15   6     3   78
 # runtime
-max_epochs = 60
-stage2_num_epochs = 10
+max_epochs = 420
+stage2_num_epochs = 30
 base_lr = 4e-3
 
 train_cfg = dict(max_epochs=max_epochs, val_interval=1)
@@ -459,18 +459,111 @@ dataset_cofw = dict(
     ],
 )
 
+dataset_halpe = dict(
+    type='HalpeDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='halpe/annotations/halpe_train_133kpt.json',
+    data_prefix=dict(img='pose/Halpe/hico_20160224_det/images/train2015/'),
+    pipeline=[
+        dict(
+            type='KeypointConverter',
+            num_keypoints=106,
+            mapping=[
+                #
+                (26, 0),
+                (27, 2),
+                (28, 4),
+                (29, 6),
+                (30, 8),
+                (31, 10),
+                (32, 12),
+                (33, 14),
+                (34, 16),
+                (35, 18),
+                (36, 20),
+                (37, 22),
+                (38, 24),
+                (39, 26),
+                (40, 28),
+                (41, 30),
+                (42, 32),
+                #
+                (43, 33),
+                (44, 34),
+                (45, 35),
+                (46, 36),
+                (47, 37),
+                #
+                (48, 42),
+                (49, 43),
+                (50, 44),
+                (51, 45),
+                (52, 46),
+                #
+                (53, 51),
+                (54, 52),
+                (55, 53),
+                (56, 54),
+                #
+                (57, 58),
+                (58, 59),
+                (59, 60),
+                (60, 61),
+                (61, 62),
+                #
+                (62, 66),
+                (65, 70),
+                #
+                ((63, 64), 68),
+                ((66, 67), 72),
+                #
+                (68, 75),
+                (71, 79),
+                #
+                ((69, 70), 77),
+                ((72, 73), 81),
+                #
+                (74, 84),
+                (75, 85),
+                (76, 86),
+                (77, 87),
+                (78, 88),
+                (79, 89),
+                (80, 90),
+                (81, 91),
+                (82, 92),
+                (83, 93),
+                (84, 94),
+                (85, 95),
+                (86, 96),
+                (87, 97),
+                (88, 98),
+                (89, 99),
+                (90, 100),
+                (91, 101),
+                (92, 102),
+                (93, 103)
+            ])
+    ],
+)
+
 # data loaders
 train_dataloader = dict(
-    batch_size=64,
+    batch_size=256,
     num_workers=10,
     persistent_workers=True,
-    sampler=dict(type='DefaultSampler', shuffle=True),
+    sampler=dict(
+        type='MultiSourceSampler',
+        batch_size=256,
+        source_ratio=[3, 3, 1, 1, 1, 1],
+        shuffle=True),
     dataset=dict(
         type='CombinedDataset',
         metainfo=dict(from_file='configs/_base_/datasets/lapa.py'),
         datasets=[
             dataset_lapa, dataset_coco, dataset_wflw, dataset_300w,
-            dataset_cofw
+            dataset_cofw, dataset_halpe
         ],
         pipeline=train_pipeline,
         test_mode=False,
