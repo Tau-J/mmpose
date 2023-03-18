@@ -1,6 +1,6 @@
 _base_ = ['../../../_base_/default_runtime.py']
 
-# coco-hand onehand10k freihand2d rhd2d
+# coco-hand onehand10k freihand2d rhd2d halpehand
 
 # runtime
 max_epochs = 120
@@ -184,7 +184,7 @@ dataset_coco = dict(
     data_root=data_root,
     data_mode=data_mode,
     ann_file='coco/annotations/coco_wholebody_train_v1.0.json',
-    data_prefix=dict(img='pose/coco/train2017/'),
+    data_prefix=dict(img='detection/coco/train2017/'),
     pipeline=[],
 )
 
@@ -242,9 +242,18 @@ dataset_rhd = dict(
     ],
 )
 
+dataset_halpehand = dict(
+    type='HalpeHandDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='halpe/annotations/halpe_train_v1.json',
+    data_prefix=dict(img='pose/Halpe/hico_20160224_det/images/train2015/'),
+    pipeline=[],
+)
+
 # data loaders
 train_dataloader = dict(
-    batch_size=64,
+    batch_size=256,
     num_workers=10,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
@@ -253,7 +262,8 @@ train_dataloader = dict(
         metainfo=dict(
             from_file='configs/_base_/datasets/coco_wholebody_hand.py'),
         datasets=[
-            dataset_coco, dataset_onehand10k, dataset_freihand, dataset_rhd
+            dataset_coco, dataset_onehand10k, dataset_freihand, dataset_rhd,
+            dataset_halpehand
         ],
         pipeline=train_pipeline,
         test_mode=False,

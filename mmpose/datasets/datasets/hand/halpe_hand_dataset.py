@@ -112,16 +112,17 @@ class HalpeHandDataset(BaseCocoStyleDataset):
             ann_ids = coco.getAnnIds(imgIds=img_id, iscrowd=False)
             anns = coco.loadAnns(ann_ids)
             for ann in anns:
-                lefthand_kpts = ann['keypoints'][94 * 3:115 * 3]
-                righthand_kpts = ann['keypoints'][115 * 3:136 * 3]
+                keypoints = np.array(ann['keypoints']).reshape(-1, 3)
+                lefthand_kpts = keypoints[-42:-21, :]
+                righthand_kpts = keypoints[-21:, :]
 
                 lefthand_box = get_bbox(lefthand_kpts)
                 righthand_box = get_bbox(righthand_kpts)
                 t_ann = {
                     'lefthand_kpts': lefthand_kpts,
                     'righthand_kpts': righthand_kpts,
-                    'lefthand_valid': max(lefthand_kpts) > 0,
-                    'righthand_valid': max(righthand_kpts) > 0,
+                    'lefthand_valid': np.max(lefthand_kpts) > 0,
+                    'righthand_valid': np.max(righthand_kpts) > 0,
                     'lefthand_box': lefthand_box,
                     'righthand_box': righthand_box,
                 }
@@ -152,7 +153,6 @@ class HalpeHandDataset(BaseCocoStyleDataset):
                             'keypoints': keypoints,
                             'keypoints_visible': keypoints_visible,
                             'iscrowd': ann['iscrowd'],
-                            'segmentation': ann['segmentation'],
                             'id': id,
                         }
                         instance_list.append(instance_info)

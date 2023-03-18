@@ -1,6 +1,6 @@
 _base_ = ['../../../_base_/default_runtime.py']
 
-# coco-hand onehand10k freihand2d rhd2d halpehand
+# coco-hand onehand10k freihand2d rhd2d
 
 # runtime
 max_epochs = 120
@@ -184,7 +184,7 @@ dataset_coco = dict(
     data_root=data_root,
     data_mode=data_mode,
     ann_file='coco/annotations/coco_wholebody_train_v1.0.json',
-    data_prefix=dict(img='pose/coco/train2017/'),
+    data_prefix=dict(img='detection/coco/train2017/'),
     pipeline=[],
 )
 
@@ -206,42 +206,6 @@ dataset_freihand = dict(
     pipeline=[],
 )
 
-dataset_rhd = dict(
-    type='Rhd2DDataset',
-    data_root=data_root,
-    data_mode=data_mode,
-    ann_file='rhd/annotations/rhd_train.json',
-    data_prefix=dict(img='pose/RHD/'),
-    pipeline=[
-        dict(
-            type='KeypointConverter',
-            num_keypoints=21,
-            mapping=[
-                (0, 0),
-                (1, 4),
-                (2, 3),
-                (3, 2),
-                (4, 1),
-                (5, 8),
-                (6, 7),
-                (7, 6),
-                (8, 5),
-                (9, 12),
-                (10, 11),
-                (11, 10),
-                (12, 9),
-                (13, 16),
-                (14, 15),
-                (15, 14),
-                (16, 13),
-                (17, 20),
-                (18, 19),
-                (19, 18),
-                (20, 17),
-            ])
-    ],
-)
-
 dataset_halpehand = dict(
     type='HalpeHandDataset',
     data_root=data_root,
@@ -253,7 +217,7 @@ dataset_halpehand = dict(
 
 # data loaders
 train_dataloader = dict(
-    batch_size=64,
+    batch_size=256,
     num_workers=10,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
@@ -262,7 +226,7 @@ train_dataloader = dict(
         metainfo=dict(
             from_file='configs/_base_/datasets/coco_wholebody_hand.py'),
         datasets=[
-            dataset_coco, dataset_onehand10k, dataset_freihand, dataset_rhd,
+            dataset_coco, dataset_onehand10k, dataset_freihand,
             dataset_halpehand
         ],
         pipeline=train_pipeline,
