@@ -103,8 +103,8 @@ dataset_type = 'LapaDataset'
 data_mode = 'topdown'
 data_root = 'data/'
 
-# file_client_args = dict(backend='disk')
-file_client_args = dict(
+# backend_args = dict(backend='disk')
+backend_args = dict(
     backend='petrel',
     path_mapping=dict({
         f'{data_root}': 's3://openmmlab/datasets/',
@@ -113,7 +113,7 @@ file_client_args = dict(
 
 # pipelines
 train_pipeline = [
-    dict(type='LoadImage', file_client_args=file_client_args),
+    dict(type='LoadImage', backend_args=backend_args),
     dict(type='GetBBoxCenterScale'),
     dict(type='RandomFlip', direction='horizontal'),
     # dict(type='RandomHalfBody'),
@@ -143,14 +143,14 @@ train_pipeline = [
     dict(type='PackPoseInputs')
 ]
 val_pipeline = [
-    dict(type='LoadImage', file_client_args=file_client_args),
+    dict(type='LoadImage', backend_args=backend_args),
     dict(type='GetBBoxCenterScale'),
     dict(type='TopdownAffine', input_size=codec['input_size']),
     dict(type='PackPoseInputs')
 ]
 
 train_pipeline_stage2 = [
-    dict(type='LoadImage', file_client_args=file_client_args),
+    dict(type='LoadImage', backend_args=backend_args),
     dict(type='GetBBoxCenterScale'),
     dict(type='RandomFlip', direction='horizontal'),
     # dict(type='RandomHalfBody'),
