@@ -177,16 +177,6 @@ train_pipeline_stage2 = [
     dict(type='PackPoseInputs')
 ]
 
-# train dataset
-dataset_lapa = dict(
-    type=dataset_type,
-    data_root=data_root,
-    data_mode=data_mode,
-    ann_file='LaPa/annotations/lapa_train.json',
-    data_prefix=dict(img='pose/LaPa/train/images/'),
-    pipeline=[],
-)
-
 kpt_68_to_106 = [
     #
     (0, 0),
@@ -263,6 +253,205 @@ kpt_68_to_106 = [
     (66, 102),
     (67, 103)
 ]
+
+mapping_wflw = [
+    #
+    (0, 0),
+    (1, 1),
+    (2, 2),
+    (3, 3),
+    (4, 4),
+    (5, 5),
+    (6, 6),
+    (7, 7),
+    (8, 8),
+    (9, 9),
+    (10, 10),
+    (11, 11),
+    (12, 12),
+    (13, 13),
+    (14, 14),
+    (15, 15),
+    (16, 16),
+    (17, 17),
+    (18, 18),
+    (19, 19),
+    (20, 20),
+    (21, 21),
+    (22, 22),
+    (23, 23),
+    (24, 24),
+    (25, 25),
+    (26, 26),
+    (27, 27),
+    (28, 28),
+    (29, 29),
+    (30, 30),
+    (31, 31),
+    (32, 32),
+    #
+    (33, 33),
+    (34, 34),
+    (35, 35),
+    (36, 36),
+    (37, 37),
+    (38, 38),
+    (39, 39),
+    (40, 40),
+    (41, 41),
+    #
+    (42, 42),
+    (43, 43),
+    (44, 44),
+    (45, 45),
+    (46, 46),
+    (47, 47),
+    (48, 48),
+    (49, 49),
+    (50, 50),
+    #
+    (51, 51),
+    (52, 52),
+    (53, 53),
+    (54, 54),
+    #
+    (55, 58),
+    (56, 59),
+    (57, 60),
+    (58, 61),
+    (59, 62),
+    #
+    (60, 66),
+    (61, 67),
+    (62, 68),
+    (63, 69),
+    (64, 70),
+    (65, 71),
+    (66, 72),
+    (67, 73),
+    #
+    (68, 75),
+    (69, 76),
+    (70, 77),
+    (71, 78),
+    (72, 79),
+    (73, 80),
+    (74, 81),
+    (75, 82),
+    #
+    (76, 84),
+    (77, 85),
+    (78, 86),
+    (79, 87),
+    (80, 88),
+    (81, 89),
+    (82, 90),
+    (83, 91),
+    (84, 92),
+    (85, 93),
+    (86, 94),
+    (87, 95),
+    (88, 96),
+    (89, 97),
+    (90, 98),
+    (91, 99),
+    (92, 100),
+    (93, 101),
+    (94, 102),
+    (95, 103),
+    #
+    (96, 104),
+    #
+    (97, 105)
+]
+
+mapping_halpe = [
+    #
+    (26, 0),
+    (27, 2),
+    (28, 4),
+    (29, 6),
+    (30, 8),
+    (31, 10),
+    (32, 12),
+    (33, 14),
+    (34, 16),
+    (35, 18),
+    (36, 20),
+    (37, 22),
+    (38, 24),
+    (39, 26),
+    (40, 28),
+    (41, 30),
+    (42, 32),
+    #
+    (43, 33),
+    (44, 34),
+    (45, 35),
+    (46, 36),
+    (47, 37),
+    #
+    (48, 42),
+    (49, 43),
+    (50, 44),
+    (51, 45),
+    (52, 46),
+    #
+    (53, 51),
+    (54, 52),
+    (55, 53),
+    (56, 54),
+    #
+    (57, 58),
+    (58, 59),
+    (59, 60),
+    (60, 61),
+    (61, 62),
+    #
+    (62, 66),
+    (65, 70),
+    #
+    ((63, 64), 68),
+    ((66, 67), 72),
+    #
+    (68, 75),
+    (71, 79),
+    #
+    ((69, 70), 77),
+    ((72, 73), 81),
+    #
+    (74, 84),
+    (75, 85),
+    (76, 86),
+    (77, 87),
+    (78, 88),
+    (79, 89),
+    (80, 90),
+    (81, 91),
+    (82, 92),
+    (83, 93),
+    (84, 94),
+    (85, 95),
+    (86, 96),
+    (87, 97),
+    (88, 98),
+    (89, 99),
+    (90, 100),
+    (91, 101),
+    (92, 102),
+    (93, 103)
+]
+
+# train dataset
+dataset_lapa = dict(
+    type=dataset_type,
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='LaPa/annotations/lapa_train.json',
+    data_prefix=dict(img='pose/LaPa/train/images/'),
+    pipeline=[],
+)
+
 dataset_coco = dict(
     type='CocoWholeBodyFaceDataset',
     data_root=data_root,
@@ -283,118 +472,7 @@ dataset_wflw = dict(
     data_prefix=dict(img='pose/WFLW/images/'),
     pipeline=[
         dict(
-            type='KeypointConverter',
-            num_keypoints=106,
-            mapping=[
-                #
-                (0, 0),
-                (1, 1),
-                (2, 2),
-                (3, 3),
-                (4, 4),
-                (5, 5),
-                (6, 6),
-                (7, 7),
-                (8, 8),
-                (9, 9),
-                (10, 10),
-                (11, 11),
-                (12, 12),
-                (13, 13),
-                (14, 14),
-                (15, 15),
-                (16, 16),
-                (17, 17),
-                (18, 18),
-                (19, 19),
-                (20, 20),
-                (21, 21),
-                (22, 22),
-                (23, 23),
-                (24, 24),
-                (25, 25),
-                (26, 26),
-                (27, 27),
-                (28, 28),
-                (29, 29),
-                (30, 30),
-                (31, 31),
-                (32, 32),
-                #
-                (33, 33),
-                (34, 34),
-                (35, 35),
-                (36, 36),
-                (37, 37),
-                (38, 38),
-                (39, 39),
-                (40, 40),
-                (41, 41),
-                #
-                (42, 42),
-                (43, 43),
-                (44, 44),
-                (45, 45),
-                (46, 46),
-                (47, 47),
-                (48, 48),
-                (49, 49),
-                (50, 50),
-                #
-                (51, 51),
-                (52, 52),
-                (53, 53),
-                (54, 54),
-                #
-                (55, 58),
-                (56, 59),
-                (57, 60),
-                (58, 61),
-                (59, 62),
-                #
-                (60, 66),
-                (61, 67),
-                (62, 68),
-                (63, 69),
-                (64, 70),
-                (65, 71),
-                (66, 72),
-                (67, 73),
-                #
-                (68, 75),
-                (69, 76),
-                (70, 77),
-                (71, 78),
-                (72, 79),
-                (73, 80),
-                (74, 81),
-                (75, 82),
-                #
-                (76, 84),
-                (77, 85),
-                (78, 86),
-                (79, 87),
-                (80, 88),
-                (81, 89),
-                (82, 90),
-                (83, 91),
-                (84, 92),
-                (85, 93),
-                (86, 94),
-                (87, 95),
-                (88, 96),
-                (89, 97),
-                (90, 98),
-                (91, 99),
-                (92, 100),
-                (93, 101),
-                (94, 102),
-                (95, 103),
-                #
-                (96, 104),
-                #
-                (97, 105)
-            ])
+            type='KeypointConverter', num_keypoints=106, mapping=mapping_wflw)
     ],
 )
 
@@ -467,84 +545,7 @@ dataset_halpe = dict(
     data_prefix=dict(img='pose/Halpe/hico_20160224_det/images/train2015/'),
     pipeline=[
         dict(
-            type='KeypointConverter',
-            num_keypoints=106,
-            mapping=[
-                #
-                (26, 0),
-                (27, 2),
-                (28, 4),
-                (29, 6),
-                (30, 8),
-                (31, 10),
-                (32, 12),
-                (33, 14),
-                (34, 16),
-                (35, 18),
-                (36, 20),
-                (37, 22),
-                (38, 24),
-                (39, 26),
-                (40, 28),
-                (41, 30),
-                (42, 32),
-                #
-                (43, 33),
-                (44, 34),
-                (45, 35),
-                (46, 36),
-                (47, 37),
-                #
-                (48, 42),
-                (49, 43),
-                (50, 44),
-                (51, 45),
-                (52, 46),
-                #
-                (53, 51),
-                (54, 52),
-                (55, 53),
-                (56, 54),
-                #
-                (57, 58),
-                (58, 59),
-                (59, 60),
-                (60, 61),
-                (61, 62),
-                #
-                (62, 66),
-                (65, 70),
-                #
-                ((63, 64), 68),
-                ((66, 67), 72),
-                #
-                (68, 75),
-                (71, 79),
-                #
-                ((69, 70), 77),
-                ((72, 73), 81),
-                #
-                (74, 84),
-                (75, 85),
-                (76, 86),
-                (77, 87),
-                (78, 88),
-                (79, 89),
-                (80, 90),
-                (81, 91),
-                (82, 92),
-                (83, 93),
-                (84, 94),
-                (85, 95),
-                (86, 96),
-                (87, 97),
-                (88, 98),
-                (89, 99),
-                (90, 100),
-                (91, 101),
-                (92, 102),
-                (93, 103)
-            ])
+            type='KeypointConverter', num_keypoints=106, mapping=mapping_halpe)
     ],
 )
 
@@ -568,21 +569,129 @@ train_dataloader = dict(
         pipeline=train_pipeline,
         test_mode=False,
     ))
-val_dataloader = dict(
-    batch_size=32,
-    num_workers=10,
-    persistent_workers=True,
-    drop_last=False,
-    sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
-    dataset=dict(
-        type=dataset_type,
-        data_root=data_root,
-        data_mode=data_mode,
-        ann_file='LaPa/annotations/lapa_val.json',
-        data_prefix=dict(img='pose/LaPa/val/images/'),
-        test_mode=True,
-        pipeline=val_pipeline,
-    ))
+# val_dataloader = dict(
+#     batch_size=32,
+#     num_workers=10,
+#     persistent_workers=True,
+#     drop_last=False,
+#     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
+#     dataset=dict(
+#         type=dataset_type,
+#         data_root=data_root,
+#         data_mode=data_mode,
+#         ann_file='LaPa/annotations/lapa_val.json',
+#         data_prefix=dict(img='pose/LaPa/val/images/'),
+#         test_mode=True,
+#         pipeline=val_pipeline,
+#     ))
+
+# test dataset
+val_lapa = dict(
+    type=dataset_type,
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='LaPa/annotations/lapa_test.json',
+    data_prefix=dict(img='pose/LaPa/test/images/'),
+    pipeline=[],
+)
+
+val_coco = dict(
+    type='CocoWholeBodyFaceDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='coco/annotations/coco_wholebody_val_v1.0.json',
+    data_prefix=dict(img='detection/coco/val2017/'),
+    pipeline=[
+        dict(
+            type='KeypointConverter', num_keypoints=106, mapping=kpt_68_to_106)
+    ],
+)
+
+val_wflw = dict(
+    type='WFLWDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='wflw/annotations/face_landmarks_wflw_test.json',
+    data_prefix=dict(img='pose/WFLW/images/'),
+    pipeline=[
+        dict(
+            type='KeypointConverter', num_keypoints=106, mapping=mapping_wflw)
+    ],
+)
+
+val_300w = dict(
+    type='Face300WDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='300w/annotations/face_landmarks_300w_test.json',
+    data_prefix=dict(img='pose/300w/images/'),
+    pipeline=[
+        dict(
+            type='KeypointConverter', num_keypoints=106, mapping=kpt_68_to_106)
+    ],
+)
+
+val_cofw = dict(
+    type='COFWDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='cofw/annotations/cofw_test.json',
+    data_prefix=dict(img='pose/COFW/images/'),
+    pipeline=[
+        dict(
+            type='KeypointConverter',
+            num_keypoints=106,
+            mapping=[
+                #
+                (0, 33),
+                (2, 38),
+                (4, 35),
+                (5, 40),
+                #
+                (1, 46),
+                (3, 50),
+                (6, 44),
+                (7, 48),
+                #
+                (8, 60),
+                (10, 64),
+                (12, 62),
+                (13, 66),
+                #
+                (9, 72),
+                (11, 68),
+                (14, 70),
+                (15, 74),
+                #
+                (18, 57),
+                (19, 63),
+                (20, 54),
+                (21, 60),
+                #
+                (22, 84),
+                (23, 90),
+                (24, 87),
+                (25, 98),
+                (26, 102),
+                (27, 93),
+                #
+                (28, 16)
+            ])
+    ],
+)
+
+val_halpe = dict(
+    type='HalpeDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='halpe/annotations/halpe_val_v1.json',
+    data_prefix=dict(img='detection/coco/val2017/'),
+    pipeline=[
+        dict(
+            type='KeypointConverter', num_keypoints=106, mapping=mapping_halpe)
+    ],
+)
+
 test_dataloader = dict(
     batch_size=32,
     num_workers=10,
@@ -590,14 +699,14 @@ test_dataloader = dict(
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
     dataset=dict(
-        type=dataset_type,
-        data_root=data_root,
-        data_mode=data_mode,
-        ann_file='LaPa/annotations/lapa_test.json',
-        data_prefix=dict(img='pose/LaPa/test/images/'),
-        test_mode=True,
+        type='CombinedDataset',
+        metainfo=dict(from_file='configs/_base_/datasets/lapa.py'),
+        datasets=[val_lapa, val_coco, val_wflw, val_300w, val_cofw, val_halpe],
         pipeline=val_pipeline,
+        test_mode=True,
     ))
+
+val_dataloader = test_dataloader
 
 # hooks
 default_hooks = dict(

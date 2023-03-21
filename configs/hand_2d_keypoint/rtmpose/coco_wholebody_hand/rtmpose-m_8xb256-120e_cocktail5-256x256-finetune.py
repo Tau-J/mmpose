@@ -268,22 +268,114 @@ train_dataloader = dict(
         pipeline=train_pipeline,
         test_mode=False,
     ))
-val_dataloader = dict(
+
+# val_dataloader = dict(
+#     batch_size=32,
+#     num_workers=10,
+#     persistent_workers=True,
+#     drop_last=False,
+#     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
+#     dataset=dict(
+#         type=dataset_type,
+#         data_root=data_root,
+#         data_mode=data_mode,
+#         ann_file='coco/annotations/coco_wholebody_val_v1.0.json',
+#         data_prefix=dict(img='detection/coco/val2017/'),
+#         test_mode=True,
+#         pipeline=val_pipeline,
+#     ))
+
+# test datasets
+val_coco = dict(
+    type=dataset_type,
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='coco/annotations/coco_wholebody_val_v1.0.json',
+    data_prefix=dict(img='detection/coco/val2017/'),
+    pipeline=[],
+)
+
+val_onehand10k = dict(
+    type='OneHand10KDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='onehand10k/annotations/onehand10k_test.json',
+    data_prefix=dict(img='pose/OneHand10K/'),
+    pipeline=[],
+)
+
+val_freihand = dict(
+    type='FreiHandDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='freihand/annotations/freihand_test.json',
+    data_prefix=dict(img='pose/FreiHand/'),
+    pipeline=[],
+)
+
+val_rhd = dict(
+    type='Rhd2DDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='rhd/annotations/rhd_test.json',
+    data_prefix=dict(img='pose/RHD/'),
+    pipeline=[
+        dict(
+            type='KeypointConverter',
+            num_keypoints=21,
+            mapping=[
+                (0, 0),
+                (1, 4),
+                (2, 3),
+                (3, 2),
+                (4, 1),
+                (5, 8),
+                (6, 7),
+                (7, 6),
+                (8, 5),
+                (9, 12),
+                (10, 11),
+                (11, 10),
+                (12, 9),
+                (13, 16),
+                (14, 15),
+                (15, 14),
+                (16, 13),
+                (17, 20),
+                (18, 19),
+                (19, 18),
+                (20, 17),
+            ])
+    ],
+)
+
+val_halpehand = dict(
+    type='HalpeHandDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='halpe/annotations/halpe_val_v1.json',
+    data_prefix=dict(img='detection/coco/val2017/'),
+    pipeline=[],
+)
+
+test_dataloader = dict(
     batch_size=32,
     num_workers=10,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
     dataset=dict(
-        type=dataset_type,
-        data_root=data_root,
-        data_mode=data_mode,
-        ann_file='coco/annotations/coco_wholebody_val_v1.0.json',
-        data_prefix=dict(img='detection/coco/val2017/'),
-        test_mode=True,
+        type='CombinedDataset',
+        metainfo=dict(
+            from_file='configs/_base_/datasets/coco_wholebody_hand.py'),
+        datasets=[
+            val_coco, val_onehand10k, val_freihand, val_rhd, val_halpehand
+        ],
         pipeline=val_pipeline,
+        test_mode=True,
     ))
-test_dataloader = val_dataloader
+
+val_dataloader = test_dataloader
 
 # hooks
 default_hooks = dict(
