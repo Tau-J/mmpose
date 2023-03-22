@@ -103,8 +103,8 @@ dataset_type = 'LapaDataset'
 data_mode = 'topdown'
 data_root = 'data/'
 
-# backend_args = dict(backend='disk')
-backend_args = dict(
+# file_client_args = dict(backend='disk')
+file_client_args = dict(
     backend='petrel',
     path_mapping=dict({
         f'{data_root}': 's3://openmmlab/datasets/',
@@ -113,7 +113,7 @@ backend_args = dict(
 
 # pipelines
 train_pipeline = [
-    dict(type='LoadImage', backend_args=backend_args),
+    dict(type='LoadImage', file_client_args=file_client_args),
     dict(type='GetBBoxCenterScale'),
     dict(type='RandomFlip', direction='horizontal'),
     # dict(type='RandomHalfBody'),
@@ -143,14 +143,14 @@ train_pipeline = [
     dict(type='PackPoseInputs')
 ]
 val_pipeline = [
-    dict(type='LoadImage', backend_args=backend_args),
+    dict(type='LoadImage', file_client_args=file_client_args),
     dict(type='GetBBoxCenterScale'),
     dict(type='TopdownAffine', input_size=codec['input_size']),
     dict(type='PackPoseInputs')
 ]
 
 train_pipeline_stage2 = [
-    dict(type='LoadImage', backend_args=backend_args),
+    dict(type='LoadImage', file_client_args=file_client_args),
     dict(type='GetBBoxCenterScale'),
     dict(type='RandomFlip', direction='horizontal'),
     # dict(type='RandomHalfBody'),
@@ -607,21 +607,6 @@ train_dataloader = dict(
         pipeline=train_pipeline,
         test_mode=False,
     ))
-# val_dataloader = dict(
-#     batch_size=32,
-#     num_workers=10,
-#     persistent_workers=True,
-#     drop_last=False,
-#     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
-#     dataset=dict(
-#         type=dataset_type,
-#         data_root=data_root,
-#         data_mode=data_mode,
-#         ann_file='LaPa/annotations/lapa_val.json',
-#         data_prefix=dict(img='pose/LaPa/val/images/'),
-#         test_mode=True,
-#         pipeline=val_pipeline,
-#     ))
 
 # test dataset
 val_lapa = dict(
