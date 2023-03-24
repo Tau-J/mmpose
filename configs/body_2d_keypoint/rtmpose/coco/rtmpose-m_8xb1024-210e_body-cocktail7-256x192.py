@@ -72,7 +72,7 @@ model = dict(
             'rtmpose/cspnext-m_udp-aic-coco_210e-256x192-f2f7d6f6_20230130.pth'  # noqa
         )),
     head=dict(
-        type='RTMHead',
+        type='RTMCCHead',
         in_channels=768,
         out_channels=17,
         input_size=codec['input_size'],
@@ -83,8 +83,8 @@ model = dict(
             hidden_dims=256,
             s=128,
             expansion_factor=2,
-            dropout_rate=0.1,
-            drop_path=0.3,
+            dropout_rate=0.0,
+            drop_path=0.5,
             act_fn='SiLU',
             use_rel_bias=False,
             pos_enc=False),
@@ -101,8 +101,8 @@ dataset_type = 'CocoDataset'
 data_mode = 'topdown'
 data_root = 'data/'
 
-# file_client_args = dict(backend='disk')
-file_client_args = dict(
+# backend_args = dict(backend='disk')
+backend_args = dict(
     backend='petrel',
     path_mapping=dict({
         f'{data_root}': 's3://openmmlab/datasets/',
@@ -111,7 +111,7 @@ file_client_args = dict(
 
 # pipelines
 train_pipeline = [
-    dict(type='LoadImage', file_client_args=file_client_args),
+    dict(type='LoadImage', backend_args=backend_args),
     dict(type='GetBBoxCenterScale'),
     dict(type='RandomFlip', direction='horizontal'),
     dict(type='RandomHalfBody'),
@@ -138,14 +138,14 @@ train_pipeline = [
     dict(type='PackPoseInputs')
 ]
 val_pipeline = [
-    dict(type='LoadImage', file_client_args=file_client_args),
+    dict(type='LoadImage', backend_args=backend_args),
     dict(type='GetBBoxCenterScale'),
     dict(type='TopdownAffine', input_size=codec['input_size']),
     dict(type='PackPoseInputs')
 ]
 
 train_pipeline_stage2 = [
-    dict(type='LoadImage', file_client_args=file_client_args),
+    dict(type='LoadImage', backend_args=backend_args),
     dict(type='GetBBoxCenterScale'),
     dict(type='RandomFlip', direction='horizontal'),
     dict(type='RandomHalfBody'),
@@ -335,7 +335,7 @@ dataset_mpii = dict(
     ann_file='mpii/annotations/mpii_train.json',
     data_prefix=dict(img='pose/MPI/images/'),
     pipeline=[
-        dict(type='KeypointConverter', num_keypoints=16, mapping=mpii_coco)
+        dict(type='KeypointConverter', num_keypoints=17, mapping=mpii_coco)
     ],
 )
 
@@ -344,7 +344,7 @@ dataset_jhmdb = dict(
     data_root=data_root,
     data_mode=data_mode,
     ann_file='jhmdb/annotations/Sub1_train.json',
-    data_prefix=dict(img='pose/JHMDB/Rename_Images/'),
+    data_prefix=dict(img='pose/JHMDB/'),
     pipeline=[
         dict(type='KeypointConverter', num_keypoints=17, mapping=jhmdb_coco)
     ],
@@ -355,18 +355,18 @@ dataset_halpe = dict(
     data_root=data_root,
     data_mode=data_mode,
     ann_file='halpe/annotations/halpe_train_v1.json',
-    data_prefix=dict(img='pose/Halpe/hico_20160224_det/images/'),
+    data_prefix=dict(img='pose/Halpe/hico_20160224_det/images/train2015'),
     pipeline=[
         dict(type='KeypointConverter', num_keypoints=17, mapping=halpe_coco)
     ],
 )
 
 dataset_posetrack = dict(
-    type='PosetrackDataset',
+    type='PoseTrack18Dataset',
     data_root=data_root,
     data_mode=data_mode,
     ann_file='posetrack18/annotations/posetrack18_train.json',
-    data_prefix=dict(img='pose/PoseChallenge2018/images/'),
+    data_prefix=dict(img='pose/PoseChallenge2018/'),
     pipeline=[
         dict(
             type='KeypointConverter', num_keypoints=17, mapping=posetrack_coco)
@@ -437,7 +437,7 @@ val_mpii = dict(
     ann_file='mpii/annotations/mpii_val.json',
     data_prefix=dict(img='pose/MPI/images/'),
     pipeline=[
-        dict(type='KeypointConverter', num_keypoints=16, mapping=mpii_coco)
+        dict(type='KeypointConverter', num_keypoints=17, mapping=mpii_coco)
     ],
 )
 
@@ -446,7 +446,7 @@ val_jhmdb = dict(
     data_root=data_root,
     data_mode=data_mode,
     ann_file='jhmdb/annotations/Sub1_test.json',
-    data_prefix=dict(img='pose/JHMDB/Rename_Images/'),
+    data_prefix=dict(img='pose/JHMDB/'),
     pipeline=[
         dict(type='KeypointConverter', num_keypoints=17, mapping=jhmdb_coco)
     ],
@@ -476,11 +476,11 @@ val_ochuman = dict(
 )
 
 val_posetrack = dict(
-    type='PosetrackDataset',
+    type='PoseTrack18Dataset',
     data_root=data_root,
     data_mode=data_mode,
     ann_file='posetrack18/annotations/posetrack18_val.json',
-    data_prefix=dict(img='pose/PoseChallenge2018/images/'),
+    data_prefix=dict(img='pose/PoseChallenge2018/'),
     pipeline=[
         dict(
             type='KeypointConverter', num_keypoints=17, mapping=posetrack_coco)
@@ -497,8 +497,8 @@ val_dataloader = dict(
         type=dataset_type,
         data_root=data_root,
         data_mode=data_mode,
-        ann_file='annotations/person_keypoints_val2017.json',
-        bbox_file=f'{data_root}person_detection_results/'
+        ann_file='coco/annotations/person_keypoints_val2017.json',
+        bbox_file=f'{data_root}coco/person_detection_results/'
         'COCO_val2017_detections_AP_H_56_person.json',
         data_prefix=dict(img='detection/coco/val2017/'),
         test_mode=True,
@@ -546,7 +546,8 @@ custom_hooks = [
 ]
 
 # evaluators
-val_evaluator = dict(
-    type='CocoMetric',
-    ann_file=data_root + 'coco/annotations/person_keypoints_val2017.json')
+# val_evaluator = dict(
+#     type='CocoMetric',
+#     ann_file=data_root + 'coco/annotations/person_keypoints_val2017.json')
+val_evaluator = dict(type='PCKAccuracy', )
 test_evaluator = val_evaluator
