@@ -3,9 +3,9 @@ _base_ = ['../../../_base_/default_runtime.py']
 # lapa coco wflw 300w cofw halpe
 #   28  113      15   6     3   78
 # runtime
-max_epochs = 210
-stage2_num_epochs = 30
-base_lr = 4e-4
+max_epochs = 60
+stage2_num_epochs = 5
+base_lr = 4e-3
 
 train_cfg = dict(max_epochs=max_epochs, val_interval=1)
 randomness = dict(seed=21)
@@ -70,8 +70,8 @@ model = dict(
         init_cfg=dict(
             type='Pretrained',
             prefix='backbone.',
-            checkpoint='/mnt/petrelfs/jiangtao/ckpts/'
-            'rtmpose-m-face-cocktail6-udp-pretrain/best_NME_epoch_210.pth'  # noqa
+            checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
+            'rtmpose/cspnext-m_udp-aic-coco_210e-256x192-f2f7d6f6_20230130.pth'  # noqa
         )),
     head=dict(
         type='RTMCCHead',
@@ -103,8 +103,8 @@ dataset_type = 'LapaDataset'
 data_mode = 'topdown'
 data_root = 'data/'
 
-# file_client_args = dict(backend='disk')
-file_client_args = dict(
+# backend_args = dict(backend='disk')
+backend_args = dict(
     backend='petrel',
     path_mapping=dict({
         f'{data_root}': 's3://openmmlab/datasets/',
@@ -113,7 +113,7 @@ file_client_args = dict(
 
 # pipelines
 train_pipeline = [
-    dict(type='LoadImage', file_client_args=file_client_args),
+    dict(type='LoadImage', backend_args=backend_args),
     dict(type='GetBBoxCenterScale'),
     dict(type='RandomFlip', direction='horizontal'),
     # dict(type='RandomHalfBody'),
@@ -143,14 +143,14 @@ train_pipeline = [
     dict(type='PackPoseInputs')
 ]
 val_pipeline = [
-    dict(type='LoadImage', file_client_args=file_client_args),
+    dict(type='LoadImage', backend_args=backend_args),
     dict(type='GetBBoxCenterScale'),
     dict(type='TopdownAffine', input_size=codec['input_size']),
     dict(type='PackPoseInputs')
 ]
 
 train_pipeline_stage2 = [
-    dict(type='LoadImage', file_client_args=file_client_args),
+    dict(type='LoadImage', backend_args=backend_args),
     dict(type='GetBBoxCenterScale'),
     dict(type='RandomFlip', direction='horizontal'),
     # dict(type='RandomHalfBody'),

@@ -1,10 +1,10 @@
 _base_ = ['../../../_base_/default_runtime.py']
 
-# coco-hand onehand10k freihand2d rhd2d halpehand
+# coco-hand onehand10k freihand2d
 
 # runtime
 max_epochs = 120
-stage2_num_epochs = 30
+stage2_num_epochs = 10
 base_lr = 4e-3
 
 train_cfg = dict(max_epochs=max_epochs, val_interval=10)
@@ -103,8 +103,8 @@ dataset_type = 'CocoWholeBodyHandDataset'
 data_mode = 'topdown'
 data_root = 'data/'
 
-# file_client_args = dict(backend='disk')
-file_client_args = dict(
+# backend_args = dict(backend='disk')
+backend_args = dict(
     backend='petrel',
     path_mapping=dict({
         f'{data_root}': 's3://openmmlab/datasets/',
@@ -113,7 +113,7 @@ file_client_args = dict(
 
 # pipelines
 train_pipeline = [
-    dict(type='LoadImage', file_client_args=file_client_args),
+    dict(type='LoadImage', backend_args=backend_args),
     dict(type='GetBBoxCenterScale'),
     # dict(type='RandomHalfBody'),
     dict(
@@ -141,14 +141,14 @@ train_pipeline = [
     dict(type='PackPoseInputs')
 ]
 val_pipeline = [
-    dict(type='LoadImage', file_client_args=file_client_args),
+    dict(type='LoadImage', backend_args=backend_args),
     dict(type='GetBBoxCenterScale'),
     dict(type='TopdownAffine', input_size=codec['input_size']),
     dict(type='PackPoseInputs')
 ]
 
 train_pipeline_stage2 = [
-    dict(type='LoadImage', file_client_args=file_client_args),
+    dict(type='LoadImage', backend_args=backend_args),
     dict(type='GetBBoxCenterScale'),
     # dict(type='RandomHalfBody'),
     dict(
@@ -206,51 +206,6 @@ dataset_freihand = dict(
     pipeline=[],
 )
 
-dataset_rhd = dict(
-    type='Rhd2DDataset',
-    data_root=data_root,
-    data_mode=data_mode,
-    ann_file='rhd/annotations/rhd_train.json',
-    data_prefix=dict(img='pose/RHD/'),
-    pipeline=[
-        dict(
-            type='KeypointConverter',
-            num_keypoints=21,
-            mapping=[
-                (0, 0),
-                (1, 4),
-                (2, 3),
-                (3, 2),
-                (4, 1),
-                (5, 8),
-                (6, 7),
-                (7, 6),
-                (8, 5),
-                (9, 12),
-                (10, 11),
-                (11, 10),
-                (12, 9),
-                (13, 16),
-                (14, 15),
-                (15, 14),
-                (16, 13),
-                (17, 20),
-                (18, 19),
-                (19, 18),
-                (20, 17),
-            ])
-    ],
-)
-
-dataset_halpehand = dict(
-    type='HalpeHandDataset',
-    data_root=data_root,
-    data_mode=data_mode,
-    ann_file='halpe/annotations/halpe_train_v1.json',
-    data_prefix=dict(img='pose/Halpe/hico_20160224_det/images/train2015/'),
-    pipeline=[],
-)
-
 # data loaders
 train_dataloader = dict(
     batch_size=256,
@@ -261,10 +216,7 @@ train_dataloader = dict(
         type='CombinedDataset',
         metainfo=dict(
             from_file='configs/_base_/datasets/coco_wholebody_hand.py'),
-        datasets=[
-            dataset_coco, dataset_onehand10k, dataset_freihand, dataset_rhd,
-            dataset_halpehand
-        ],
+        datasets=[dataset_coco, dataset_onehand10k, dataset_freihand],
         pipeline=train_pipeline,
         test_mode=False,
     ))

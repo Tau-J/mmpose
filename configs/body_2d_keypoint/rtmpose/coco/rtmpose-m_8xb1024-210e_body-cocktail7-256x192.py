@@ -546,8 +546,12 @@ custom_hooks = [
 ]
 
 # evaluators
-# val_evaluator = dict(
-#     type='CocoMetric',
-#     ann_file=data_root + 'coco/annotations/person_keypoints_val2017.json')
-val_evaluator = dict(type='PCKAccuracy', )
+val_evaluator = dict(
+    type='CocoMetric',
+    ann_file=data_root + 'coco/annotations/person_keypoints_val2017.json')
+# val_evaluator = [
+#     dict(type='PCKAccuracy', thr=0.2),
+#     dict(type='AUC'),
+#     dict(type='EPE'),
+# ]
 test_evaluator = val_evaluator
