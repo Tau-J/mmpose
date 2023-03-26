@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -128,15 +129,10 @@ class KLDiscretLoss(nn.Module):
             Different joint types may have different target weights.
     """
 
-    def __init__(self,
-                 beta=1.0,
-                 label_softmax=False,
-                 use_focal=False,
-                 use_target_weight=True):
+    def __init__(self, beta=1.0, label_softmax=False, use_target_weight=True):
         super(KLDiscretLoss, self).__init__()
         self.beta = beta
         self.label_softmax = label_softmax
-        self.use_focal = use_focal
         self.use_target_weight = use_target_weight
 
         self.log_softmax = nn.LogSoftmax(dim=1)
@@ -148,13 +144,7 @@ class KLDiscretLoss(nn.Module):
         log_pt = self.log_softmax(dec_outs)
         if self.label_softmax:
             labels = F.softmax(labels * self.beta, dim=1)
-        if self.use_focal:
-            kl_loss = self.kl_loss(log_pt, labels)
-            pt = torch.exp(-kl_loss)
-            loss = torch.mean((1 - pt).pow(2) * kl_loss, dim=1)
-        else:
-            loss = torch.mean(self.kl_loss(log_pt, labels), dim=1)
-
+        loss = torch.mean(self.kl_loss(log_pt, labels), dim=1)
         return loss
 
     def forward(self, pred_simcc, gt_simcc, target_weight):
@@ -188,7 +178,8 @@ class KLDiscretLoss(nn.Module):
             loss += (
                 self.criterion(coord_y_pred, coord_y_gt).mul(weight).sum())
 
-        return loss / num_joints
+        loss = loss / num_joints
+        return loss
 
 
 @MODELS.register_module()
@@ -230,3 +221,58 @@ class InfoNCELoss(nn.Module):
         targets = torch.arange(n, dtype=torch.long, device=features.device)
         loss = F.cross_entropy(logits, targets, reduction='sum')
         return loss * self.loss_weight
+
+
+@MODELS.register_module()
+class SimCCBoneLoss(nn.Module):
+    """SimCCBoneLoss.
+
+    Args:
+        bone (list): Bone definition.
+        use_target_weight (bool): Option to use weighted loss.
+            Different joint types may have different target weights.
+    """
+
+    def __init__(self, use_target_weight: bool = True):
+        super(SimCCBoneLoss, self).__init__()
+
+        self.use_target_weight = use_target_weight
+        self.smooth_l1_loss = nn.SmoothL1Loss(reduction='none')
+
+    def forward(self, pred_simcc, gt_simcc, target_weight):
+        """Forward function.
+
+        Args:
+            pred_simcc (Tuple[Tensor, Tensor]): Predicted SimCC vectors of
+                x-axis and y-axis.
+            gt_simcc (Tuple[Tensor, Tensor]): Target representations.
+            target_weight (torch.Tensor[N, K] or torch.Tensor[N]):
+                Weights across different labels.
+        """
+        num_joints = pred_simcc[0].size(1)
+
+        id_i, id_j = [], []
+        for i in range(num_joints):
+            for j in range(i + 1, num_joints):
+                id_i.append(i)
+                id_j.append(j)
+
+        loss = 0.
+        for pred, target in zip(pred_simcc, gt_simcc):
+            J = torch.norm(
+                pred[:, id_i, :] - pred[:, id_j, :],
+                p=2,
+                dim=-1,
+                keepdim=False)
+            Y = torch.norm(
+                target[:, id_i, :] - target[:, id_j, :],
+                p=2,
+                dim=-1,
+                keepdim=False)
+            loss = loss + self.smooth_l1_loss(J, Y)
+
+            if self.use_target_weight:
+                w = target_weight[:, id_i] * target_weight[:, id_j]
+                loss = loss * w
+
+        return loss.mean() / num_joints
