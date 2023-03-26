@@ -141,7 +141,7 @@ class KLDiscretLoss(nn.Module):
     def criterion(self, dec_outs, labels):
         """Criterion function."""
 
-        log_pt = self.log_softmax(dec_outs)
+        log_pt = self.log_softmax(dec_outs * self.beta)
         if self.label_softmax:
             labels = F.softmax(labels * self.beta, dim=1)
         loss = torch.mean(self.kl_loss(log_pt, labels), dim=1)
