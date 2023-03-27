@@ -72,6 +72,7 @@ class RTMCCHead(BaseHead):
             act_fn='ReLU',
             use_rel_bias=False,
             pos_enc=False),
+        groups: list = None,
         loss: ConfigType = dict(type='KLDiscretLoss', use_target_weight=True),
         decoder: OptConfigType = None,
         init_cfg: OptConfigType = None,
@@ -87,6 +88,7 @@ class RTMCCHead(BaseHead):
         self.input_size = input_size
         self.in_featuremap_size = in_featuremap_size
         self.simcc_split_ratio = simcc_split_ratio
+        self.groups = groups
 
         self.loss_module = MODELS.build(loss)
         if decoder is not None:
@@ -128,8 +130,19 @@ class RTMCCHead(BaseHead):
             use_rel_bias=gau_cfg['use_rel_bias'],
             pos_enc=gau_cfg['pos_enc'])
 
-        self.cls_x = nn.Linear(gau_cfg['hidden_dims'], W, bias=False)
-        self.cls_y = nn.Linear(gau_cfg['hidden_dims'], H, bias=False)
+        if groups is not None:
+            self.cls_x = nn.ModuleList([
+                nn.Linear(gau_cfg['hidden_dims'], W, bias=False)
+                for _ in groups
+            ])
+            self.cls_y = nn.ModuleList([
+                nn.Linear(gau_cfg['hidden_dims'], H, bias=False)
+                for _ in groups
+            ])
+            self.W, self.H = W, H
+        else:
+            self.cls_x = nn.Linear(gau_cfg['hidden_dims'], W, bias=False)
+            self.cls_y = nn.Linear(gau_cfg['hidden_dims'], H, bias=False)
 
     def forward(self, feats: Tuple[Tensor]) -> Tuple[Tensor, Tensor]:
         """Forward the network.
@@ -155,8 +168,17 @@ class RTMCCHead(BaseHead):
 
         feats = self.gau(feats)
 
-        pred_x = self.cls_x(feats)
-        pred_y = self.cls_y(feats)
+        if self.groups is not None:
+            pred_x = torch.zeros(feats.size(0), feats.size(1), self.W)
+            pred_y = torch.zeros(feats.size(0), feats.size(1), self.H)
+            for i, idx in enumerate(self.groups):
+                t_x = self.cls_x[i](feats[:, idx, :])
+                t_y = self.cls_y[i](feats[:, idx, :])
+                pred_x[:, idx, :] = t_x
+                pred_y[:, idx, :] = t_y
+        else:
+            pred_x = self.cls_x(feats)
+            pred_y = self.cls_y(feats)
 
         return pred_x, pred_y
 

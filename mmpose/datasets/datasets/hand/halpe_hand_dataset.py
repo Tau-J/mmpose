@@ -116,8 +116,10 @@ class HalpeHandDataset(BaseCocoStyleDataset):
                 lefthand_kpts = keypoints[-42:-21, :]
                 righthand_kpts = keypoints[-21:, :]
 
-                lefthand_box = get_bbox(lefthand_kpts)
-                righthand_box = get_bbox(righthand_kpts)
+                left_mask = lefthand_kpts[:, 2] > 0
+                lefthand_box = get_bbox(lefthand_kpts[left_mask, :])
+                right_mask = righthand_kpts[:, 2] > 0
+                righthand_box = get_bbox(righthand_kpts[right_mask, :])
                 t_ann = {
                     'lefthand_kpts': lefthand_kpts,
                     'righthand_kpts': righthand_kpts,
