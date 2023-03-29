@@ -1,3 +1,3 @@
-# Customize Logging
+# 自定义日志
 
 Coming soon.

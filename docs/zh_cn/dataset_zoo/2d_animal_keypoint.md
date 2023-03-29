@@ -1,9 +1,9 @@
 # 2D Animal Keypoint Dataset
 
-It is recommended to symlink the dataset root to `$MMPOSE/data`.
-If your folder structure is different, you may need to change the corresponding paths in config files.
+我们建议将数据集根目录的符号链接创建到 `$MMPOSE/data`。
+如果您的文件夹结构不同，可能需要在配置文件中更改相应的路径。
 
-MMPose supported datasets:
+MMPose 支持以下数据集：
 
 - [Animal-Pose](#animal-pose) \[ [Homepage](https://sites.google.com/view/animal-pose/) \]
 - [AP-10K](#ap-10k) \[ [Homepage](https://github.com/AlexTheBad/AP-10K/) \]
@@ -37,13 +37,13 @@ MMPose supported datasets:
   <img src="https://user-images.githubusercontent.com/100993824/227796953-95ae1e30-5323-43f8-9a19-c4c2326e9835.png" height="200px">
 </div>
 
-For [Animal-Pose](https://sites.google.com/view/animal-pose/) dataset, we prepare the dataset as follows:
+对于 [Animal-Pose](https://sites.google.com/view/animal-pose/) 数据集，我们按照以下步骤准备数据集：
 
-1. Download the images of [PASCAL VOC2012](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/#data), especially the five categories (dog, cat, sheep, cow, horse), which we use as trainval dataset.
-2. Download the [test-set](https://drive.google.com/drive/folders/1DwhQobZlGntOXxdm7vQsE4bqbFmN3b9y?usp=sharing) images with raw annotations (1000 images, 5 categories).
-3. We have pre-processed the annotations to make it compatible with MMPose. Please download the annotation files from [annotations](https://download.openmmlab.com/mmpose/datasets/animalpose_annotations.tar). If you would like to generate the annotations by yourself, please check our dataset parsing [codes](/tools/dataset_converters/parse_animalpose_dataset.py).
+1. 下载 [PASCAL VOC2012](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/#data)，特别是五类（狗、猫、绵羊、牛、马），我们将它们用作 trainval 数据集。
+2. 从 [test-set](https://drive.google.com/drive/folders/1DwhQobZlGntOXxdm7vQsE4bqbFmN3b9y?usp=sharing) 下载具有原始标注的图像 （1000 张图像，5个类别）。
+3. 我们对标注文件进行了预处理，使其与 MMPose 兼容。请从 [annotations](https://download.openmmlab.com/mmpose/datasets/animalpose_annotations.tar) 下载标注文件。如果您想自己生成标注，请查看我们的数据集解析 [codes](/tools/dataset_converters/parse_animalpose_dataset.py)。
 
-Extract them under {MMPose}/data, and make them look like this:
+将它们提取到 `{MMPose}/data` 下，并使其看起来像这样：
 
 ```text
 mmpose
@@ -97,10 +97,7 @@ mmpose
 
 ```
 
-The official dataset does not provide the official train/val/test set split.
-We choose the images from PascalVOC for train & val. In total, we have 3608 images and 5117 annotations for train+val, where
-2798 images with 4000 annotations are used for training, and 810 images with 1117 annotations are used for validation.
-Those images from other sources (1000 images with 1000 annotations) are used for testing.
+官方数据集没有提供官方的 训练/验证/测试集 分割。我们选择了 PascalVOC 的图像作为训练和验证，总共有 3608 张图像和 5117 个标注用于训练+验证。其中，2798 张带有 4000 个标注的图像用于训练，810 张带有 1117 个标注的图像用于验证。来自其他来源的图像（1000 张带有 1000 个标注）用于测试。
 
 ## AP-10K
 
@@ -126,10 +123,11 @@ Those images from other sources (1000 images with 1000 annotations) are used for
   <img src="https://user-images.githubusercontent.com/100993824/227797151-091dc21a-d944-49c9-8b62-cc47fa89e69f.png" height="200px">
 </div>
 
-For [AP-10K](https://github.com/AlexTheBad/AP-10K/) dataset, images and annotations can be downloaded from [download](https://drive.google.com/file/d/1-FNNGcdtAQRehYYkGY1y4wzFNg4iWNad/view?usp=sharing).
-Note, this data and annotation data is for non-commercial use only.
+对于 [AP-10K](https://github.com/AlexTheBad/AP-10K/) 数据集，可以从 [download](https://drive.google.com/file/d/1-FNNGcdtAQRehYYkGY1y4wzFNg4iWNad/view?usp=sharing) 下载图像和标注数据。
 
-Extract them under {MMPose}/data, and make them look like this:
+请注意，这些数据和标注仅供非商业使用。
+
+将它们提取到 `{MMPose}/data` 下，并使它们看起来像这样：
 
 ```text
 mmpose
@@ -157,7 +155,7 @@ mmpose
 
 ```
 
-The annotation files in 'annotation' folder contains 50 labeled animal species. There are total 10,015 labeled images with 13,028 instances in the AP-10K dataset. We randonly split them into train, val, and test set following the ratio of 7:1:2.
+`annotations` 文件夹中的注释文件包含 50 种有标签的动物物种。 AP-10K 数据集中共有 10,015 张带有 13,028 个实例的标记图像。 我们按比例随机将它们分成训练集，验证集和测试集，比例为 7：1：2。
 
 ## Horse-10
 
@@ -182,9 +180,11 @@ The annotation files in 'annotation' folder contains 50 labeled animal species. 
   <img src="https://user-images.githubusercontent.com/100993824/227797934-32bc1b2c-7957-4a29-94df-8e431842ab3b.png" height="200px">
 </div>
 
-For [Horse-10](http://www.mackenziemathislab.org/horse10) dataset, images can be downloaded from [download](http://www.mackenziemathislab.org/horse10).
-Please download the annotation files from [horse10_annotations](https://download.openmmlab.com/mmpose/datasets/horse10_annotations.tar). Note, this data and annotation data is for non-commercial use only, per the authors (see http://horse10.deeplabcut.org for more information).
-Extract them under {MMPose}/data, and make them look like this:
+对于 [Horse-10](http://www.mackenziemathislab.org/horse10) 数据集，可以从 [download](http://www.mackenziemathislab.org/horse10) 下载图像。
+
+请从 [horse10_annotations](https://download.openmmlab.com/mmpose/datasets/horse10_annotations.tar) 下载标注文件。 请注意，根据作者的要求，这些数据和注释只供非商业使用（有关更多信息，请参见 http://horse10.deeplabcut.org ）。
+
+将它们解压到 `{MMPose}/data` 目录下，并让它们看起来像这样：
 
 ```text
 mmpose
@@ -232,9 +232,11 @@ mmpose
   <img src="https://user-images.githubusercontent.com/100993824/227799576-f10f8469-9432-4139-beb4-195037dee72c.png" height="200px">
 </div>
 
-For [MacaquePose](http://www.pri.kyoto-u.ac.jp/datasets/macaquepose/index.html) dataset, images can be downloaded from [download](http://www.pri.kyoto-u.ac.jp/datasets/macaquepose/index.html).
-Please download the annotation files from [macaque_annotations](https://download.openmmlab.com/mmpose/datasets/macaque_annotations.tar).
-Extract them under {MMPose}/data, and make them look like this:
+对于 [MacaquePose](http://www.pri.kyoto-u.ac.jp/datasets/macaquepose/index.html) 数据集，可以从 [download](http://www.pri.kyoto-u.ac.jp/datasets/macaquepose/index.html) 下载图片。
+
+请从 [macaque_annotations](https://download.openmmlab.com/mmpose/datasets/macaque_annotations.tar) 下载标注文件。
+
+将它们提取到 `{MMPose}/data` 文件夹下，并使其看起来像这样：
 
 ```text
 mmpose
@@ -258,7 +260,7 @@ mmpose
 
 ```
 
-Since the official dataset does not provide the test set, we randomly select 12500 images for training, and the rest for evaluation (see [code](/tools/dataset/parse_macaquepose_dataset.py)).
+由于官方数据集没有提供测试集，我们随机选择了12500张图像进行训练，其余的用于评估（请参考 [code](/tools/dataset/parse_macaquepose_dataset.py) ）。
 
 ## Vinegar Fly
 
@@ -286,9 +288,11 @@ Since the official dataset does not provide the test set, we randomly select 125
   <img src="https://user-images.githubusercontent.com/100993824/227802774-bb4e4ef2-2ade-42ad-80f1-97f2a7faa9e2.png" height="200px">
 </div>
 
-For [Vinegar Fly](https://github.com/jgraving/DeepPoseKit-Data) dataset, images can be downloaded from [vinegar_fly_images](https://download.openmmlab.com/mmpose/datasets/vinegar_fly_images.tar).
-Please download the annotation files from [vinegar_fly_annotations](https://download.openmmlab.com/mmpose/datasets/vinegar_fly_annotations.tar).
-Extract them under {MMPose}/data, and make them look like this:
+对于 [Vinegar Fly](https://github.com/jgraving/DeepPoseKit-Data) 数据集，可以从 [vinegar_fly_images](https://download.openmmlab.com/mmpose/datasets/vinegar_fly_images.tar) 下载图像。
+
+请从 [vinegar_fly_annotations](https://download.openmmlab.com/mmpose/datasets/vinegar_fly_annotations.tar) 下载标注文件，并注意此数据和注释数据仅供非商业使用。
+
+将它们提取到 `{MMPose}/data` 下，并使它们看起来像这样：
 
 ```text
 mmpose
@@ -311,7 +315,7 @@ mmpose
 
 ```
 
-Since the official dataset does not provide the test set, we randomly select 90% images for training, and the rest (10%) for evaluation (see [code](/tools/dataset_converters/parse_deepposekit_dataset.py)).
+由于官方数据集没有提供测试集，我们随机选择 90％ 的图像进行训练，剩余的 10％ 用于评估（请参阅 [code](/tools/dataset_converters/parse_deepposekit_dataset.py) ）。
 
 ## Desert Locust
 
@@ -338,9 +342,9 @@ Since the official dataset does not provide the test set, we randomly select 90%
   <img src="https://user-images.githubusercontent.com/100993824/227802779-09d0ec8c-8971-4c67-a315-e2d1355f7f72.png" height="200px">
 </div>
 
-For [Desert Locust](https://github.com/jgraving/DeepPoseKit-Data) dataset, images can be downloaded from [locust_images](https://download.openmmlab.com/mmpose/datasets/locust_images.tar).
-Please download the annotation files from [locust_annotations](https://download.openmmlab.com/mmpose/datasets/locust_annotations.tar).
-Extract them under {MMPose}/data, and make them look like this:
+对于 [Desert Locust](https://github.com/jgraving/DeepPoseKit-Data) 数据集，可以从 [locust_images](https://download.openmmlab.com/mmpose/datasets/locust_images.tar) 下载图像，标注文件可以从 [locust_annotations](https://download.openmmlab.com/mmpose/datasets/locust_annotations.tar) 下载。
+
+将它们提取到 `{MMPose}/data` 下，并使它们看起来像这样：
 
 ```text
 mmpose
@@ -363,7 +367,7 @@ mmpose
 
 ```
 
-Since the official dataset does not provide the test set, we randomly select 90% images for training, and the rest (10%) for evaluation (see [code](/tools/dataset_converters/parse_deepposekit_dataset.py)).
+由于官方数据集没有提供测试集，我们随机选择90%的图像用于训练，剩余的10%用于评估（请参阅 [code](/tools/dataset_converters/parse_deepposekit_dataset.py) ）。
 
 ## Grévy’s Zebra
 
@@ -390,9 +394,9 @@ Since the official dataset does not provide the test set, we randomly select 90%
   <img src="https://user-images.githubusercontent.com/100993824/227802783-ace952bb-1ff9-4720-80a8-c63cc9e714b6.png" height="200px">
 </div>
 
-For [Grévy’s Zebra](https://github.com/jgraving/DeepPoseKit-Data) dataset, images can be downloaded from [zebra_images](https://download.openmmlab.com/mmpose/datasets/zebra_images.tar).
-Please download the annotation files from [zebra_annotations](https://download.openmmlab.com/mmpose/datasets/zebra_annotations.tar).
-Extract them under {MMPose}/data, and make them look like this:
+对于 [Grévy’s Zebra](https://github.com/jgraving/DeepPoseKit-Data) 数据集，可以从 [zebra_images](https://download.openmmlab.com/mmpose/datasets/zebra_images.tar) 下载图片，标注文件可以从 [zebra_annotations](https://download.openmmlab.com/mmpose/datasets/zebra_annotations.tar) 下载。
+
+将它们提取到 `{MMPose}/data` 下，并使它们看起来像这样：
 
 ```text
 mmpose
@@ -415,7 +419,7 @@ mmpose
 
 ```
 
-Since the official dataset does not provide the test set, we randomly select 90% images for training, and the rest (10%) for evaluation (see [code](/tools/dataset_converters/parse_deepposekit_dataset.py)).
+由于官方数据集没有提供测试集，我们随机选择90%的图像用于训练，剩余的10%用于评估（请参阅 [code](/tools/dataset_converters/parse_deepposekit_dataset.py) ）。
 
 ## ATRW
 
@@ -440,15 +444,15 @@ Since the official dataset does not provide the test set, we randomly select 90%
   <img src="https://user-images.githubusercontent.com/100993824/227797386-fce99241-8a0e-4a40-a179-dad013e6c5a4.png" height="200px">
 </div>
 
-ATRW captures images of the Amur tiger (also known as Siberian tiger, Northeast-China tiger) in the wild.
-For [ATRW](https://cvwc2019.github.io/challenge.html) dataset, please download images from
-[Pose_train](https://lilablobssc.blob.core.windows.net/cvwc2019/train/atrw_pose_train.tar.gz),
-[Pose_val](https://lilablobssc.blob.core.windows.net/cvwc2019/train/atrw_pose_val.tar.gz), and
-[Pose_test](https://lilablobssc.blob.core.windows.net/cvwc2019/test/atrw_pose_test.tar.gz).
-Note that in the ATRW official annotation files, the key "file_name" is written as "filename". To make it compatible with
-other coco-type json files, we have modified this key.
-Please download the modified annotation files from [atrw_annotations](https://download.openmmlab.com/mmpose/datasets/atrw_annotations.tar).
-Extract them under {MMPose}/data, and make them look like this:
+ATRW 拍摄了野生的东北虎（又称为库页岛东北虎，西伯利亚虎）图片。
+
+对于 [ATRW](https://cvwc2019.github.io/challenge.html) 数据集，请从 [Pose_train](https://lilablobssc.blob.core.windows.net/cvwc2019/train/atrw_pose_train.tar.gz)， [Pose_val](https://lilablobssc.blob.core.windows.net/cvwc2019/train/atrw_pose_val.tar.gz)， [Pose_test](https://lilablobssc.blob.core.windows.net/cvwc2019/test/atrw_pose_test.tar.gz) 下载。
+
+请注意，在ATRW官方注释文件中 `file_name` 被写作 `filename` 。为了使其与其他 coco 类型的 json 文件兼容，我们已更改。
+
+请从 [atrw_annotations](https://download.openmmlab.com/mmpose/datasets/atrw_annotations.tar) 下载修改后的标注文件。
+
+将它们提取到 `{MMPose}/data` 下，并使它们看起来像这样：
 
 ```text
 mmpose
