@@ -155,7 +155,7 @@ mmpose
 
 ```
 
-`annotations` 文件夹中的注释文件包含 50 种有标签的动物物种。 AP-10K 数据集中共有 10,015 张带有 13,028 个实例的标记图像。 我们按比例随机将它们分成训练集，验证集和测试集，比例为 7：1：2。
+`annotations` 文件夹中的标注文件包含 50 种有标签的动物物种。 AP-10K 数据集中共有 10,015 张带有 13,028 个实例的标记图像。 我们按比例随机将它们分成训练集，验证集和测试集，比例为 7：1：2。
 
 ## Horse-10
 
@@ -182,7 +182,7 @@ mmpose
 
 对于 [Horse-10](http://www.mackenziemathislab.org/horse10) 数据集，可以从 [download](http://www.mackenziemathislab.org/horse10) 下载图像。
 
-请从 [horse10_annotations](https://download.openmmlab.com/mmpose/datasets/horse10_annotations.tar) 下载标注文件。 请注意，根据作者的要求，这些数据和注释只供非商业使用（有关更多信息，请参见 http://horse10.deeplabcut.org ）。
+请从 [horse10_annotations](https://download.openmmlab.com/mmpose/datasets/horse10_annotations.tar) 下载标注文件。 请注意，根据作者的要求，这些数据和标注只供非商业使用（有关更多信息，请参见 http://horse10.deeplabcut.org ）。
 
 将它们解压到 `{MMPose}/data` 目录下，并让它们看起来像这样：
 
@@ -290,7 +290,7 @@ mmpose
 
 对于 [Vinegar Fly](https://github.com/jgraving/DeepPoseKit-Data) 数据集，可以从 [vinegar_fly_images](https://download.openmmlab.com/mmpose/datasets/vinegar_fly_images.tar) 下载图像。
 
-请从 [vinegar_fly_annotations](https://download.openmmlab.com/mmpose/datasets/vinegar_fly_annotations.tar) 下载标注文件，并注意此数据和注释数据仅供非商业使用。
+请从 [vinegar_fly_annotations](https://download.openmmlab.com/mmpose/datasets/vinegar_fly_annotations.tar) 下载标注文件，并注意此数据和标注数据仅供非商业使用。
 
 将它们提取到 `{MMPose}/data` 下，并使它们看起来像这样：
 
@@ -448,7 +448,7 @@ ATRW 拍摄了野生的东北虎（又称为库页岛东北虎，西伯利亚虎
 
 对于 [ATRW](https://cvwc2019.github.io/challenge.html) 数据集，请从 [Pose_train](https://lilablobssc.blob.core.windows.net/cvwc2019/train/atrw_pose_train.tar.gz)， [Pose_val](https://lilablobssc.blob.core.windows.net/cvwc2019/train/atrw_pose_val.tar.gz)， [Pose_test](https://lilablobssc.blob.core.windows.net/cvwc2019/test/atrw_pose_test.tar.gz) 下载。
 
-请注意，在ATRW官方注释文件中 `file_name` 被写作 `filename` 。为了使其与其他 coco 类型的 json 文件兼容，我们已更改。
+请注意，在ATRW官方标注文件中 `file_name` 被写作 `filename` 。为了使其与其他 coco 类型的 json 文件兼容，我们已更改。
 
 请从 [atrw_annotations](https://download.openmmlab.com/mmpose/datasets/atrw_annotations.tar) 下载修改后的标注文件。
 
