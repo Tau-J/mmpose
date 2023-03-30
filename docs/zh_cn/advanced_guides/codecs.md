@@ -4,7 +4,7 @@
 
 编码和解码是一对紧密相关的互逆处理过程。在 MMPose 早期版本中，编码和解码过程往往分散在不同模块里，使其不够直观和统一，增加了学习和维护成本。
 
-MMPose 1.0 中引入了新模块 **编解码器（Codec）** ，将关键点数据的编码和解码过程进行集成，以增加代码的友好度和复用性。
+MMPose 1.0 中引入了新模块 **编解码器（Codec）** ，将关键点数据的编码和解码过程进行集成，以增加代码的友好度和复用性，所有的编解码器都存放在 `$MMPose/codecs` 目录下。
 
 编解码器在工作流程中所处的位置如下所示：
 
@@ -23,9 +23,10 @@ MMPose 1.0 中引入了新模块 **编解码器（Codec）** ，将关键点数�
 - 一维向量：用于 SimCC-based 方法
 - 高斯热图：用于 Heatmap-based 方法
 
-以 Regression-based 方法的编码器为例：
+以 Regression-based 方法的编码器（mmpose/codecs/regression_label.py）为例：
 
 ```Python
+# mmpose/codecs/regression_label.py
 def encode(self,
            keypoints: np.ndarray,
            keypoints_visible: Optional[np.ndarray] = None) -> dict:
@@ -90,9 +91,10 @@ def loss(self,
 
 解码器主要负责将模型的输出解码为输入图片尺度的坐标值，处理过程与编码器相反。
 
-以 Regression-based 方法的解码器为例：
+以 Regression-based 方法的解码器（mmpose/codecs/regression_label.py）为例：
 
 ```Python
+# mmpose/codecs/regression_label.py
 def decode(self, encoded: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """Decode keypoint coordinates from normalized space to input image
     space.
@@ -173,7 +175,7 @@ head=dict(
 ```Python
 
 # codec settings
-codec = dict(type='RegressionLabel', input_size=(192, 256))                     ## 定义 ##
+codec = dict(type='RegressionLabel', input_size=(192, 256))   ## 定义 ##
 
 # model settings
 model = dict(
@@ -194,7 +196,7 @@ model = dict(
         in_channels=2048,
         num_joints=17,
         loss=dict(type='RLELoss', use_target_weight=True),
-        decoder=codec),                                                         ## 模型头部 ##
+        decoder=codec),   ## 模型头部 ##
     test_cfg=dict(
         flip_test=True,
         shift_coords=True,

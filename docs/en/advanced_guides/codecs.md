@@ -23,7 +23,7 @@ The encoder transforms the coordinates in the input image space into the needed 
 - One-dimensional Vectors
 - Gaussian Heatmaps
 
-For example, in the Regression-based method, the encoder will be:
+For example, in the Regression-based method, the encoder (mmpose/codecs/regression_label.py) will be:
 
 ```Python
 def encode(self,
@@ -90,7 +90,7 @@ def loss(self,
 
 The decoder transforms the model outputs into coordinates in the input image space, which is the opposite processing of the encoder.
 
-For example, in the Regression-based method, the decoder will be:
+For example, in the Regression-based method, the decoder (mmpose/codecs/regression_label.py) will be:
 
 ```Python
 def decode(self, encoded: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
