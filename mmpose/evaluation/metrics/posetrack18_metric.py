@@ -4,7 +4,7 @@ import os.path as osp
 from typing import Dict, List, Optional
 
 import numpy as np
-from mmengine.fileio import dump, load
+from mmengine.fileio import dump, get_local_path, load
 from mmengine.logging import MMLogger
 
 from mmpose.registry import METRICS
@@ -67,6 +67,8 @@ class PoseTrack18Metric(CocoMetric):
         outfile_prefix (str | None): The prefix of json files. It includes
             the file path and the prefix of filename, e.g., ``'a/b/prefix'``.
             If not specified, a temp file will be created. Defaults to ``None``
+        backend_args (dict, optional): Arguments to instantiate the
+            corresponding backend. Defaults to None.
         **kwargs: Keyword parameters passed to :class:`mmeval.BaseMetric`
     """
     default_prefix: Optional[str] = 'posetrack18'
@@ -79,6 +81,7 @@ class PoseTrack18Metric(CocoMetric):
                  nms_thr: float = 0.9,
                  format_only: bool = False,
                  outfile_prefix: Optional[str] = None,
+                 backend_args: dict = None,
                  collect_device: str = 'cpu',
                  prefix: Optional[str] = None) -> None:
         # raise an error to avoid long time running without getting results
@@ -94,6 +97,7 @@ class PoseTrack18Metric(CocoMetric):
             nms_thr=nms_thr,
             format_only=format_only,
             outfile_prefix=outfile_prefix,
+            backend_args=backend_args,
             collect_device=collect_device,
             prefix=prefix)
 
@@ -129,46 +133,48 @@ class PoseTrack18Metric(CocoMetric):
                            [4, 6], [5, 7]]
         categories.append(cat)
 
-        # path of directory for official gt files
-        gt_folder = osp.join(
-            osp.dirname(self.ann_file),
-            osp.splitext(self.ann_file.split('_')[-1])[0])
-        # the json file for each video sequence
-        json_files = [
-            pos for pos in os.listdir(gt_folder) if pos.endswith('.json')
-        ]
+        with get_local_path(
+                self.ann_file, backend_args=self.backend_args) as local_path:
+            # path of directory for official gt files
+            gt_folder = osp.join(
+                osp.dirname(local_path),
+                osp.splitext(local_path.split('_')[-1])[0])
+            # the json file for each video sequence
+            json_files = [
+                pos for pos in os.listdir(gt_folder) if pos.endswith('.json')
+            ]
 
-        for json_file in json_files:
-            gt = load(osp.join(gt_folder, json_file))
-            annotations = []
-            images = []
+            for json_file in json_files:
+                gt = load(osp.join(gt_folder, json_file))
+                annotations = []
+                images = []
 
-            for image in gt['images']:
-                img = {}
-                img['id'] = image['id']
-                img['file_name'] = image['file_name']
-                images.append(img)
+                for image in gt['images']:
+                    img = {}
+                    img['id'] = image['id']
+                    img['file_name'] = image['file_name']
+                    images.append(img)
 
-                img_kpts = keypoints[img['id']]
+                    img_kpts = keypoints[img['id']]
 
-                for track_id, img_kpt in enumerate(img_kpts):
-                    ann = {}
-                    ann['image_id'] = img_kpt['img_id']
-                    ann['keypoints'] = np.array(
-                        img_kpt['keypoints']).reshape(-1).tolist()
-                    ann['scores'] = np.array(ann['keypoints']).reshape(
-                        [-1, 3])[:, 2].tolist()
-                    ann['score'] = float(img_kpt['score'])
-                    ann['track_id'] = track_id
-                    annotations.append(ann)
+                    for track_id, img_kpt in enumerate(img_kpts):
+                        ann = {}
+                        ann['image_id'] = img_kpt['img_id']
+                        ann['keypoints'] = np.array(
+                            img_kpt['keypoints']).reshape(-1).tolist()
+                        ann['scores'] = np.array(ann['keypoints']).reshape(
+                            [-1, 3])[:, 2].tolist()
+                        ann['score'] = float(img_kpt['score'])
+                        ann['track_id'] = track_id
+                        annotations.append(ann)
 
-            pred_file = osp.join(osp.dirname(outfile_prefix), json_file)
-            info = {}
-            info['images'] = images
-            info['categories'] = categories
-            info['annotations'] = annotations
+                pred_file = osp.join(osp.dirname(outfile_prefix), json_file)
+                info = {}
+                info['images'] = images
+                info['categories'] = categories
+                info['annotations'] = annotations
 
-            dump(info, pred_file, sort_keys=True, indent=4)
+                dump(info, pred_file, sort_keys=True, indent=4)
 
     def _do_python_keypoint_eval(self, outfile_prefix: str) -> List[tuple]:
         """Do keypoint evaluation using `poseval` package.
@@ -184,37 +190,40 @@ class PoseTrack18Metric(CocoMetric):
         """
         logger: MMLogger = MMLogger.get_current_instance()
 
-        # path of directory for official gt files
-        # 'xxx/posetrack18_train.json' -> 'xxx/train/'
-        gt_folder = osp.join(
-            osp.dirname(self.ann_file),
-            osp.splitext(self.ann_file.split('_')[-1])[0])
-        pred_folder = osp.dirname(outfile_prefix)
+        with get_local_path(
+                self.ann_file, backend_args=self.backend_args) as local_path:
+            # path of directory for official gt files
+            # 'xxx/posetrack18_train.json' -> 'xxx/train/'
+            gt_folder = osp.join(
+                osp.dirname(local_path),
+                osp.splitext(local_path.split('_')[-1])[0])
+            pred_folder = osp.dirname(outfile_prefix)
 
-        argv = ['', gt_folder + '/', pred_folder + '/']
+            argv = ['', gt_folder + '/', pred_folder + '/']
 
-        logger.info('Loading data')
-        gtFramesAll, prFramesAll = eval_helpers.load_data_dir(argv)
+            logger.info('Loading data')
+            gtFramesAll, prFramesAll = eval_helpers.load_data_dir(argv)
 
-        logger.info(f'# gt frames  : {len(gtFramesAll)}')
-        logger.info(f'# pred frames: {len(prFramesAll)}')
+            logger.info(f'# gt frames  : {len(gtFramesAll)}')
+            logger.info(f'# pred frames: {len(prFramesAll)}')
 
-        # evaluate per-frame multi-person pose estimation (AP)
-        # compute AP
-        logger.info('Evaluation of per-frame multi-person pose estimation')
-        apAll, _, _ = evaluateAP(gtFramesAll, prFramesAll, None, False, False)
+            # evaluate per-frame multi-person pose estimation (AP)
+            # compute AP
+            logger.info('Evaluation of per-frame multi-person pose estimation')
+            apAll, _, _ = evaluateAP(gtFramesAll, prFramesAll, None, False,
+                                     False)
 
-        # print AP
-        logger.info('Average Precision (AP) metric:')
-        eval_helpers.printTable(apAll)
+            # print AP
+            logger.info('Average Precision (AP) metric:')
+            eval_helpers.printTable(apAll)
 
-        stats = eval_helpers.getCum(apAll)
+            stats = eval_helpers.getCum(apAll)
 
-        stats_names = [
-            'Head AP', 'Shou AP', 'Elb AP', 'Wri AP', 'Hip AP', 'Knee AP',
-            'Ankl AP', 'AP'
-        ]
+            stats_names = [
+                'Head AP', 'Shou AP', 'Elb AP', 'Wri AP', 'Hip AP', 'Knee AP',
+                'Ankl AP', 'AP'
+            ]
 
-        info_str = list(zip(stats_names, stats))
+            info_str = list(zip(stats_names, stats))
 
         return info_str

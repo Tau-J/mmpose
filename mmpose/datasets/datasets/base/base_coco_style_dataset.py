@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from mmengine.dataset import BaseDataset, force_full_init
-from mmengine.fileio import load
+from mmengine.fileio import get_local_path, load
 from mmengine.utils import check_file_exist, is_list_of
 from xtcocotools.coco import COCO
 
@@ -56,24 +56,29 @@ class BaseCocoStyleDataset(BaseDataset):
         max_refetch (int, optional): If ``Basedataset.prepare_data`` get a
             None img. The maximum extra number of cycles to get a valid
             image. Default: 1000.
+        backend_args (dict, optional): Arguments to instantiate the
+            corresponding backend. Defaults to None.
     """
 
     METAINFO: dict = dict()
 
-    def __init__(self,
-                 ann_file: str = '',
-                 bbox_file: Optional[str] = None,
-                 data_mode: str = 'topdown',
-                 metainfo: Optional[dict] = None,
-                 data_root: Optional[str] = None,
-                 data_prefix: dict = dict(img=''),
-                 filter_cfg: Optional[dict] = None,
-                 indices: Optional[Union[int, Sequence[int]]] = None,
-                 serialize_data: bool = True,
-                 pipeline: List[Union[dict, Callable]] = [],
-                 test_mode: bool = False,
-                 lazy_init: bool = False,
-                 max_refetch: int = 1000):
+    def __init__(
+        self,
+        ann_file: str = '',
+        bbox_file: Optional[str] = None,
+        data_mode: str = 'topdown',
+        metainfo: Optional[dict] = None,
+        data_root: Optional[str] = None,
+        data_prefix: dict = dict(img=''),
+        filter_cfg: Optional[dict] = None,
+        indices: Optional[Union[int, Sequence[int]]] = None,
+        serialize_data: bool = True,
+        pipeline: List[Union[dict, Callable]] = [],
+        test_mode: bool = False,
+        lazy_init: bool = False,
+        max_refetch: int = 1000,
+        backend_args: dict = None,
+    ):
 
         if data_mode not in {'topdown', 'bottomup'}:
             raise ValueError(
@@ -94,6 +99,7 @@ class BaseCocoStyleDataset(BaseDataset):
                     'while "bbox_file" is only '
                     'supported when `test_mode==True`.')
         self.bbox_file = bbox_file
+        self.backend_args = backend_args
 
         super().__init__(
             ann_file=ann_file,
@@ -194,38 +200,39 @@ class BaseCocoStyleDataset(BaseDataset):
 
     def _load_annotations(self) -> Tuple[List[dict], List[dict]]:
         """Load data from annotations in COCO format."""
+        with get_local_path(
+                self.ann_file, backend_args=self.backend_args) as local_path:
+            check_file_exist(local_path)
 
-        check_file_exist(self.ann_file)
+            coco = COCO(local_path)
+            # set the metainfo about categories, which is a list of dict
+            # and each dict contains the 'id', 'name', etc. about this category
+            self._metainfo['CLASSES'] = coco.loadCats(coco.getCatIds())
 
-        coco = COCO(self.ann_file)
-        # set the metainfo about categories, which is a list of dict
-        # and each dict contains the 'id', 'name', etc. about this category
-        self._metainfo['CLASSES'] = coco.loadCats(coco.getCatIds())
+            instance_list = []
+            image_list = []
 
-        instance_list = []
-        image_list = []
+            for img_id in coco.getImgIds():
+                img = coco.loadImgs(img_id)[0]
+                img.update({
+                    'img_id':
+                    img_id,
+                    'img_path':
+                    osp.join(self.data_prefix['img'], img['file_name']),
+                })
+                image_list.append(img)
 
-        for img_id in coco.getImgIds():
-            img = coco.loadImgs(img_id)[0]
-            img.update({
-                'img_id':
-                img_id,
-                'img_path':
-                osp.join(self.data_prefix['img'], img['file_name']),
-            })
-            image_list.append(img)
+                ann_ids = coco.getAnnIds(imgIds=img_id)
+                for ann in coco.loadAnns(ann_ids):
 
-            ann_ids = coco.getAnnIds(imgIds=img_id)
-            for ann in coco.loadAnns(ann_ids):
+                    instance_info = self.parse_data_info(
+                        dict(raw_ann_info=ann, raw_img_info=img))
 
-                instance_info = self.parse_data_info(
-                    dict(raw_ann_info=ann, raw_img_info=img))
+                    # skip invalid instance annotation.
+                    if not instance_info:
+                        continue
 
-                # skip invalid instance annotation.
-                if not instance_info:
-                    continue
-
-                instance_list.append(instance_info)
+                    instance_list.append(instance_info)
         return instance_list, image_list
 
     def parse_data_info(self, raw_data_info: dict) -> Optional[dict]:
@@ -380,51 +387,58 @@ class BaseCocoStyleDataset(BaseDataset):
     def _load_detection_results(self) -> List[dict]:
         """Load data from detection results with dummy keypoint annotations."""
 
-        check_file_exist(self.ann_file)
-        check_file_exist(self.bbox_file)
+        with get_local_path(
+                self.ann_file, backend_args=self.backend_args
+        ) as local_ann_path, get_local_path(
+                self.bbox_file,
+                backend_args=self.backend_args) as local_bbox_path:
+            check_file_exist(local_ann_path)
+            check_file_exist(local_bbox_path)
 
-        # load detection results
-        det_results = load(self.bbox_file)
-        assert is_list_of(det_results, dict)
+            # load detection results
+            det_results = load(local_bbox_path)
+            assert is_list_of(det_results, dict)
 
-        # load coco annotations to build image id-to-name index
-        coco = COCO(self.ann_file)
-        # set the metainfo about categories, which is a list of dict
-        # and each dict contains the 'id', 'name', etc. about this category
-        self._metainfo['CLASSES'] = coco.loadCats(coco.getCatIds())
+            # load coco annotations to build image id-to-name index
+            coco = COCO(local_ann_path)
+            # set the metainfo about categories, which is a list of dict
+            # and each dict contains the 'id', 'name', etc. about this category
+            self._metainfo['CLASSES'] = coco.loadCats(coco.getCatIds())
 
-        num_keypoints = self.metainfo['num_keypoints']
-        data_list = []
-        id_ = 0
-        for det in det_results:
-            # remove non-human instances
-            if det['category_id'] != 1:
-                continue
+            num_keypoints = self.metainfo['num_keypoints']
+            data_list = []
+            id_ = 0
+            for det in det_results:
+                # remove non-human instances
+                if det['category_id'] != 1:
+                    continue
 
-            img = coco.loadImgs(det['image_id'])[0]
+                img = coco.loadImgs(det['image_id'])[0]
 
-            img_path = osp.join(self.data_prefix['img'], img['file_name'])
-            bbox_xywh = np.array(
-                det['bbox'][:4], dtype=np.float32).reshape(1, 4)
-            bbox = bbox_xywh2xyxy(bbox_xywh)
-            bbox_score = np.array(det['score'], dtype=np.float32).reshape(1)
+                img_path = osp.join(self.data_prefix['img'], img['file_name'])
+                bbox_xywh = np.array(
+                    det['bbox'][:4], dtype=np.float32).reshape(1, 4)
+                bbox = bbox_xywh2xyxy(bbox_xywh)
+                bbox_score = np.array(
+                    det['score'], dtype=np.float32).reshape(1)
 
-            # use dummy keypoint location and visibility
-            keypoints = np.zeros((1, num_keypoints, 2), dtype=np.float32)
-            keypoints_visible = np.ones((1, num_keypoints), dtype=np.float32)
+                # use dummy keypoint location and visibility
+                keypoints = np.zeros((1, num_keypoints, 2), dtype=np.float32)
+                keypoints_visible = np.ones((1, num_keypoints),
+                                            dtype=np.float32)
 
-            data_list.append({
-                'img_id': det['image_id'],
-                'img_path': img_path,
-                'img_shape': (img['height'], img['width']),
-                'bbox': bbox,
-                'bbox_score': bbox_score,
-                'keypoints': keypoints,
-                'keypoints_visible': keypoints_visible,
-                'id': id_,
-            })
+                data_list.append({
+                    'img_id': det['image_id'],
+                    'img_path': img_path,
+                    'img_shape': (img['height'], img['width']),
+                    'bbox': bbox,
+                    'bbox_score': bbox_score,
+                    'keypoints': keypoints,
+                    'keypoints_visible': keypoints_visible,
+                    'id': id_,
+                })
 
-            id_ += 1
+                id_ += 1
 
         return data_list
 

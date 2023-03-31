@@ -7,7 +7,7 @@ from typing import Dict, Optional, Sequence
 
 import numpy as np
 from mmengine.evaluator import BaseMetric
-from mmengine.fileio import dump, load
+from mmengine.fileio import dump, get_local_path, load
 from mmengine.logging import MMLogger
 from xtcocotools.coco import COCO
 from xtcocotools.cocoeval import COCOeval
@@ -75,6 +75,8 @@ class CocoMetric(BaseMetric):
         outfile_prefix (str | None): The prefix of json files. It includes
             the file path and the prefix of filename, e.g., ``'a/b/prefix'``.
             If not specified, a temp file will be created. Defaults to ``None``
+        backend_args (dict, optional): Arguments to instantiate the
+            corresponding backend. Defaults to None.
         collect_device (str): Device name used for collecting results from
             different ranks during distributed training. Must be ``'cpu'`` or
             ``'gpu'``. Defaults to ``'cpu'``
@@ -95,14 +97,20 @@ class CocoMetric(BaseMetric):
                  nms_thr: float = 0.9,
                  format_only: bool = False,
                  outfile_prefix: Optional[str] = None,
+                 backend_args: dict = None,
                  collect_device: str = 'cpu',
                  prefix: Optional[str] = None) -> None:
         super().__init__(collect_device=collect_device, prefix=prefix)
         self.ann_file = ann_file
         # initialize coco helper with the annotation json file
         # if ann_file is not specified, initialize with the converted dataset
+        ann_exists = False
         if ann_file is not None:
-            self.coco = COCO(ann_file)
+            with get_local_path(
+                    ann_file, backend_args=backend_args) as local_path:
+                if not format_only:
+                    ann_exists = 'annotations' in load(local_path)
+                self.coco = COCO(local_path)
         else:
             self.coco = None
 
@@ -132,12 +140,13 @@ class CocoMetric(BaseMetric):
                 'in the end.'
         elif ann_file is not None:
             # do evaluation only if the ground truth annotations exist
-            assert 'annotations' in load(ann_file), \
+            assert ann_exists, \
                 'Ground truth annotations are required for evaluation '\
                 'when `format_only` is False.'
 
         self.format_only = format_only
         self.outfile_prefix = outfile_prefix
+        self.backend_args = backend_args
 
     def process(self, data_batch: Sequence[dict],
                 data_samples: Sequence[dict]) -> None:
