@@ -1,9 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import json
 import os.path as osp
 from typing import List, Tuple
 
 import numpy as np
+from mmengine.fileio import get_local_path, load
 from mmengine.utils import check_file_exist
 
 from mmpose.registry import DATASETS
@@ -99,70 +99,72 @@ class MpiiTrbDataset(BaseCocoStyleDataset):
         max_refetch (int, optional): If ``Basedataset.prepare_data`` get a
             None img. The maximum extra number of cycles to get a valid
             image. Default: 1000.
+        backend_args (dict, optional): Arguments to instantiate the
+            corresponding backend. Defaults to None.
     """
 
     METAINFO: dict = dict(from_file='configs/_base_/datasets/mpii_trb.py')
 
     def _load_annotations(self) -> Tuple[List[dict], List[dict]]:
         """Load data from annotations in MPII-TRB format."""
+        with get_local_path(
+                self.ann_file, backend_args=self.backend_args) as local_path:
+            check_file_exist(local_path)
+            data = load(local_path)
 
-        check_file_exist(self.ann_file)
-        with open(self.ann_file) as anno_file:
-            data = json.load(anno_file)
+            imgid2info = {img['id']: img for img in data['images']}
 
-        imgid2info = {img['id']: img for img in data['images']}
+            instance_list = []
+            image_list = []
+            used_img_ids = set()
 
-        instance_list = []
-        image_list = []
-        used_img_ids = set()
+            # mpii-trb bbox scales are normalized with factor 200.
+            pixel_std = 200.
 
-        # mpii-trb bbox scales are normalized with factor 200.
-        pixel_std = 200.
+            for ann in data['annotations']:
+                img_id = ann['image_id']
 
-        for ann in data['annotations']:
-            img_id = ann['image_id']
+                # center, scale in shape [1, 2] and bbox in [1, 4]
+                center = np.array([ann['center']], dtype=np.float32)
+                scale = np.array([[ann['scale'], ann['scale']]],
+                                 dtype=np.float32) * pixel_std
+                bbox = bbox_cs2xyxy(center, scale)
 
-            # center, scale in shape [1, 2] and bbox in [1, 4]
-            center = np.array([ann['center']], dtype=np.float32)
-            scale = np.array([[ann['scale'], ann['scale']]],
-                             dtype=np.float32) * pixel_std
-            bbox = bbox_cs2xyxy(center, scale)
+                # keypoints in shape [1, K, 2] and keypoints_visible in [1, K]
+                _keypoints = np.array(
+                    ann['keypoints'], dtype=np.float32).reshape(1, -1, 3)
+                keypoints = _keypoints[..., :2]
+                keypoints_visible = np.minimum(1, _keypoints[..., 2])
 
-            # keypoints in shape [1, K, 2] and keypoints_visible in [1, K]
-            _keypoints = np.array(
-                ann['keypoints'], dtype=np.float32).reshape(1, -1, 3)
-            keypoints = _keypoints[..., :2]
-            keypoints_visible = np.minimum(1, _keypoints[..., 2])
+                img_path = osp.join(self.data_prefix['img'],
+                                    imgid2info[img_id]['file_name'])
 
-            img_path = osp.join(self.data_prefix['img'],
-                                imgid2info[img_id]['file_name'])
+                instance_info = {
+                    'id': ann['id'],
+                    'img_id': img_id,
+                    'img_path': img_path,
+                    'bbox_center': center,
+                    'bbox_scale': scale,
+                    'bbox': bbox,
+                    'bbox_score': np.ones(1, dtype=np.float32),
+                    'num_keypoints': ann['num_joints'],
+                    'keypoints': keypoints,
+                    'keypoints_visible': keypoints_visible,
+                    'iscrowd': ann['iscrowd'],
+                }
 
-            instance_info = {
-                'id': ann['id'],
-                'img_id': img_id,
-                'img_path': img_path,
-                'bbox_center': center,
-                'bbox_scale': scale,
-                'bbox': bbox,
-                'bbox_score': np.ones(1, dtype=np.float32),
-                'num_keypoints': ann['num_joints'],
-                'keypoints': keypoints,
-                'keypoints_visible': keypoints_visible,
-                'iscrowd': ann['iscrowd'],
-            }
+                # val set
+                if 'headbox' in ann:
+                    instance_info['headbox'] = np.array(
+                        ann['headbox'], dtype=np.float32)
 
-            # val set
-            if 'headbox' in ann:
-                instance_info['headbox'] = np.array(
-                    ann['headbox'], dtype=np.float32)
+                instance_list.append(instance_info)
+                if instance_info['img_id'] not in used_img_ids:
+                    used_img_ids.add(instance_info['img_id'])
+                    image_list.append({
+                        'img_id': instance_info['img_id'],
+                        'img_path': instance_info['img_path'],
+                    })
 
-            instance_list.append(instance_info)
-            if instance_info['img_id'] not in used_img_ids:
-                used_img_ids.add(instance_info['img_id'])
-                image_list.append({
-                    'img_id': instance_info['img_id'],
-                    'img_path': instance_info['img_path'],
-                })
-
-        instance_list = sorted(instance_list, key=lambda x: x['id'])
+            instance_list = sorted(instance_list, key=lambda x: x['id'])
         return instance_list, image_list

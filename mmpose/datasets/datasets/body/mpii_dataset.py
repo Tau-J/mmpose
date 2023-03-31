@@ -1,9 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import json
 import os.path as osp
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
+from mmengine.fileio import get_local_path, load
 from mmengine.utils import check_file_exist
 from scipy.io import loadmat
 
@@ -78,6 +78,8 @@ class MpiiDataset(BaseCocoStyleDataset):
         max_refetch (int, optional): If ``Basedataset.prepare_data`` get a
             None img. The maximum extra number of cycles to get a valid
             image. Default: 1000.
+        backend_args (dict, optional): Arguments to instantiate the
+            corresponding backend. Defaults to None.
     """
 
     METAINFO: dict = dict(from_file='configs/_base_/datasets/mpii.py')
@@ -96,7 +98,8 @@ class MpiiDataset(BaseCocoStyleDataset):
                  pipeline: List[Union[dict, Callable]] = [],
                  test_mode: bool = False,
                  lazy_init: bool = False,
-                 max_refetch: int = 1000):
+                 max_refetch: int = 1000,
+                 backend_args: dict = None):
 
         if headbox_file:
             if data_mode != 'topdown':
@@ -132,79 +135,85 @@ class MpiiDataset(BaseCocoStyleDataset):
             pipeline=pipeline,
             test_mode=test_mode,
             lazy_init=lazy_init,
-            max_refetch=max_refetch)
+            max_refetch=max_refetch,
+            backend_args=backend_args)
 
     def _load_annotations(self) -> Tuple[List[dict], List[dict]]:
         """Load data from annotations in MPII format."""
+        with get_local_path(
+                self.ann_file,
+                backend_args=self.backend_args) as local_path, get_local_path(
+                    self.headbox_file,
+                    backend_args=self.backend_args) as local_headbox_path:
+            check_file_exist(local_path)
+            anns = load(local_path)
 
-        check_file_exist(self.ann_file)
-        with open(self.ann_file) as anno_file:
-            anns = json.load(anno_file)
+            if local_headbox_path:
+                check_file_exist(local_headbox_path)
+                headbox_dict = loadmat(local_headbox_path)
+                headboxes_src = np.transpose(headbox_dict['headboxes_src'],
+                                             [2, 0, 1])
+                SC_BIAS = 0.6
 
-        if self.headbox_file:
-            check_file_exist(self.headbox_file)
-            headbox_dict = loadmat(self.headbox_file)
-            headboxes_src = np.transpose(headbox_dict['headboxes_src'],
-                                         [2, 0, 1])
-            SC_BIAS = 0.6
+            instance_list = []
+            image_list = []
+            used_img_ids = set()
+            ann_id = 0
 
-        instance_list = []
-        image_list = []
-        used_img_ids = set()
-        ann_id = 0
+            # mpii bbox scales are normalized with factor 200.
+            pixel_std = 200.
 
-        # mpii bbox scales are normalized with factor 200.
-        pixel_std = 200.
+            for idx, ann in enumerate(anns):
+                center = np.array(ann['center'], dtype=np.float32)
+                scale = np.array([ann['scale'], ann['scale']],
+                                 dtype=np.float32) * pixel_std
 
-        for idx, ann in enumerate(anns):
-            center = np.array(ann['center'], dtype=np.float32)
-            scale = np.array([ann['scale'], ann['scale']],
-                             dtype=np.float32) * pixel_std
+                # Adjust center/scale slightly to avoid cropping limbs
+                if center[0] != -1:
+                    center[1] = center[1] + 15. / pixel_std * scale[1]
 
-            # Adjust center/scale slightly to avoid cropping limbs
-            if center[0] != -1:
-                center[1] = center[1] + 15. / pixel_std * scale[1]
+                # MPII uses matlab format, index is 1-based,
+                # we should first convert to 0-based index
+                center = center - 1
 
-            # MPII uses matlab format, index is 1-based,
-            # we should first convert to 0-based index
-            center = center - 1
+                # unify shape with coco datasets
+                center = center.reshape(1, -1)
+                scale = scale.reshape(1, -1)
+                bbox = bbox_cs2xyxy(center, scale)
 
-            # unify shape with coco datasets
-            center = center.reshape(1, -1)
-            scale = scale.reshape(1, -1)
-            bbox = bbox_cs2xyxy(center, scale)
+                # load keypoints in shape [1, K, 2]
+                # and keypoints_visible in [1, K]
+                keypoints = np.array(ann['joints']).reshape(1, -1, 2)
+                keypoints_visible = np.array(ann['joints_vis']).reshape(1, -1)
 
-            # load keypoints in shape [1, K, 2] and keypoints_visible in [1, K]
-            keypoints = np.array(ann['joints']).reshape(1, -1, 2)
-            keypoints_visible = np.array(ann['joints_vis']).reshape(1, -1)
+                instance_info = {
+                    'id': ann_id,
+                    'img_id': int(ann['image'].split('.')[0]),
+                    'img_path': osp.join(self.data_prefix['img'],
+                                         ann['image']),
+                    'bbox_center': center,
+                    'bbox_scale': scale,
+                    'bbox': bbox,
+                    'bbox_score': np.ones(1, dtype=np.float32),
+                    'keypoints': keypoints,
+                    'keypoints_visible': keypoints_visible,
+                }
 
-            instance_info = {
-                'id': ann_id,
-                'img_id': int(ann['image'].split('.')[0]),
-                'img_path': osp.join(self.data_prefix['img'], ann['image']),
-                'bbox_center': center,
-                'bbox_scale': scale,
-                'bbox': bbox,
-                'bbox_score': np.ones(1, dtype=np.float32),
-                'keypoints': keypoints,
-                'keypoints_visible': keypoints_visible,
-            }
+                if local_headbox_path:
+                    # calculate the diagonal length of head box as norm_factor
+                    headbox = headboxes_src[idx]
+                    head_size = np.linalg.norm(headbox[1] - headbox[0], axis=0)
+                    head_size *= SC_BIAS
+                    instance_info['head_size'] = head_size.reshape(1, -1)
 
-            if self.headbox_file:
-                # calculate the diagonal length of head box as norm_factor
-                headbox = headboxes_src[idx]
-                head_size = np.linalg.norm(headbox[1] - headbox[0], axis=0)
-                head_size *= SC_BIAS
-                instance_info['head_size'] = head_size.reshape(1, -1)
+                if instance_info['img_id'] not in used_img_ids:
+                    used_img_ids.add(instance_info['img_id'])
+                    image_list.append({
+                        'img_id': instance_info['img_id'],
+                        'img_path': instance_info['img_path'],
+                    })
 
-            if instance_info['img_id'] not in used_img_ids:
-                used_img_ids.add(instance_info['img_id'])
-                image_list.append({
-                    'img_id': instance_info['img_id'],
-                    'img_path': instance_info['img_path'],
-                })
-
-            instance_list.append(instance_info)
-            ann_id = ann_id + 1
+                instance_list.append(instance_info)
+                ann_id = ann_id + 1
 
         return instance_list, image_list
