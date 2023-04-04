@@ -300,35 +300,6 @@ class PoseLocalVisualizer(Visualizer):
                         f'({len(self.kpt_color)}) does not matches '
                         f'that of keypoints ({len(kpts)})')
 
-                # draw each point on image
-                for kid, kpt in enumerate(kpts):
-                    if score[kid] < kpt_thr or not visible[
-                            kid] or kpt_color[kid] is None:
-                        # skip the point that should not be drawn
-                        continue
-
-                    color = kpt_color[kid]
-                    if not isinstance(color, str):
-                        color = tuple(int(c) for c in color)
-                    transparency = self.alpha
-                    if self.show_keypoint_weight:
-                        transparency *= max(0, min(1, score[kid]))
-                    self.draw_circles(
-                        kpt,
-                        radius=np.array([self.radius]),
-                        face_colors=color,
-                        edge_colors=color,
-                        alpha=transparency,
-                        line_widths=self.radius)
-                    if show_kpt_idx:
-                        self.draw_texts(
-                            str(kid),
-                            kpt,
-                            colors=color,
-                            font_sizes=self.radius * 3,
-                            vertical_alignments='bottom',
-                            horizontal_alignments='center')
-
                 # draw links
                 if self.skeleton is not None and self.link_color is not None:
                     if self.link_color is None or isinstance(
@@ -387,6 +358,35 @@ class PoseLocalVisualizer(Visualizer):
                         else:
                             self.draw_lines(
                                 X, Y, color, line_widths=self.line_width)
+
+                # draw each point on image
+                for kid, kpt in enumerate(kpts):
+                    if score[kid] < kpt_thr or not visible[
+                            kid] or kpt_color[kid] is None:
+                        # skip the point that should not be drawn
+                        continue
+
+                    color = kpt_color[kid]
+                    if not isinstance(color, str):
+                        color = tuple(int(c) for c in color)
+                    transparency = self.alpha
+                    if self.show_keypoint_weight:
+                        transparency *= max(0, min(1, score[kid]))
+                    self.draw_circles(
+                        kpt,
+                        radius=np.array([self.radius]),
+                        face_colors=color,
+                        edge_colors=color,
+                        alpha=transparency,
+                        line_widths=self.radius)
+                    if show_kpt_idx:
+                        self.draw_texts(
+                            str(kid),
+                            kpt,
+                            colors=color,
+                            font_sizes=self.radius * 3,
+                            vertical_alignments='bottom',
+                            horizontal_alignments='center')
 
         return self.get_image()
 
