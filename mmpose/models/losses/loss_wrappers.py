@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Dict
 
+import torch
 import torch.nn as nn
 
 from mmpose.registry import MODELS
@@ -14,15 +15,40 @@ class MultipleLossWrapper(nn.Module):
 
     Args:
         losses (list): List of Loss Config
+
+    Example:
+        >>> losses = [
+        >>>     dict(type='MSELoss', use_target_weight=True),
+        >>>     dict(type='SmoothL1Loss', use_target_weight=True)
+        >>> ]
+        >>> self.loss = MultipleLossListWrapper(losses)
+        >>>
+        >>> input_list = [pred1, pred2]
+        >>> target_list = [target1, target2]
+        >>> losses = self.loss(input_list, target_list, target_weight)
+        >>> losses[0]  # MSELoss(pred1, target1)
+        >>> losses[1]  # SmoothL1Loss(pred2, target2)
     """
 
-    def __init__(self, losses: list, sum_weights: list = None):
+    def __init__(self,
+                 losses: list,
+                 input_mode: str = 'list',
+                 loss_weights: list = [1.0, 1.0],
+                 reduction: str = 'mean'):
         super().__init__()
-
         self.num_losses = len(losses)
-        if sum_weights is not None:
-            assert len(sum_weights) == self.num_losses, ''
-        self.sum_weights = sum_weights
+        self.input_mode = input_mode
+        self.loss_weights = loss_weights
+
+        assert input_mode in [
+            'list', 'single'
+        ], 'input_mode should be either `list` or `single`'
+        assert len(loss_weights) == self.num_losses, (
+            'The length of loss_weights should be equal to the'
+            ' number of losses')
+        assert reduction in [
+            'none', 'mean', 'sum'
+        ], 'reduction should be either `none`, `mean` or `sum`'
 
         loss_modules = []
         for loss_cfg in losses:
@@ -32,12 +58,10 @@ class MultipleLossWrapper(nn.Module):
 
     def forward(self, input_list, target_list, keypoint_weights=None):
         """Forward function.
-
         Note:
             - batch_size: N
             - num_keypoints: K
             - dimension of keypoints: D (D=2 or D=3)
-
         Args:
             input_list (List[Tensor]): List of inputs.
             target_list (List[Tensor]): List of targets.
@@ -50,17 +74,19 @@ class MultipleLossWrapper(nn.Module):
 
         losses = []
         for i in range(self.num_losses):
-            input_i = input_list[i]
-            target_i = target_list[i]
+            input_i = input_list[i] \
+                if self.input_mode == 'list' else input_list
+            target_i = target_list[i] \
+                if self.input_mode == 'list' else target_list
 
             loss_i = self.loss_modules[i](input_i, target_i, keypoint_weights)
+            loss_i = loss_i * self.loss_weights[i]
             losses.append(loss_i)
 
-        if self.sum_weights is not None:
-            losses = [
-                loss * weight for loss, weight in zip(losses, self.sum_weights)
-            ]
-            losses = sum(losses)
+        if self.reduction == 'mean':
+            losses = torch.stack(losses, dim=0).mean()
+        elif self.reduction == 'sum':
+            losses = torch.stack(losses, dim=0).sum()
 
         return losses
 
@@ -70,11 +96,9 @@ class CombinedLoss(nn.ModuleDict):
     """A wrapper to combine multiple loss functions. These loss functions can
     have different input type (e.g. heatmaps or regression values), and can
     only be involed individually and explixitly.
-
     Args:
         losses (Dict[str, ConfigType]): The names and configs of loss
             functions to be wrapped
-
     Example::
         >>> heatmap_loss_cfg = dict(type='KeypointMSELoss')
         >>> ae_loss_cfg = dict(type='AssociativeEmbeddingLoss')

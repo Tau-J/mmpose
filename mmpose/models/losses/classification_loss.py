@@ -157,26 +157,20 @@ class KLDiscretLoss(nn.Module):
             target_weight (torch.Tensor[N, K] or torch.Tensor[N]):
                 Weights across different labels.
         """
-        output_x, output_y = pred_simcc
-        target_x, target_y = gt_simcc
-        num_joints = output_x.size(1)
+        num_joints = pred_simcc[0].size(1)
         loss = 0
 
-        for idx in range(num_joints):
-            coord_x_pred = output_x[:, idx].squeeze()
-            coord_y_pred = output_y[:, idx].squeeze()
-            coord_x_gt = target_x[:, idx].squeeze()
-            coord_y_gt = target_y[:, idx].squeeze()
+        for pred, target in zip(pred_simcc, gt_simcc):
+            for idx in range(num_joints):
+                pred_i = pred[:, idx].squeeze()
+                gt_i = target[:, idx].squeeze()
 
-            if self.use_target_weight:
-                weight = target_weight[:, idx].squeeze()
-            else:
-                weight = 1.
+                if self.use_target_weight:
+                    weight = target_weight[:, idx].squeeze()
+                else:
+                    weight = 1.
 
-            loss += (
-                self.criterion(coord_x_pred, coord_x_gt).mul(weight).sum())
-            loss += (
-                self.criterion(coord_y_pred, coord_y_gt).mul(weight).sum())
+                loss += (self.criterion(pred_i, gt_i).mul(weight).sum())
 
         loss = loss / num_joints
         return loss

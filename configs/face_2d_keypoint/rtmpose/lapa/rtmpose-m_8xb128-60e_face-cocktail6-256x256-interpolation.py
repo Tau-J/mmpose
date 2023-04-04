@@ -91,16 +91,11 @@ model = dict(
             use_rel_bias=False,
             pos_enc=False),
         loss=dict(
-            type='MultipleLossWrapper',
-            losses=[
-                dict(
-                    type='KLDiscretLoss',
-                    use_target_weight=True,
-                    beta=10.,
-                    label_softmax=True),
-                dict(type='SimCCBoneLoss', use_target_weight=True)
-            ],
-            sum_weights=[1.0, 1.0]),
+            type='KLDiscretLoss',
+            use_target_weight=True,
+            beta=10.,
+            # use_bone=True,
+            label_softmax=True),
         decoder=codec),
     test_cfg=dict(flip_test=True, ))
 
