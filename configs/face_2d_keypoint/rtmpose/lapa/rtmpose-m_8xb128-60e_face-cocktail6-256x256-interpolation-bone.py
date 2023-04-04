@@ -94,7 +94,7 @@ model = dict(
             type='KLDiscretLoss',
             use_target_weight=True,
             beta=10.,
-            use_bone=True,
+            # use_bone=True,
             label_softmax=True),
         decoder=codec),
     test_cfg=dict(flip_test=True, ))
@@ -104,27 +104,31 @@ dataset_type = 'LapaDataset'
 data_mode = 'topdown'
 data_root = 'data/'
 
-# backend_args = dict(backend='disk')
-backend_args = dict(
-    backend='petrel',
-    path_mapping=dict({
-        f'{data_root}': 's3://openmmlab/datasets/',
-        f'{data_root}': 's3://openmmlab/datasets/'
-    }))
+backend_args = dict(backend='local')
+# backend_args = dict(
+#     backend='petrel',
+#     path_mapping=dict({
+#         f'{data_root}': 's3://openmmlab/datasets/',
+#         f'{data_root}': 's3://openmmlab/datasets/'
+#     }))
 
 # pipelines
 train_pipeline = [
     dict(type='LoadImage', backend_args=backend_args),
     dict(type='GetBBoxCenterScale'),
     dict(type='RandomFlip', direction='horizontal'),
-    # dict(type='RandomHalfBody'),
+    dict(type='RandomHalfBody'),
     dict(
-        type='RandomBBoxTransform', scale_factor=[0.5, 1.5], rotate_factor=80),
+        type='RandomBBoxTransform', scale_factor=[0.5, 1.5], rotate_factor=90),
     dict(type='TopdownAffine', input_size=codec['input_size']),
     dict(type='mmdet.YOLOXHSVRandomAug'),
     dict(
         type='Albumentation',
         transforms=[
+            dict(type='ChannelShuffle', p=0.5),
+            dict(type='CLAHE', p=0.5),
+            dict(type='Downscale', scale_min=0.7, scale_max=0.9, p=0.1),
+            dict(type='ColorJitter', p=0.5),
             dict(type='Blur', p=0.2),
             dict(type='MedianBlur', p=0.2),
             dict(
@@ -590,12 +594,12 @@ dataset_halpe = dict(
 
 # data loaders
 train_dataloader = dict(
-    batch_size=256,
+    batch_size=128,
     num_workers=10,
     persistent_workers=True,
     sampler=dict(
         type='MultiSourceSampler',
-        batch_size=256,
+        batch_size=128,
         source_ratio=[3, 3, 1, 1, 1, 1],
         shuffle=True),
     dataset=dict(
