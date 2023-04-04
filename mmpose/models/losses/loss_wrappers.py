@@ -10,31 +10,25 @@ from mmpose.utils.typing import ConfigType
 
 @MODELS.register_module()
 class MultipleLossWrapper(nn.Module):
-    """A wrapper to collect multiple loss functions together and return a list
-    of losses in the same order.
+    """A wrapper to collect multiple loss functions together and compute the
+    total loss.
 
     Args:
-        losses (list): List of Loss Config
-
-    Example:
-        >>> losses = [
-        >>>     dict(type='MSELoss', use_target_weight=True),
-        >>>     dict(type='SmoothL1Loss', use_target_weight=True)
-        >>> ]
-        >>> self.loss = MultipleLossListWrapper(losses)
-        >>>
-        >>> input_list = [pred1, pred2]
-        >>> target_list = [target1, target2]
-        >>> losses = self.loss(input_list, target_list, target_weight)
-        >>> losses[0]  # MSELoss(pred1, target1)
-        >>> losses[1]  # SmoothL1Loss(pred2, target2)
+        losses (list[dict]): List of loss configs.
+        input_mode (str): Input mode of the loss function. Options are
+            'list' and 'single'. If 'list', the input of the loss function
+            will be a list of tensors. If 'single', the input of the loss
+            function will be a single tensor. Default: 'list'.
+        loss_weights (list[float]): List of loss weights. Default: [1.0, 1.0].
+        reduction (str): Reduction method of the loss. Options are 'none',
+            'mean' and 'sum'. Default: 'none'.
     """
 
     def __init__(self,
                  losses: list,
                  input_mode: str = 'list',
                  loss_weights: list = [1.0, 1.0],
-                 reduction: str = 'mean'):
+                 reduction: str = 'none'):
         super().__init__()
         self.num_losses = len(losses)
         self.input_mode = input_mode

@@ -100,7 +100,9 @@ model = dict(
                     label_softmax=True),
                 dict(type='SimCCBoneLoss', use_target_weight=True)
             ],
-            sum_weights=[1.0, 1.0]),
+            input_mode='single',
+            loss_weights=[1.0, 1.0],
+            reduction='sum'),
         decoder=codec),
     test_cfg=dict(flip_test=True, ))
 
