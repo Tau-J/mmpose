@@ -364,7 +364,7 @@ val_halpehand = dict(
 
 test_dataloader = dict(
     batch_size=32,
-    num_workers=10,
+    num_workers=5,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
