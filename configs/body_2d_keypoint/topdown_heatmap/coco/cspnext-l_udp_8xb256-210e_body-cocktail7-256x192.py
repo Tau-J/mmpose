@@ -54,8 +54,8 @@ model = dict(
         type='CSPNeXt',
         arch='P5',
         expand_ratio=0.5,
-        deepen_factor=0.33,
-        widen_factor=0.5,
+        deepen_factor=1.,
+        widen_factor=1.,
         out_indices=(4, ),
         channel_attention=True,
         norm_cfg=dict(type='SyncBN'),
@@ -65,10 +65,10 @@ model = dict(
             prefix='backbone.',
             checkpoint='https://download.openmmlab.com/mmdetection/v3.0/'
             'rtmdet/cspnext_rsb_pretrain/'
-            'cspnext-s_imagenet_600e-ea671761.pth')),
+            'cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth')),
     head=dict(
         type='HeatmapHead',
-        in_channels=512,
+        in_channels=1024,
         out_channels=17,
         loss=dict(type='KeypointMSELoss', use_target_weight=True),
         decoder=codec),
@@ -98,16 +98,13 @@ train_pipeline = [
     dict(type='RandomFlip', direction='horizontal'),
     dict(type='RandomHalfBody'),
     dict(
-        type='RandomBBoxTransform', scale_factor=[0.6, 1.4], rotate_factor=80),
+        type='RandomBBoxTransform', scale_factor=[0.5, 1.5], rotate_factor=90),
     dict(type='TopdownAffine', input_size=codec['input_size'], use_udp=True),
     dict(type='mmdet.YOLOXHSVRandomAug'),
+    dict(type='PhotometricDistortion'),
     dict(
         type='Albumentation',
         transforms=[
-            dict(type='ChannelShuffle', p=0.5),
-            dict(type='CLAHE', p=0.5),
-            dict(type='Downscale', scale_min=0.7, scale_max=0.9, p=0.1),
-            dict(type='ColorJitter', p=0.5),
             dict(type='Blur', p=0.1),
             dict(type='MedianBlur', p=0.1),
             dict(
@@ -361,7 +358,7 @@ dataset_posetrack = dict(
 
 # data loaders
 train_dataloader = dict(
-    batch_size=1024,
+    batch_size=256,
     num_workers=10,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
@@ -484,8 +481,8 @@ val_dataloader = dict(
         data_root=data_root,
         data_mode=data_mode,
         ann_file='coco/annotations/person_keypoints_val2017.json',
-        # bbox_file=f'{data_root}coco/person_detection_results/'
-        # 'COCO_val2017_detections_AP_H_56_person.json',
+        bbox_file=f'{data_root}coco/person_detection_results/'
+        'COCO_val2017_detections_AP_H_56_person.json',
         data_prefix=dict(img='detection/coco/val2017/'),
         test_mode=True,
         pipeline=val_pipeline,
@@ -517,6 +514,8 @@ test_dataloader = dict(
 # hooks
 default_hooks = dict(
     checkpoint=dict(save_best='coco/AP', rule='greater', max_keep_ckpts=1))
+# default_hooks = dict(
+#     checkpoint=dict(save_best='AUC', rule='greater', max_keep_ckpts=1))
 
 custom_hooks = [
     dict(
@@ -535,4 +534,8 @@ custom_hooks = [
 val_evaluator = dict(
     type='CocoMetric',
     ann_file=data_root + 'coco/annotations/person_keypoints_val2017.json')
-test_evaluator = val_evaluator
+test_evaluator = [
+    dict(type='PCKAccuracy', thr=0.2),
+    dict(type='AUC'),
+    dict(type='EPE')
+]
