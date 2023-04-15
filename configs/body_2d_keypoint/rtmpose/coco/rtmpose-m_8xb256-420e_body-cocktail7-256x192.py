@@ -68,8 +68,8 @@ model = dict(
         init_cfg=dict(
             type='Pretrained',
             prefix='backbone.',
-            checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
-            'rtmpose/cspnext-m_udp-aic-coco_210e-256x192-f2f7d6f6_20230130.pth'  # noqa
+            checkpoint='/mnt/petrelfs/jiangtao/ckpts/'
+            'cspnext-m-body-cocktail7-udp-pretrain-bs256/best_coco/AP_epoch_210.pth'  # noqa
         )),
     head=dict(
         type='RTMCCHead',
@@ -153,8 +153,8 @@ train_pipeline_stage2 = [
     dict(
         type='RandomBBoxTransform',
         shift_factor=0.,
-        scale_factor=[0.75, 1.25],
-        rotate_factor=60),
+        scale_factor=[0.5, 1.5],
+        rotate_factor=90),
     dict(type='TopdownAffine', input_size=codec['input_size']),
     dict(type='mmdet.YOLOXHSVRandomAug'),
     dict(

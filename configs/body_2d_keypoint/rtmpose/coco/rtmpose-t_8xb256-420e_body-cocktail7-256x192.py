@@ -68,8 +68,8 @@ model = dict(
         init_cfg=dict(
             type='Pretrained',
             prefix='backbone.',
-            checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
-            'rtmpose/cspnext-tiny_udp-aic-coco_210e-256x192-cbed682d_20230130.pth'  # noqa
+            checkpoint='/mnt/petrelfs/jiangtao/ckpts/'
+            'cspnext-tiny-body-cocktail7-udp-pretrain-bs256/best_coco/AP_epoch_210.pth'  # noqa
         )),
     head=dict(
         type='RTMCCHead',
