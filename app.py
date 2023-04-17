@@ -84,25 +84,29 @@ def predict(input):
         '--det_config',
         type=str,
         default='projects/rtmpose/rtmdet/person/'
-        'rtmdet_nano_320-8xb32_coco-person.py',  # noqa
+        # 'rtmdet_nano_320-8xb32_coco-person.py',  # noqa
+        'projects/rtmpose/rtmdet/person/rtmdet_m_640-8xb32_coco-person.py'  # noqa
         help='Config file for detection')
     parser.add_argument(
         '--det_checkpoint',
         type=str,
         default='https://download.openmmlab.com/mmpose/v1/projects/rtmpose/'
-        'rtmdet_nano_8xb32-100e_coco-obj365-person-05d8511e.pth',  # noqa
+        # 'rtmdet_nano_8xb32-100e_coco-obj365-person-05d8511e.pth',  # noqa
+        'rtmdet_m_8xb32-100e_coco-obj365-person-235e8209.pth',  # noqa
         help='Checkpoint file for detection')
     parser.add_argument(
         '--pose_config',
         type=str,
         default='projects/rtmpose/rtmpose/body_2d_keypoint/'
-        'rtmpose-m_8xb256-420e_coco-256x192.py',
+        # 'rtmpose-m_8xb256-420e_coco-256x192.py',
+        'rtmpose-l_8xb256-420e_coco-384x288.py',
         help='Config file for pose')
     parser.add_argument(
         '--pose_checkpoint',
         type=str,
         default='https://download.openmmlab.com/mmpose/v1/projects/rtmpose/'
-        'rtmpose-m_simcc-aic-coco_pt-aic-coco_420e-256x192-63eb25f7_20230126.pth',  # noqa
+        # 'rtmpose-m_simcc-aic-coco_pt-aic-coco_420e-256x192-63eb25f7_20230126.pth',  # noqa
+        'rtmpose-l_simcc-aic-coco_pt-aic-coco_420e-384x288-97d6cb0f_20230228.pth',
         help='Checkpoint file for pose')
     # parser.add_argument(
     #     '--input', type=str, default='', help='Image/Video file')
@@ -216,11 +220,11 @@ def predict(input):
         # inference
         _ = process_one_image(args, input, detector, pose_estimator,
                               visualizer)
-        return visualizer.get_image()[:, :, ::-1]
+        return visualizer.get_image()
 
 
 gr.Interface(
     fn=predict,
     inputs=gr.Image(type='numpy'),
-    outputs=gr.Image(type='numpy'),
+    outputs=gr.Image(type='pil'),
     examples=['tests/data/coco/000000000785.jpg']).launch()
