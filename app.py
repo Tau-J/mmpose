@@ -82,25 +82,25 @@ def predict(input):
     parser = ArgumentParser()
     parser.add_argument(
         '--det_config',
-        str='str',
+        type='str',
         default='projects/rtmpose/rtmdet/person/'
         'rtmdet_nano_320-8xb32_coco-person.py',  # noqa
         help='Config file for detection')
     parser.add_argument(
         '--det_checkpoint',
-        str='str',
+        type='str',
         default='https://download.openmmlab.com/mmpose/v1/projects/rtmpose/'
         'rtmdet_nano_8xb32-100e_coco-obj365-person-05d8511e.pth',  # noqa
         help='Checkpoint file for detection')
     parser.add_argument(
         '--pose_config',
-        str='str',
+        type='str',
         default='projects/rtmpose/rtmpose/body_2d_keypoint/'
         'rtmpose-m_8xb256-420e_coco-256x192.py',
         help='Config file for pose')
     parser.add_argument(
         '--pose_checkpoint',
-        str='str',
+        type='str',
         default='https://download.openmmlab.com/mmpose/v1/projects/rtmpose/'
         'rtmpose-m_simcc-aic-coco_pt-aic-coco_420e-256x192-63eb25f7_20230126.pth',  # noqa
         help='Checkpoint file for pose')
