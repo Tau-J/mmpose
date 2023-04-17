@@ -5,7 +5,7 @@ from argparse import ArgumentParser
 
 import gradio as gr
 # import json_tricks as json
-import mmcv
+# import mmcv
 import numpy as np
 
 from mmpose.apis import inference_topdown
@@ -42,11 +42,11 @@ def process_one_image(args,
     pose_results = inference_topdown(pose_estimator, img, bboxes)
     data_samples = merge_data_samples(pose_results)
 
-    # show the results
-    if isinstance(img, str):
-        img = mmcv.imread(img, channel_order='rgb')
-    elif isinstance(img, np.ndarray):
-        img = mmcv.bgr2rgb(img)
+    # # show the results
+    # if isinstance(img, str):
+    #     img = mmcv.imread(img, channel_order='rgb')
+    # elif isinstance(img, np.ndarray):
+    #     img = mmcv.bgr2rgb(img)
 
     if visualizer is not None:
         visualizer.add_datasample(
