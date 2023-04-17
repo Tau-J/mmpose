@@ -221,6 +221,6 @@ def predict(input):
 
 gr.Interface(
     fn=predict,
-    inputs=gr.Image(type='pil'),
-    outputs=gr.Image(type='pil'),
+    inputs=gr.Image(type='numpy'),
+    outputs=gr.Image(type='numpy'),
     examples=['tests/data/coco/000000000785.jpg']).launch()
