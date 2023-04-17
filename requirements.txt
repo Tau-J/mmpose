@@ -1,4 +1,16 @@
--r requirements/build.txt
--r requirements/runtime.txt
--r requirements/tests.txt
--r requirements/optional.txt
+chumpy
+json_tricks
+matplotlib
+mmcv>=2.0.0rc1,<2.1.0
+mmdet>=3.0.0rc6,<3.1.0
+mmengine>=0.4.0,<1.0.0
+munkres
+numpy
+numpy
+opencv-python
+openmim
+pillow
+scipy
+torch>=1.6
+torchvision
+xtcocotools>=1.12
