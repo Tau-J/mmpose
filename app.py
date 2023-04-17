@@ -3,13 +3,14 @@
 
 import os
 
-os.system('mim install "mmcv>=2.0.0"')
-os.system('mim install mmengine')
-os.system('mim install "mmdet>=3.0.0"')
+os.system('python -m mim install "mmcv>=2.0.0"')
+os.system('python -m mim install mmengine')
+os.system('python -m mim install "mmdet>=3.0.0"')
 
 from argparse import ArgumentParser
 
 import gradio as gr
+
 # import json_tricks as json
 import mmcv
 import numpy as np
