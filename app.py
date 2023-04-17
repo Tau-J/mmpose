@@ -216,7 +216,7 @@ def predict(input):
         # inference
         _ = process_one_image(args, input, detector, pose_estimator,
                               visualizer)
-        return visualizer.get_image()
+        return visualizer.get_image()[:, :, ::-1]
 
 
 gr.Interface(
