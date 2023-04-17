@@ -85,7 +85,7 @@ def predict(input):
         type=str,
         default='projects/rtmpose/rtmdet/person/'
         # 'rtmdet_nano_320-8xb32_coco-person.py',  # noqa
-        'projects/rtmpose/rtmdet/person/rtmdet_m_640-8xb32_coco-person.py',  # noqa
+        'rtmdet_m_640-8xb32_coco-person.py',  # noqa
         help='Config file for detection')
     parser.add_argument(
         '--det_checkpoint',
