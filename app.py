@@ -1,6 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 # import mimetypes
 
+import os
+
+os.system('mim install "mmcv>=2.0.0"')
+os.system('mim install mmengine')
+os.system('mim install "mmdet>=3.0.0"')
+
 from argparse import ArgumentParser
 
 import gradio as gr
