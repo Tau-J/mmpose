@@ -223,4 +223,4 @@ gr.Interface(
     fn=predict,
     inputs=gr.Image(type='pil'),
     outputs=gr.Image(type='pil'),
-    examples=['lion.jpg', 'cheetah.jpg']).launch()
+    examples=['tests/data/coco/000000000785.jpg']).launch()
