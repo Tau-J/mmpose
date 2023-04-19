@@ -143,8 +143,10 @@ class KLDiscretLoss(nn.Module):
 
         log_pt = self.log_softmax(dec_outs * self.beta)
         if self.label_softmax:
-            labels = F.softmax(labels * self.beta, dim=1)
-        loss = torch.mean(self.kl_loss(log_pt, labels), dim=1)
+            labels = F.softmax(labels / self.beta, dim=1)
+        # loss = torch.mean(self.kl_loss(log_pt, labels), dim=1)
+        loss = (1 / self.beta)**2 * self.kl_loss(log_pt, labels)
+        loss = loss.sum(dim=-1)
         return loss
 
     def forward(self, pred_simcc, gt_simcc, target_weight):

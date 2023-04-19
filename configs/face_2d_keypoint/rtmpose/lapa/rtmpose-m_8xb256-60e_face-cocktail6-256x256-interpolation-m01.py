@@ -14,6 +14,7 @@ randomness = dict(seed=21)
 optim_wrapper = dict(
     type='OptimWrapper',
     optimizer=dict(type='Lion', lr=base_lr, weight_decay=0.015),
+    clip_grad=dict(max_norm=35, norm_type=2),
     paramwise_cfg=dict(
         norm_decay_mult=0, bias_decay_mult=0, bypass_duplicate=True))
 
@@ -94,7 +95,7 @@ model = dict(
             type='KLDiscretLoss',
             use_target_weight=True,
             beta=10.,
-            # use_bone=True,
+            m=0.1,
             label_softmax=True),
         decoder=codec),
     test_cfg=dict(flip_test=True, ))
@@ -104,13 +105,13 @@ dataset_type = 'LapaDataset'
 data_mode = 'topdown'
 data_root = 'data/'
 
-backend_args = dict(backend='local')
-# backend_args = dict(
-#     backend='petrel',
-#     path_mapping=dict({
-#         f'{data_root}': 's3://openmmlab/datasets/',
-#         f'{data_root}': 's3://openmmlab/datasets/'
-#     }))
+# backend_args = dict(backend='local')
+backend_args = dict(
+    backend='petrel',
+    path_mapping=dict({
+        f'{data_root}': 's3://openmmlab/datasets/',
+        f'{data_root}': 's3://openmmlab/datasets/'
+    }))
 
 # pipelines
 train_pipeline = [
@@ -122,6 +123,7 @@ train_pipeline = [
         type='RandomBBoxTransform', scale_factor=[0.5, 1.5], rotate_factor=90),
     dict(type='TopdownAffine', input_size=codec['input_size']),
     dict(type='mmdet.YOLOXHSVRandomAug'),
+    dict(type='PhotometricDistortion'),
     dict(
         type='Albumentation',
         transforms=[
@@ -594,13 +596,13 @@ dataset_halpe = dict(
 
 # data loaders
 train_dataloader = dict(
-    batch_size=128,
+    batch_size=256,
     num_workers=10,
     persistent_workers=True,
     sampler=dict(
         type='MultiSourceSampler',
-        batch_size=128,
-        source_ratio=[3, 3, 1, 1, 1, 1],
+        batch_size=256,
+        source_ratio=[1, 1, 1, 1, 1, 1],
         shuffle=True),
     dataset=dict(
         type='CombinedDataset',
