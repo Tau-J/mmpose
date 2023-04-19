@@ -95,7 +95,7 @@ model = dict(
             type='KLDiscretLoss',
             use_target_weight=True,
             beta=10.,
-            m=0.1,
+            beta2=0.1,
             label_softmax=True),
         decoder=codec),
     test_cfg=dict(flip_test=True, ))
