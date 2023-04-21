@@ -1,7 +1,7 @@
 _base_ = ['../../../_base_/default_runtime.py']
 
 # runtime
-max_epochs = 1490
+max_epochs = 1400
 stage2_num_epochs = 30
 base_lr = 4e-3
 
@@ -384,7 +384,7 @@ train_dataloader = dict(
     sampler=dict(
         type='MultiSourceSampler',
         batch_size=train_batch_size,
-        source_ratio=[3, 1, 1, 1, 1, 1, 1],
+        source_ratio=[5, 5, 1, 1, 1, 1, 1],
         shuffle=True),
     dataset=dict(
         type='CombinedDataset',
