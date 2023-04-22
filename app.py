@@ -62,7 +62,7 @@ def process_one_image(args,
             img,
             data_sample=data_samples,
             draw_gt=False,
-            draw_heatmap=args.draw_heatmap,
+            draw_heatmap=draw_heatmap,
             draw_bbox=args.draw_bbox,
             show_kpt_idx=args.show_kpt_idx,
             skeleton_style=args.skeleton_style,
@@ -75,7 +75,7 @@ def process_one_image(args,
 
 input_type = 'image'
 
-def predict(input):
+def predict(input, draw_heatmap=False):
     """Visualize the demo images.
 
     Using mmdet to detect the human.
@@ -91,7 +91,7 @@ def predict(input):
     parser.add_argument(
         '--det_checkpoint',
         type=str,
-        default='https://download.openmmlab.com/mmpose/v1/projects/rtmpose/'
+        default='https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/'
         # 'rtmdet_nano_8xb32-100e_coco-obj365-person-05d8511e.pth',  # noqa
         'rtmdet_m_8xb32-100e_coco-obj365-person-235e8209.pth',  # noqa
         help='Checkpoint file for detection')
@@ -105,7 +105,7 @@ def predict(input):
     parser.add_argument(
         '--pose_checkpoint',
         type=str,
-        default='https://download.openmmlab.com/mmpose/v1/projects/rtmpose/'
+        default='https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/'
         # 'rtmpose-m_simcc-aic-coco_pt-aic-coco_420e-256x192-63eb25f7_20230126.pth',  # noqa
         'rtmpose-l_simcc-aic-coco_pt-aic-coco_420e-384x288-97d6cb0f_20230228.pth',
         help='Checkpoint file for pose')
@@ -200,7 +200,7 @@ def predict(input):
         args.pose_checkpoint,
         device=args.device,
         cfg_options=dict(
-            model=dict(test_cfg=dict(output_heatmaps=args.draw_heatmap))))
+            model=dict(test_cfg=dict(output_heatmaps=draw_heatmap))))
 
     # input_type = 'image'
     # input_type = mimetypes.guess_type(args.input)[0].split('/')[0]
@@ -224,7 +224,7 @@ def predict(input):
                               visualizer)
         return visualizer.get_image()[:, :, ::-1]
     
-    elif input_type in ['webcam', 'video']:
+    elif input_type == 'video':
         from mmpose.visualization import FastVisualizer
 
         visualizer = FastVisualizer(
@@ -233,7 +233,7 @@ def predict(input):
             line_width=args.thickness,
             kpt_thr=args.kpt_thr)
 
-        if args.draw_heatmap:
+        if draw_heatmap:
             # init Localvisualizer
             from mmpose.registry import VISUALIZERS
 
@@ -248,10 +248,7 @@ def predict(input):
                 pose_estimator.dataset_meta,
                 skeleton_style=args.skeleton_style)
 
-        if args.input == 'webcam':
-            cap = cv2.VideoCapture(0)
-        else:
-            cap = cv2.VideoCapture(args.input)
+        cap = cv2.VideoCapture(input)
 
         video_writer = None
         frame_idx = 0
@@ -264,7 +261,7 @@ def predict(input):
                 break
 
             # topdown pose estimation
-            if args.draw_heatmap:
+            if draw_heatmap:
                 pred_instances = process_one_image(args, frame, detector,
                                                    pose_estimator,
                                                    local_visualizer, 0.001)
@@ -276,7 +273,7 @@ def predict(input):
                 # cv2.imshow('MMPose Demo [Press ESC to Exit]', frame)
 
             # output videos
-            if args.draw_heatmap:
+            if draw_heatmap:
                 frame_vis = local_visualizer.get_image()
             else:
                 frame_vis = frame.copy()[:, :, ::-1]
@@ -318,8 +315,9 @@ with gr.Blocks() as demo:
 
         gr.Markdown('## Output')
         out_image = gr.Image(type='pil')
+        hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
         input_type = 'image'
-        button.click(predict, input_img, out_image)
+        button.click(predict, [input_img, hm], out_image)
 
     with gr.Tab('Webcaom-Image'):
         input_img = gr.Image(source='webcam', type='numpy')
@@ -327,8 +325,9 @@ with gr.Blocks() as demo:
 
         gr.Markdown('## Output')
         out_image = gr.Image(type='pil')
+        hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
         input_type = 'image'
-        button.click(predict, input_img, out_image)
+        button.click(predict, [input_img, hm], out_image)
 
     with gr.Tab('Upload-Video'):
         input_video = gr.Video(type='mp4')
@@ -336,17 +335,18 @@ with gr.Blocks() as demo:
 
         gr.Markdown('## Output')
         out_video = gr.Video()
+        hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
         input_type = 'video'
-        button.click(predict, input_video, out_video)
+        button.click(predict, [input_video, hm], out_video)
 
     with gr.Tab('Webcam-Video'):
         input_video = gr.Video(source='webcam', format='mp4')
         button = gr.Button('Inference', variant='primary')
-
+        hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
         gr.Markdown('## Output')
         out_video = gr.Video()
         input_type = 'video'
-        button.click(predict, input_video, out_video)
+        button.click(predict, [input_video, hm], out_video)
 
 gr.close_all()
 demo.queue()
