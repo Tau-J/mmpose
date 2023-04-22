@@ -316,7 +316,7 @@ with gr.Blocks() as demo:
         button = gr.Button('Inference', variant='primary')
 
         gr.Markdown('## Output')
-        out_image = gr.Image(type='pil')
+        out_image = gr.Image(type='numpy')
         hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
         input_type = 'image'
         button.click(partial(predict, input_type=input_type), [input_img, hm], out_image)
@@ -326,7 +326,7 @@ with gr.Blocks() as demo:
         button = gr.Button('Inference', variant='primary')
 
         gr.Markdown('## Output')
-        out_image = gr.Image(type='pil')
+        out_image = gr.Image(type='numpy')
         hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
         input_type = 'image'
         button.click(partial(predict, input_type=input_type), [input_img, hm], out_image)
