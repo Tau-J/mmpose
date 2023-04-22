@@ -318,7 +318,7 @@ with gr.Blocks() as demo:
         gr.Markdown('## Output')
         out_image = gr.Image(type='pil')
 
-        button.click(predict, [input_img, 'image'], out_image)
+        button.click(predict, [[input_img, 'image']], out_image)
 
     with gr.Tab('Webcaom-Image'):
         input_img = gr.Image(source='webcam', type='numpy')
@@ -327,7 +327,7 @@ with gr.Blocks() as demo:
         gr.Markdown('## Output')
         out_image = gr.Image(type='pil')
 
-        button.click(predict, [input_img, 'image'], out_image)
+        button.click(predict, [[input_img, 'image']], out_image)
 
     with gr.Tab('Upload-Video'):
         input_video = gr.Video(type='mp4')
@@ -335,7 +335,7 @@ with gr.Blocks() as demo:
 
         out_video = gr.output.Video(label='Output Video')
 
-        button.click(predict, [input_video, 'video'], out_video)
+        button.click(predict, [[input_video, 'video']], out_video)
 
     with gr.Tab('Webcam-Video'):
         input_video = gr.Video(source='webcam', format='mp4')
@@ -343,7 +343,7 @@ with gr.Blocks() as demo:
 
         out_video = gr.output.Video(label='Output Video')
 
-        button.click(predict, [input_video, 'video'], out_video)
+        button.click(predict, [[input_video, 'video']], out_video)
 
 gr.close_all()
 demo.queue()
