@@ -221,9 +221,9 @@ def predict(input, draw_heatmap=False, input_type='image'):
             pose_estimator.dataset_meta, skeleton_style=args.skeleton_style)
 
         # inference
-        _ = process_one_image(args, input, detector, pose_estimator,
+        _ = process_one_image(args, input[:,:,::-1], detector, pose_estimator,
                               visualizer, draw_heatmap=draw_heatmap)
-        return visualizer.get_image()[:, :, ::-1]
+        return visualizer.get_image()
     
     elif input_type == 'video':
         from mmpose.visualization import FastVisualizer
