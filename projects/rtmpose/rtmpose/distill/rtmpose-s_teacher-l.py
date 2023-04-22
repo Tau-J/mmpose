@@ -1,9 +1,10 @@
 _base_ = ['mmpose::_base_/default_runtime.py']
 custom_imports = dict(imports=['distiller'])
 # runtime
-max_epochs = 1400
+max_epochs = 420
 stage2_num_epochs = 30
 base_lr = 4e-3
+find_unused_parameters = True
 
 train_cfg = dict(max_epochs=max_epochs, val_interval=10)
 randomness = dict(seed=21)
@@ -106,7 +107,7 @@ dataset_type = 'CocoDataset'
 data_mode = 'topdown'
 data_root = '../../data/'
 
-# backend_args = dict(backend='disk')
+# backend_args = dict(backend='local')
 backend_args = dict(
     backend='petrel',
     path_mapping=dict({
