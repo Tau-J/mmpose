@@ -73,8 +73,9 @@ def process_one_image(args,
     # if there is no instance detected, return None
     return data_samples.get('pred_instances', None)
 
+input_type = 'image'
 
-def predict(input, input_type='image'):
+def predict(input):
     """Visualize the demo images.
 
     Using mmdet to detect the human.
@@ -317,8 +318,8 @@ with gr.Blocks() as demo:
 
         gr.Markdown('## Output')
         out_image = gr.Image(type='pil')
-
-        button.click(predict, [[input_img, 'image']], out_image)
+        input_type = 'image'
+        button.click(predict, input_img, out_image)
 
     with gr.Tab('Webcaom-Image'):
         input_img = gr.Image(source='webcam', type='numpy')
@@ -326,24 +327,24 @@ with gr.Blocks() as demo:
 
         gr.Markdown('## Output')
         out_image = gr.Image(type='pil')
-
-        button.click(predict, [[input_img, 'image']], out_image)
+        input_type = 'image'
+        button.click(predict, input_img, out_image)
 
     with gr.Tab('Upload-Video'):
         input_video = gr.Video(type='mp4')
         button = gr.Button('Inference', variant='primary')
 
         out_video = gr.output.Video(label='Output Video')
-
-        button.click(predict, [[input_video, 'video']], out_video)
+        input_type = 'video'
+        button.click(predict, input_video, out_video)
 
     with gr.Tab('Webcam-Video'):
         input_video = gr.Video(source='webcam', format='mp4')
         button = gr.Button('Inference', variant='primary')
 
         out_video = gr.output.Video(label='Output Video')
-
-        button.click(predict, [[input_video, 'video']], out_video)
+        input_type = 'video'
+        button.click(predict, input_video, out_video)
 
 gr.close_all()
 demo.queue()
