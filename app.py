@@ -9,7 +9,7 @@ os.system('python -m mim install mmengine')
 os.system('python -m mim install "mmdet>=3.0.0"')
 os.system('python -m mim install -e .')
 
-import mimetypes
+# import mimetypes
 from argparse import ArgumentParser
 
 import cv2
@@ -169,12 +169,12 @@ def predict(input, draw_heatmap=False, input_type='image'):
     parser.add_argument(
         '--radius',
         type=int,
-        default=3,
+        default=6,
         help='Keypoint radius for visualization')
     parser.add_argument(
         '--thickness',
         type=int,
-        default=1,
+        default=3,
         help='Link thickness for visualization')
     parser.add_argument(
         '--show-interval', type=int, default=0, help='Sleep seconds per frame')
