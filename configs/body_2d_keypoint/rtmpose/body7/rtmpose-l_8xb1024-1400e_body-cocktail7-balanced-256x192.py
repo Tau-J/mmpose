@@ -1,8 +1,8 @@
 _base_ = ['../../../_base_/default_runtime.py']
 
 # runtime
-max_epochs = 700
-stage2_num_epochs = 20
+max_epochs = 1400
+stage2_num_epochs = 30
 base_lr = 4e-3
 
 train_cfg = dict(max_epochs=max_epochs, val_interval=10)
@@ -375,7 +375,7 @@ dataset_posetrack = dict(
 )
 
 # data loaders
-train_batch_size = 512
+train_batch_size = 1024
 train_dataloader = dict(
     batch_size=train_batch_size,
     num_workers=10,
