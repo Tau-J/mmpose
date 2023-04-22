@@ -28,13 +28,13 @@ try:
 except (ImportError, ModuleNotFoundError):
     has_mmdet = False
 
-
 def process_one_image(args,
                       img,
                       detector,
                       pose_estimator,
                       visualizer=None,
-                      show_interval=0):
+                      show_interval=0,
+                      draw_heatmap=False):
     """Visualize predicted keypoints (and heatmaps) of one image."""
 
     # predict bbox
@@ -221,7 +221,7 @@ def predict(input, draw_heatmap=False):
 
         # inference
         _ = process_one_image(args, input, detector, pose_estimator,
-                              visualizer)
+                              visualizer, draw_heatmap=draw_heatmap)
         return visualizer.get_image()[:, :, ::-1]
     
     elif input_type == 'video':
@@ -264,7 +264,8 @@ def predict(input, draw_heatmap=False):
             if draw_heatmap:
                 pred_instances = process_one_image(args, frame, detector,
                                                    pose_estimator,
-                                                   local_visualizer, 0.001)
+                                                   local_visualizer, 0.001,
+                                                   draw_heatmap=True)
             else:
                 pred_instances = process_one_image(args, frame, detector,
                                                    pose_estimator)
