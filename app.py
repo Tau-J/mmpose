@@ -334,7 +334,8 @@ with gr.Blocks() as demo:
         input_video = gr.Video(type='mp4')
         button = gr.Button('Inference', variant='primary')
 
-        out_video = gr.output.Video(label='Output Video')
+        gr.Markdown('## Output')
+        out_video = gr.Video()
         input_type = 'video'
         button.click(predict, input_video, out_video)
 
@@ -342,7 +343,8 @@ with gr.Blocks() as demo:
         input_video = gr.Video(source='webcam', format='mp4')
         button = gr.Button('Inference', variant='primary')
 
-        out_video = gr.output.Video(label='Output Video')
+        gr.Markdown('## Output')
+        out_video = gr.Video()
         input_type = 'video'
         button.click(predict, input_video, out_video)
 
