@@ -2,6 +2,7 @@
 
 
 import os
+from functools import partial
 
 os.system('python -m mim install "mmcv>=2.0.0"')
 os.system('python -m mim install mmengine')
@@ -75,7 +76,7 @@ def process_one_image(args,
 
 # input_type = 'image'
 
-def predict(input, input_type='image', draw_heatmap=False):
+def predict(input, draw_heatmap=False, input_type='image'):
     """Visualize the demo images.
 
     Using mmdet to detect the human.
@@ -318,7 +319,7 @@ with gr.Blocks() as demo:
         out_image = gr.Image(type='pil')
         hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
         input_type = 'image'
-        button.click(predict, [input_img, input_type, hm], out_image)
+        button.click(partial(predict, input_type=input_type), [input_img, hm], out_image)
 
     with gr.Tab('Webcaom-Image'):
         input_img = gr.Image(source='webcam', type='numpy')
@@ -328,7 +329,7 @@ with gr.Blocks() as demo:
         out_image = gr.Image(type='pil')
         hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
         input_type = 'image'
-        button.click(predict, [input_img, input_type, hm], out_image)
+        button.click(partial(predict, input_type=input_type), [input_img, hm], out_image)
 
     with gr.Tab('Upload-Video'):
         input_video = gr.Video(type='mp4')
@@ -338,7 +339,7 @@ with gr.Blocks() as demo:
         out_video = gr.Video()
         hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
         input_type = 'video'
-        button.click(predict, [input_video, input_type, hm], out_video)
+        button.click(partial(predict, input_type=input_type), [input_video, hm], out_video)
 
     with gr.Tab('Webcam-Video'):
         input_video = gr.Video(source='webcam', format='mp4')
@@ -347,7 +348,7 @@ with gr.Blocks() as demo:
         gr.Markdown('## Output')
         out_video = gr.Video()
         input_type = 'video'
-        button.click(predict, [input_video, input_type, hm], out_video)
+        button.click(partial(predict, input_type=input_type), [input_video, hm], out_video)
 
 gr.close_all()
 demo.queue()
