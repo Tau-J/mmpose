@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-# import mimetypes
+
 
 import os
 
@@ -8,11 +8,11 @@ os.system('python -m mim install mmengine')
 os.system('python -m mim install "mmdet>=3.0.0"')
 os.system('python -m mim install -e .')
 
+import mimetypes
 from argparse import ArgumentParser
 
+import cv2
 import gradio as gr
-
-# import json_tricks as json
 import mmcv
 import numpy as np
 
@@ -74,7 +74,7 @@ def process_one_image(args,
     return data_samples.get('pred_instances', None)
 
 
-def predict(input):
+def predict(input, input_type='image'):
     """Visualize the demo images.
 
     Using mmdet to detect the human.
@@ -201,7 +201,8 @@ def predict(input):
         cfg_options=dict(
             model=dict(test_cfg=dict(output_heatmaps=args.draw_heatmap))))
 
-    input_type = 'image'
+    # input_type = 'image'
+    # input_type = mimetypes.guess_type(args.input)[0].split('/')[0]
 
     if input_type == 'image':
         # init visualizer
@@ -221,10 +222,129 @@ def predict(input):
         _ = process_one_image(args, input, detector, pose_estimator,
                               visualizer)
         return visualizer.get_image()[:, :, ::-1]
+    
+    elif input_type in ['webcam', 'video']:
+        from mmpose.visualization import FastVisualizer
+
+        visualizer = FastVisualizer(
+            pose_estimator.dataset_meta,
+            radius=args.radius,
+            line_width=args.thickness,
+            kpt_thr=args.kpt_thr)
+
+        if args.draw_heatmap:
+            # init Localvisualizer
+            from mmpose.registry import VISUALIZERS
+
+            pose_estimator.cfg.visualizer.radius = args.radius
+            pose_estimator.cfg.visualizer.alpha = args.alpha
+            pose_estimator.cfg.visualizer.line_width = args.thickness
+            local_visualizer = VISUALIZERS.build(pose_estimator.cfg.visualizer)
+
+            # the dataset_meta is loaded from the checkpoint and
+            # then pass to the model in init_pose_estimator
+            local_visualizer.set_dataset_meta(
+                pose_estimator.dataset_meta,
+                skeleton_style=args.skeleton_style)
+
+        if args.input == 'webcam':
+            cap = cv2.VideoCapture(0)
+        else:
+            cap = cv2.VideoCapture(args.input)
+
+        video_writer = None
+        frame_idx = 0
+
+        while cap.isOpened():
+            success, frame = cap.read()
+            frame_idx += 1
+
+            if not success:
+                break
+
+            # topdown pose estimation
+            if args.draw_heatmap:
+                pred_instances = process_one_image(args, frame, detector,
+                                                   pose_estimator,
+                                                   local_visualizer, 0.001)
+            else:
+                pred_instances = process_one_image(args, frame, detector,
+                                                   pose_estimator)
+                # visualization
+                visualizer.draw_pose(frame, pred_instances)
+                # cv2.imshow('MMPose Demo [Press ESC to Exit]', frame)
+
+            # output videos
+            if args.draw_heatmap:
+                frame_vis = local_visualizer.get_image()
+            else:
+                frame_vis = frame.copy()[:, :, ::-1]
+
+            output_file = 'test.mp4'
+            if video_writer is None:
+                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                # the size of the image with visualization may vary
+                # depending on the presence of heatmaps
+                video_writer = cv2.VideoWriter(
+                    output_file,
+                    fourcc,
+                    25,  # saved fps
+                    (frame_vis.shape[1], frame_vis.shape[0]))
+
+            video_writer.write(mmcv.rgb2bgr(frame_vis))
+
+        video_writer.release()
+        cap.release()
+        return output_file
+
+    return None
+    
 
 
-gr.Interface(
-    fn=predict,
-    inputs=gr.Image(type='numpy'),
-    outputs=gr.Image(type='pil'),
-    examples=['tests/data/coco/000000000785.jpg']).launch()
+# gr.Interface(
+#     fn=predict,
+#     inputs=[
+#         gr.Image(type='numpy'),
+#         gr.Image(type='webcam', )],
+#     outputs=gr.Image(type='pil'),
+#     examples=['tests/data/coco/000000000785.jpg']).launch()
+
+with gr.Blocks() as demo:
+
+    with gr.Tab('Upload-Image'):
+        input_img = gr.Image(type='numpy')
+        button = gr.Button('Inference', variant='primary')
+
+        gr.Markdown('## Output')
+        out_image = gr.Image(type='pil')
+
+        button.click(predict, (input_img, 'image'), out_image)
+
+    with gr.Tab('Webcaom-Image'):
+        input_img = gr.Image(source='webcam', type='numpy')
+        button = gr.Button('Inference', variant='primary')
+
+        gr.Markdown('## Output')
+        out_image = gr.Image(type='pil')
+
+        button.click(predict, (input_img, 'image'), out_image)
+
+    with gr.Tab('Upload-Video'):
+        input_video = gr.Video(type='mp4')
+        button = gr.Button('Inference', variant='primary')
+
+        out_video = gr.output.Video(label='Output Video')
+
+        button.click(predict, (input_video, 'video'), out_video)
+
+    with gr.Tab('Webcam-Video'):
+        input_video = gr.Video(source='webcam', format='mp4')
+        button = gr.Button('Inference', variant='primary')
+
+        out_video = gr.output.Video(label='Output Video')
+
+        button.click(predict, (input_video, 'video'), out_video)
+
+gr.close_all()
+demo.queue()
+demo.launch()
