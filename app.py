@@ -204,7 +204,7 @@ def predict(input, draw_heatmap=False):
 
     # input_type = 'image'
     # input_type = mimetypes.guess_type(args.input)[0].split('/')[0]
-
+    print('input type', input_type)
     if input_type == 'image':
         # init visualizer
         from mmpose.registry import VISUALIZERS
