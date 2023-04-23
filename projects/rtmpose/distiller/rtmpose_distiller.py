@@ -35,21 +35,22 @@ def intra_class_relation(y_s, y_t):
 
 
 @MODELS.register_module()
-class DISTLoss(nn.Module):
+class PKDLoss(nn.Module):
 
     def __init__(
         self,
+        use_target_weight=True,
         inter_loss_weight=1.0,
         intra_loss_weight=1.0,
         tau=1.0,
         loss_weight: float = 1.0,
         teacher_detach: bool = True,
     ):
-        super(DISTLoss, self).__init__()
+        super(PKDLoss, self).__init__()
         self.inter_loss_weight = inter_loss_weight
         self.intra_loss_weight = intra_loss_weight
         self.tau = tau
-        self.use_target_weight = True
+        self.use_target_weight = use_target_weight
 
         self.loss_weight = loss_weight
         self.teacher_detach = teacher_detach
@@ -82,9 +83,9 @@ class DISTLoss(nn.Module):
                 weight = 1.
 
             loss += self.pearson(coord_x_pred_S,
-                                 coord_x_pred_T).mul(weight).sum()
+                                 coord_x_pred_T).mul(weight).mean()
             loss += self.pearson(coord_y_pred_S,
-                                 coord_y_pred_T).mul(weight).sum()
+                                 coord_y_pred_T).mul(weight).mean()
 
         return loss * self.loss_weight / num_joints
 
@@ -180,6 +181,10 @@ class RTMPoseDistiller(BasePoseEstimator):
             ``None``
         init_cfg (dict, optional): The config to control the initialization.
             Defaults to ``None``
+        teacher_cfg (str, optional): The teacher model config file path.
+            Defaults to ``None``
+        teacher_ckpt (str, optional): The teacher model checkpoint file path.
+            Defaults to ``None``
         metainfo (dict): Meta information for dataset, such as keypoints
             definition and properties. If set, the metainfo of the input data
             batch will be overridden. For more details, please refer to
@@ -212,7 +217,13 @@ class RTMPoseDistiller(BasePoseEstimator):
         self.teacher = init_model(teacher_cfg, teacher_ckpt).eval()
         # self.distill_loss = RTMPoseDistillLoss(use_target_weight=True,
         #    tau=20.)
-        self.distill_loss = DISTLoss()
+        self.distill_loss = PKDLoss(use_target_weight=True)
+
+        # init tricks
+        teacher_head_weights = self.teacher.head.state_dict()
+        teacher_head_weights.popitem(0)  # remove final_layer.weight
+        teacher_head_weights.popitem(0)  # remove final_layer.bias
+        self.head.load_state_dict(teacher_head_weights, strict=False)
 
     def loss(self, inputs: Tensor, data_samples: SampleList) -> dict:
         """Calculate losses from a batch of inputs and data samples.
