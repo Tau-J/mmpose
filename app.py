@@ -106,6 +106,11 @@ def predict(input, draw_heatmap=False, input_type='image', model_type='body'):
         help='root of the output img file. '
         'Default not saving the visualization images.')
     parser.add_argument(
+        '--show',
+        action='store_true',
+        default=False,
+        help='whether to show img')
+    parser.add_argument(
         '--save-predictions',
         action='store_true',
         default=False,
