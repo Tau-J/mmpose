@@ -300,7 +300,7 @@ with gr.Blocks() as demo:
         button = gr.Button('Inference', variant='primary')
         hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
         model_type = gr.Dropdown(
-            ["body", "face", "wholebody"], value='body', label="Keypoint Type", info="Body / Face / Wholebody"
+            ["body", "face", "wholebody"], label="Keypoint Type", info="Body / Face / Wholebody"
         )
         gr.Markdown('## Output')
         out_image = gr.Image(type='numpy')
@@ -313,7 +313,7 @@ with gr.Blocks() as demo:
         button = gr.Button('Inference', variant='primary')
         hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
         model_type = gr.Dropdown(
-            ["body", "face", "wholebody"], value='body', label="Keypoint Type", info="Body / Face / Wholebody"
+            ["body", "face", "wholebody"], label="Keypoint Type", info="Body / Face / Wholebody"
         )
         gr.Markdown('## Output')
         out_image = gr.Image(type='numpy')
@@ -326,7 +326,7 @@ with gr.Blocks() as demo:
         button = gr.Button('Inference', variant='primary')
         hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
         model_type = gr.Dropdown(
-            ["body", "face", "wholebody"], value='body', label="Keypoint Type", info="Body / Face / Wholebody"
+            ["body", "face", "wholebody"], label="Keypoint Type", info="Body / Face / Wholebody"
         )
         gr.Markdown('## Output')
         out_video = gr.Video()
@@ -339,7 +339,7 @@ with gr.Blocks() as demo:
         button = gr.Button('Inference', variant='primary')
         hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
         model_type = gr.Dropdown(
-            ["body", "face", "wholebody"], value='body', label="Keypoint Type", info="Body / Face / Wholebody"
+            ["body", "face", "wholebody"], label="Keypoint Type", info="Body / Face / Wholebody"
         )
         gr.Markdown('## Output')
         out_video = gr.Video()
