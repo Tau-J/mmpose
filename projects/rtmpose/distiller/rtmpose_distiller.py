@@ -49,6 +49,7 @@ class DISTLoss(nn.Module):
         self.inter_loss_weight = inter_loss_weight
         self.intra_loss_weight = intra_loss_weight
         self.tau = tau
+        self.use_target_weight = True
 
         self.loss_weight = loss_weight
         self.teacher_detach = teacher_detach
