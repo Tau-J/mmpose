@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Optional
+from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -162,6 +162,28 @@ class RTMPoseDistillLoss(nn.Module):
         return loss * self.loss_weight / num_joints
 
 
+def head_distill_forward(head, feats: Tuple[Tensor]) -> Tuple[Tensor, Tensor]:
+
+    feats = feats[-1]
+
+    feats = head.final_layer(feats)  # -> B, K, H, W
+
+    # flatten the output heatmap
+    feats = torch.flatten(feats, 2)
+
+    feats = head.mlp(feats)  # -> B, K, hidden
+
+    feats = head.gau(feats)
+
+    pred_x = head.cls_x(feats)
+    pred_y = head.cls_y(feats)
+
+    if head.training:
+        return pred_x, pred_y, feats
+    else:
+        return pred_x, pred_y
+
+
 @MODELS.register_module()
 class RTMPoseDistiller(TopdownPoseEstimator):
     """Distiller for top-down pose estimators.
@@ -255,11 +277,13 @@ class RTMPoseDistiller(TopdownPoseEstimator):
 
         gau_loss = 0.
         if self.gau_distill:
-            pred_x, pred_y, pred_feats = self.head.forward(feats)
+            pred_x, pred_y, pred_feats = head_distill_forward(self.head, feats)
 
             with torch.no_grad():
-                teacher_x, teacher_y, teacher_feats = self.teacher.forward(
-                    inputs, data_samples)
+                self.teacher.eval()
+                teacher_feats = self.teacher.extract_feat(inputs)
+                teacher_x, teacher_y, teacher_feats = head_distill_forward(
+                    self.teacher.head, teacher_feats)
 
             student_preds = (pred_x, pred_y)
             teacher_preds = (teacher_x, teacher_y)
