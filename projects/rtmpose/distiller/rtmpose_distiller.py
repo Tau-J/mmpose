@@ -178,10 +178,7 @@ def head_distill_forward(head, feats: Tuple[Tensor]) -> Tuple[Tensor, Tensor]:
     pred_x = head.cls_x(feats)
     pred_y = head.cls_y(feats)
 
-    if head.training:
-        return pred_x, pred_y, feats
-    else:
-        return pred_x, pred_y
+    return pred_x, pred_y, feats
 
 
 @MODELS.register_module()
