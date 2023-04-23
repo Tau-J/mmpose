@@ -76,7 +76,7 @@ def process_one_image(args,
 
 # input_type = 'image'
 
-def predict(input, draw_heatmap=False, input_type='image', model_type='body'):
+def predict(input, draw_heatmap=False, model_type='body', input_type='image'):
     """Visualize the demo images.
 
     Using mmdet to detect the human.
@@ -189,7 +189,7 @@ def predict(input, draw_heatmap=False, input_type='image', model_type='body'):
 
     # input_type = 'image'
     # input_type = mimetypes.guess_type(args.input)[0].split('/')[0]
-    print('input type', input_type)
+    print('input type', input_type, 'model_type', model_type)
     if input_type == 'image':
         # init visualizer
         from mmpose.registry import VISUALIZERS
@@ -306,9 +306,9 @@ with gr.Blocks() as demo:
         out_image = gr.Image(type='numpy')
         
         input_type = 'image'
-        button.click(partial(predict, input_type=input_type, model_type=model_type), [input_img, hm], out_image)
+        button.click(partial(predict, input_type=input_type), [input_img, hm, model_type], out_image)
 
-    with gr.Tab('Webcaom-Image'):
+    with gr.Tab('Webcam-Image'):
         input_img = gr.Image(source='webcam', type='numpy')
         button = gr.Button('Inference', variant='primary')
         hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
@@ -319,7 +319,7 @@ with gr.Blocks() as demo:
         out_image = gr.Image(type='numpy')
         
         input_type = 'image'
-        button.click(partial(predict, input_type=input_type, model_type=model_type), [input_img, hm], out_image)
+        button.click(partial(predict, input_type=input_type), [input_img, hm, model_type], out_image)
 
     with gr.Tab('Upload-Video'):
         input_video = gr.Video(type='mp4')
@@ -332,7 +332,7 @@ with gr.Blocks() as demo:
         out_video = gr.Video()
         
         input_type = 'video'
-        button.click(partial(predict, input_type=input_type, model_type=model_type), [input_video, hm], out_video)
+        button.click(partial(predict, input_type=input_type), [input_video, hm, model_type], out_video)
 
     with gr.Tab('Webcam-Video'):
         input_video = gr.Video(source='webcam', format='mp4')
@@ -345,7 +345,7 @@ with gr.Blocks() as demo:
         out_video = gr.Video()
 
         input_type = 'video'
-        button.click(partial(predict, input_type=input_type, model_type=model_type), [input_video, hm], out_video)
+        button.click(partial(predict, input_type=input_type), [input_video, hm, model_type], out_video)
 
 gr.close_all()
 demo.queue()
