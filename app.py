@@ -76,47 +76,29 @@ def process_one_image(args,
 
 # input_type = 'image'
 
-def predict(input, draw_heatmap=False, input_type='image'):
+def predict(input, draw_heatmap=False, input_type='image', model_type='body'):
     """Visualize the demo images.
 
     Using mmdet to detect the human.
     """
+
+    if model_type == 'body':
+        det_config = 'projects/rtmpose/rtmdet/person/rtmdet_m_640-8xb32_coco-person.py'  # noqa
+        det_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmdet_m_8xb32-100e_coco-obj365-person-235e8209.pth'  # noqa
+        pose_config = 'projects/rtmpose/rtmpose/body_2d_keypoint/rtmpose-l_8xb256-420e_coco-384x288.py'  # noqa
+        pose_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-aic-coco_pt-aic-coco_420e-384x288-97d6cb0f_20230228.pth'  # noqa
+    elif model_type == 'face':
+        det_config = 'demo/mmdetection_cfg/yolox-s_8xb8-300e_coco-face.py'  # noqa
+        det_checkpoint = 'https://download.openmmlab.com/mmpose/mmdet_pretrained/yolo-x_8xb8-300e_coco-face_13274d7c.pth'  # noqa
+        pose_config = 'projects/rtmpose/rtmpose/face_2d_keypoint/rtmpose-m_8xb64-120e_lapa-256x256.py'  # noqa
+        pose_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-m_simcc-face6_pt-aic-coco_60e-256x256-c28598e0_20230422.pth'  # noqa
+    elif model_type == 'wholebody':
+        det_config = 'projects/rtmpose/rtmdet/person/rtmdet_m_640-8xb32_coco-person.py'  # noqa
+        det_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmdet_m_8xb32-100e_coco-obj365-person-235e8209.pth'  # noqa
+        pose_config = 'projects/rtmpose/rtmpose/wholebody_2d_keypoint/rtmpose-l_8xb32-270e_coco-wholebody-384x288.py'  # noqa
+        pose_checkpoint == 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-coco-wholebody_pt-aic-coco_270e-384x288-eaeb96c8_20230125.pth'  # noqa
+
     parser = ArgumentParser()
-    parser.add_argument(
-        '--det_config',
-        type=str,
-        default='projects/rtmpose/rtmdet/person/'
-        # 'rtmdet_nano_320-8xb32_coco-person.py',  # noqa
-        'rtmdet_m_640-8xb32_coco-person.py',  # noqa
-        help='Config file for detection')
-    parser.add_argument(
-        '--det_checkpoint',
-        type=str,
-        default='https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/'
-        # 'rtmdet_nano_8xb32-100e_coco-obj365-person-05d8511e.pth',  # noqa
-        'rtmdet_m_8xb32-100e_coco-obj365-person-235e8209.pth',  # noqa
-        help='Checkpoint file for detection')
-    parser.add_argument(
-        '--pose_config',
-        type=str,
-        default='projects/rtmpose/rtmpose/body_2d_keypoint/'
-        # 'rtmpose-m_8xb256-420e_coco-256x192.py',
-        'rtmpose-l_8xb256-420e_coco-384x288.py',
-        help='Config file for pose')
-    parser.add_argument(
-        '--pose_checkpoint',
-        type=str,
-        default='https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/'
-        # 'rtmpose-m_simcc-aic-coco_pt-aic-coco_420e-256x192-63eb25f7_20230126.pth',  # noqa
-        'rtmpose-l_simcc-aic-coco_pt-aic-coco_420e-384x288-97d6cb0f_20230228.pth',
-        help='Checkpoint file for pose')
-    # parser.add_argument(
-    #     '--input', type=str, default='', help='Image/Video file')
-    parser.add_argument(
-        '--show',
-        action='store_true',
-        default=False,
-        help='whether to show img')
     parser.add_argument(
         '--output-root',
         type=str,
@@ -187,18 +169,15 @@ def predict(input, draw_heatmap=False, input_type='image'):
 
     args = parser.parse_args()
 
-    assert args.det_config is not None
-    assert args.det_checkpoint is not None
-
     # build detector
     detector = init_detector(
-        args.det_config, args.det_checkpoint, device=args.device)
+        det_config, det_checkpoint, device=args.device)
     detector.cfg = adapt_mmdet_pipeline(detector.cfg)
 
     # build pose estimator
     pose_estimator = init_pose_estimator(
-        args.pose_config,
-        args.pose_checkpoint,
+        pose_config,
+        pose_checkpoint,
         device=args.device,
         cfg_options=dict(
             model=dict(test_cfg=dict(output_heatmaps=draw_heatmap))))
@@ -314,41 +293,54 @@ with gr.Blocks() as demo:
     with gr.Tab('Upload-Image'):
         input_img = gr.Image(type='numpy')
         button = gr.Button('Inference', variant='primary')
-
+        hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
+        model_type = gr.Dropdown(
+            ["body", "face", "wholebody"], value='body', label="Keypoint Type", info="Body / Face / Wholebody"
+        )
         gr.Markdown('## Output')
         out_image = gr.Image(type='numpy')
-        hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
+        
         input_type = 'image'
-        button.click(partial(predict, input_type=input_type), [input_img, hm], out_image)
+        button.click(partial(predict, input_type=input_type, model_type=model_type), [input_img, hm], out_image)
 
     with gr.Tab('Webcaom-Image'):
         input_img = gr.Image(source='webcam', type='numpy')
         button = gr.Button('Inference', variant='primary')
-
+        hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
+        model_type = gr.Dropdown(
+            ["body", "face", "wholebody"], value='body', label="Keypoint Type", info="Body / Face / Wholebody"
+        )
         gr.Markdown('## Output')
         out_image = gr.Image(type='numpy')
-        hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
+        
         input_type = 'image'
-        button.click(partial(predict, input_type=input_type), [input_img, hm], out_image)
+        button.click(partial(predict, input_type=input_type, model_type=model_type), [input_img, hm], out_image)
 
     with gr.Tab('Upload-Video'):
         input_video = gr.Video(type='mp4')
         button = gr.Button('Inference', variant='primary')
-
+        hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
+        model_type = gr.Dropdown(
+            ["body", "face", "wholebody"], value='body', label="Keypoint Type", info="Body / Face / Wholebody"
+        )
         gr.Markdown('## Output')
         out_video = gr.Video()
-        hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
+        
         input_type = 'video'
-        button.click(partial(predict, input_type=input_type), [input_video, hm], out_video)
+        button.click(partial(predict, input_type=input_type, model_type=model_type), [input_video, hm], out_video)
 
     with gr.Tab('Webcam-Video'):
         input_video = gr.Video(source='webcam', format='mp4')
         button = gr.Button('Inference', variant='primary')
         hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
+        model_type = gr.Dropdown(
+            ["body", "face", "wholebody"], value='body', label="Keypoint Type", info="Body / Face / Wholebody"
+        )
         gr.Markdown('## Output')
         out_video = gr.Video()
+
         input_type = 'video'
-        button.click(partial(predict, input_type=input_type), [input_video, hm], out_video)
+        button.click(partial(predict, input_type=input_type, model_type=model_type), [input_video, hm], out_video)
 
 gr.close_all()
 demo.queue()
