@@ -282,7 +282,10 @@ class RTMPoseDistiller(TopdownPoseEstimator):
         loss = gt_loss + distill_loss + gau_loss * 0.1
 
         losses.update(
-            loss_kpt=loss, gt_loss=gt_loss, distill_loss=distill_loss)
+            loss_kpt=loss,
+            gt_loss=gt_loss,
+            distill_loss=distill_loss,
+            gau_loss=gau_loss)
 
         # calculate accuracy
         _, avg_acc, _ = simcc_pck_accuracy(
