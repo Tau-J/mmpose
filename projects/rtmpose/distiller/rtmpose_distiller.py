@@ -53,7 +53,7 @@ class DISTLoss(nn.Module):
         self.loss_weight = loss_weight
         self.teacher_detach = teacher_detach
 
-    def forward(self, logits_S, logits_T: torch.Tensor):
+    def pearson(self, logits_S, logits_T: torch.Tensor):
         if self.teacher_detach:
             logits_T = logits_T.detach()
         y_s = (logits_S / self.tau).softmax(dim=1)
@@ -62,6 +62,30 @@ class DISTLoss(nn.Module):
         intra_loss = self.tau**2 * intra_class_relation(y_s, y_t)
         kd_loss = self.inter_loss_weight * inter_loss + self.intra_loss_weight * intra_loss  # noqa
         return kd_loss * self.loss_weight
+
+    def forward(self, pred_simcc_S, pred_simcc_T, target_weight_S):
+        output_x_S, output_y_S = pred_simcc_S
+        output_x_T, output_y_T = pred_simcc_T
+        num_joints = output_x_S.size(1)
+        loss = 0
+
+        for idx in range(num_joints):
+            coord_x_pred_S = output_x_S[:, idx].squeeze()
+            coord_y_pred_S = output_y_S[:, idx].squeeze()
+            coord_x_pred_T = output_x_T[:, idx].squeeze()
+            coord_y_pred_T = output_y_T[:, idx].squeeze()
+
+            if self.use_target_weight:
+                weight = target_weight_S[:, idx].squeeze()
+            else:
+                weight = 1.
+
+            loss += self.pearson(coord_x_pred_S,
+                                 coord_x_pred_T).mul(weight).sum()
+            loss += self.pearson(coord_y_pred_S,
+                                 coord_y_pred_T).mul(weight).sum()
+
+        return loss * self.loss_weight / num_joints
 
 
 def kl_div(preds_S, preds_T, tau: float = 1.0):
