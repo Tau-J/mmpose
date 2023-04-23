@@ -202,6 +202,7 @@ class RTMPoseDistiller(BasePoseEstimator):
                  init_cfg: OptMultiConfig = None,
                  teacher_cfg: str = None,
                  teacher_ckpt: str = None,
+                 gau_distill: bool = False,
                  metainfo: Optional[dict] = None):
         super().__init__(
             backbone=backbone,
@@ -213,6 +214,7 @@ class RTMPoseDistiller(BasePoseEstimator):
             init_cfg=init_cfg,
             metainfo=metainfo)
 
+        self.gau_distill = gau_distill
         self.teacher = init_model(teacher_cfg, teacher_ckpt).eval()
         # self.distill_loss = RTMPoseDistillLoss(use_target_weight=True,
         #    tau=20.)
@@ -235,12 +237,6 @@ class RTMPoseDistiller(BasePoseEstimator):
         Returns:
             dict: A dictionary of losses.
         """
-        feats = self.extract_feat(inputs)
-        student_preds = self.head.forward(feats)
-
-        with torch.no_grad():
-            teacher_preds = self.teacher.forward(inputs, data_samples)
-
         losses = dict()
 
         gt_x = torch.cat(
@@ -256,13 +252,35 @@ class RTMPoseDistiller(BasePoseEstimator):
 
         gt_simcc = (gt_x, gt_y)
 
+        feats = self.extract_feat(inputs)
+
+        gau_loss = 0.
+        if self.gau_distill:
+            pred_x, pred_y, pred_feats = self.head.forward(feats)
+
+            with torch.no_grad():
+                teacher_x, teacher_y, teacher_feats = self.teacher.forward(
+                    inputs, data_samples)
+
+            student_preds = (pred_x, pred_y)
+            teacher_preds = (teacher_x, teacher_y)
+
+            for idx in range(pred_feats.size(1)):
+                gau_loss = gau_loss + self.distill_loss.pearson(
+                    pred_feats[:, idx], teacher_feats[:, idx]).mean()
+            gau_loss = gau_loss / pred_feats.size(1)
+        else:
+            student_preds = self.head.forward(feats)
+            with torch.no_grad():
+                teacher_preds = self.teacher.forward(inputs, data_samples)
+
         # calculate losses
         losses = dict()
         gt_loss = self.head.loss_module(student_preds, gt_simcc,
                                         keypoint_weights)
         distill_loss = self.distill_loss(student_preds, teacher_preds,
                                          keypoint_weights)
-        loss = gt_loss + distill_loss
+        loss = gt_loss + distill_loss + gau_loss * 0.1
 
         losses.update(
             loss_kpt=loss, gt_loss=gt_loss, distill_loss=distill_loss)
