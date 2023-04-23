@@ -17,6 +17,53 @@ from mmpose.utils.typing import (ConfigType, InstanceList, OptConfigType,
                                  OptMultiConfig, PixelDataList, SampleList)
 
 
+def cosine_similarity(a, b, eps=1e-8):
+    return (a * b).sum(1) / (a.norm(dim=1) * b.norm(dim=1) + eps)
+
+
+def pearson_correlation(a, b, eps=1e-8):
+    return cosine_similarity(a - a.mean(1, keepdim=True),
+                             b - b.mean(1, keepdim=True), eps)
+
+
+def inter_class_relation(y_s, y_t):
+    return 1 - pearson_correlation(y_s, y_t).mean()
+
+
+def intra_class_relation(y_s, y_t):
+    return inter_class_relation(y_s.transpose(0, 1), y_t.transpose(0, 1))
+
+
+@MODELS.register_module()
+class DISTLoss(nn.Module):
+
+    def __init__(
+        self,
+        inter_loss_weight=1.0,
+        intra_loss_weight=1.0,
+        tau=1.0,
+        loss_weight: float = 1.0,
+        teacher_detach: bool = True,
+    ):
+        super(DISTLoss, self).__init__()
+        self.inter_loss_weight = inter_loss_weight
+        self.intra_loss_weight = intra_loss_weight
+        self.tau = tau
+
+        self.loss_weight = loss_weight
+        self.teacher_detach = teacher_detach
+
+    def forward(self, logits_S, logits_T: torch.Tensor):
+        if self.teacher_detach:
+            logits_T = logits_T.detach()
+        y_s = (logits_S / self.tau).softmax(dim=1)
+        y_t = (logits_T / self.tau).softmax(dim=1)
+        inter_loss = self.tau**2 * inter_class_relation(y_s, y_t)
+        intra_loss = self.tau**2 * intra_class_relation(y_s, y_t)
+        kd_loss = self.inter_loss_weight * inter_loss + self.intra_loss_weight * intra_loss  # noqa
+        return kd_loss * self.loss_weight
+
+
 def kl_div(preds_S, preds_T, tau: float = 1.0):
     """Calculate the KL divergence between `preds_S` and `preds_T`.
 
@@ -138,7 +185,9 @@ class RTMPoseDistiller(BasePoseEstimator):
             metainfo=metainfo)
 
         self.teacher = init_model(teacher_cfg, teacher_ckpt).eval()
-        self.distill_loss = RTMPoseDistillLoss(use_target_weight=True, tau=20.)
+        # self.distill_loss = RTMPoseDistillLoss(use_target_weight=True,
+        #    tau=20.)
+        self.distill_loss = DISTLoss()
 
     def loss(self, inputs: Tensor, data_samples: SampleList) -> dict:
         """Calculate losses from a batch of inputs and data samples.
@@ -180,7 +229,8 @@ class RTMPoseDistiller(BasePoseEstimator):
                                          keypoint_weights)
         loss = gt_loss + distill_loss
 
-        losses.update(loss_kpt=loss)
+        losses.update(
+            loss_kpt=loss, gt_loss=gt_loss, distill_loss=distill_loss)
 
         # calculate accuracy
         _, avg_acc, _ = simcc_pck_accuracy(
