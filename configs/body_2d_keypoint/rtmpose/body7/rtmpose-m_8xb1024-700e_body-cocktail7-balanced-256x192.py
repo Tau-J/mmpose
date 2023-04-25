@@ -1,7 +1,7 @@
 _base_ = ['../../../_base_/default_runtime.py']
 
 # runtime
-max_epochs = 1400
+max_epochs = 700
 stage2_num_epochs = 30
 base_lr = 4e-3
 
@@ -101,7 +101,7 @@ dataset_type = 'CocoDataset'
 data_mode = 'topdown'
 data_root = 'data/'
 
-# backend_args = dict(backend='disk')
+# backend_args = dict(backend='local')
 backend_args = dict(
     backend='petrel',
     path_mapping=dict({

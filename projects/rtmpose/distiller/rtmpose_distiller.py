@@ -272,7 +272,7 @@ class RTMPoseDistiller(TopdownPoseEstimator):
 
         feats = self.extract_feat(inputs)
 
-        gau_loss = 0.
+        gau_loss = torch.tensor(0., device=gt_x.device)
         if self.gau_distill:
             pred_x, pred_y, pred_feats = head_distill_forward(self.head, feats)
 
