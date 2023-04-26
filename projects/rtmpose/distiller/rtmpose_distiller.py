@@ -300,13 +300,10 @@ class RTMPoseDistiller(TopdownPoseEstimator):
                                         keypoint_weights)
         distill_loss = self.distill_loss(student_preds, teacher_preds,
                                          keypoint_weights)
-        loss = gt_loss + distill_loss + gau_loss * 0.1
+        gau_loss = gau_loss * 0.1
 
         losses.update(
-            loss_kpt=loss,
-            gt_loss=gt_loss,
-            distill_loss=distill_loss,
-            gau_loss=gau_loss)
+            loss_kpt=gt_loss, distill_loss=distill_loss, gau_loss=gau_loss)
 
         # calculate accuracy
         _, avg_acc, _ = simcc_pck_accuracy(
