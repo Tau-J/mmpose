@@ -285,9 +285,8 @@ class RTMPoseDistiller(TopdownPoseEstimator):
             student_preds = (pred_x, pred_y)
             teacher_preds = (teacher_x, teacher_y)
 
-            for idx in range(pred_feats.size(1)):
-                gau_loss = gau_loss + self.distill_loss.pearson(
-                    pred_feats[:, idx], teacher_feats[:, idx]).mean()
+            gau_loss = gau_loss + self.distill_loss.pearson(
+                pred_feats, teacher_feats).mean()
             gau_loss = gau_loss / pred_feats.size(1)
         else:
             student_preds = self.head.forward(feats)

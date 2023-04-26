@@ -557,7 +557,7 @@ val_evaluator = dict(
     type='CocoMetric',
     ann_file=data_root + 'coco/annotations/person_keypoints_val2017.json')
 test_evaluator = [
-    dict(type='PCKAccuracy', thr=0.2),
+    dict(type='PCKAccuracy', thr=0.1),
     dict(type='AUC'),
     dict(type='EPE'),
 ]
