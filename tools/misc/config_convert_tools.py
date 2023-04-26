@@ -75,9 +75,10 @@ def collect_all_modules():
 
 
 def replace_type_assign(file_content: str, all_modules):
-    type_assigns = r"type='?(.*?)'?[\n\s,\)]"
+    type_assigns = r"(?<!_)type='?(.*?)'?[\n\s,\)]"
     imported_code = ''
     all_types = re.findall(type_assigns, file_content)
+    # print(f'replace_type_assign: {all_types}')
 
     imported_modules = defaultdict(set)
     types_dict = {}
@@ -101,7 +102,8 @@ def replace_type_assign(file_content: str, all_modules):
             continue
 
     for module_name, import_list in imported_modules.items():
-        imported_code += f"from {module_name} import {', '.join(import_list)}\n"
+        imported_code += f'from {module_name} ' + \
+            f"import {', '.join(import_list)}\n"
     file_content = imported_code + file_content
 
     for ori_type, real_type in types_dict.items():
@@ -149,6 +151,7 @@ def import_base_modules(filename, file_content):
 
 
 def resolve_special_syntax(filename, file_content):
+    # print('resolve_special_syntax', filename, file_content)
 
     def get_end(start):
         num_pos_para = 0
@@ -183,6 +186,7 @@ def resolve_special_syntax(filename, file_content):
     for base_key in base_cfgs:
         replaced_string = f'{base_key} = dict'
         matched = re.search(r'\n' + f'({replaced_string})', file_content)
+        # print(matched)
         if matched is None:
             continue
         start = matched.start(1)
@@ -202,7 +206,8 @@ def resolve_special_syntax(filename, file_content):
             file_content = file_content.replace(
                 matched_content, f'{base_key} = {dict_content}')
     # remove _base_ in _base_.xxx.
-    # file_content = re.sub(r'(?:\{\{)?(?<!\.)_base_\.([\w\._]*)(?:\}\})?', r'\1', file_content)
+    # file_content = re.sub(r'(?:\{\{)?(?<!\.)_base_\.([\w\._]*)(?:\}\})?',
+    #  r'\1', file_content)
     file_content = re.sub(
         r"(?:\{\{)?(?<!\.)_base_(?:\.([\w\._]*)(?:\}\})?|\['([\w\._]*)'\])",
         r'\1\2', file_content)
@@ -218,9 +223,8 @@ def validate(origin_file, target_file, all_modules):
                 try:
                     check(v, target[k])
                 except Exception as e:
-                    logger.debug(
-                        f'{k}: {v} != \n{target[k]} in {origin_file} and ./{target_file}'
-                    )
+                    logger.debug(f'{k}: {v} != \n{target[k]} in ' +
+                                 f'{origin_file} and ./{target_file}')
                     raise e
         elif isinstance(origin, list):
             assert len(origin) == len(target)
@@ -228,9 +232,8 @@ def validate(origin_file, target_file, all_modules):
                 try:
                     check(item_a, item_b)
                 except Exception as e:
-                    logger.debug(
-                        f'{item_a} != \n{item_b} in {origin_file} and ./{target_file}'
-                    )
+                    logger.debug(f'{item_a} != \n{item_b} in ' +
+                                 f'{origin_file} and ./{target_file}')
                     raise e
         else:
             if origin != target:
@@ -245,11 +248,15 @@ def validate(origin_file, target_file, all_modules):
 
 
 def convert_file(filepath, all_modules, target_filepath):
+    # print(f'convert_file: {filepath}')
     with open(filepath, 'r') as f:
         file_content = f.read()
         file_content = replace_type_assign(file_content, all_modules)
+        # print('finish replace_type_assign')
         file_content = import_base_modules(filepath, file_content)
+        # print('finish import_base_modules')
         file_content = resolve_special_syntax(filepath, file_content)
+        # print('finish resolve_special_syntax')
         try:
             yapf_style = dict(
                 based_on_style='pep8',
@@ -337,4 +344,5 @@ if __name__ == '__main__':
     args = parse()
     mmpose_register_all_modules()
     convert_files(args)
-    # convert_file('configs/body_2d_keypoint/rtmpose/coco/rtmpose-m_8xb256-420e_aic-coco-256x192.py', all_modules)
+    # convert_file('configs/body_2d_keypoint/rtmpose/coco/
+    # rtmpose-m_8xb256-420e_aic-coco-256x192.py', all_modules)

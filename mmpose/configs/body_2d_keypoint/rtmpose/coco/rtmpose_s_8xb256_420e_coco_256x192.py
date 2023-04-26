@@ -20,7 +20,6 @@ from mmpose.datasets.transforms.common_transforms import (Albumentation,
 from mmpose.datasets.transforms.formatting import PackPoseInputs
 from mmpose.datasets.transforms.loading import LoadImage
 from mmpose.datasets.transforms.topdown_transforms import TopdownAffine
-from mmpose.engine.hooks.ema_hook import ExpMomentumEMA
 from mmpose.evaluation.metrics.coco_metric import CocoMetric
 from mmpose.models.data_preprocessors.data_preprocessor import \
     PoseDataPreprocessor
@@ -240,7 +239,7 @@ default_hooks.merge(
 custom_hooks = [
     dict(
         type=EMAHook,
-        ema_type=ExpMomentumEMA,
+        ema_type='ExpMomentumEMA',
         momentum=0.0002,
         update_buffers=True,
         priority=49),
