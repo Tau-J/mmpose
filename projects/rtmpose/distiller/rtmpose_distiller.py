@@ -162,12 +162,16 @@ class RTMPoseDistillLoss(nn.Module):
         return loss * self.loss_weight / num_joints
 
 
-def head_distill_forward(head, feats: Tuple[Tensor]) -> Tuple[Tensor, Tensor]:
+def head_distill_forward(head,
+                         feats: Tuple[Tensor],
+                         keep_feats: bool = False) -> Tuple[Tensor, Tensor]:
 
     feats = feats[-1]
 
     feats = head.final_layer(feats)  # -> B, K, H, W
 
+    if keep_feats:
+        final_feats = feats.clone()
     # flatten the output heatmap
     feats = torch.flatten(feats, 2)
 
@@ -178,6 +182,8 @@ def head_distill_forward(head, feats: Tuple[Tensor]) -> Tuple[Tensor, Tensor]:
     pred_x = head.cls_x(feats)
     pred_y = head.cls_y(feats)
 
+    if keep_feats:
+        return pred_x, pred_y, feats, final_feats
     return pred_x, pred_y, feats
 
 
