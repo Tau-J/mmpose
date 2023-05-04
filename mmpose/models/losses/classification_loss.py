@@ -159,20 +159,18 @@ class KLDiscretLoss(nn.Module):
         num_joints = pred_simcc[0].size(1)
         loss = 0
 
+        if self.use_target_weight:
+            weight = target_weight.reshape(-1)
+        else:
+            weight = 1.
+
         for pred, target in zip(pred_simcc, gt_simcc):
-            for idx in range(num_joints):
-                pred_i = pred[:, idx].squeeze()
-                gt_i = target[:, idx].squeeze()
+            pred = pred.reshape(-1, pred.size(-1))
+            target = target.reshape(-1, target.size(-1))
 
-                if self.use_target_weight:
-                    weight = target_weight[:, idx].squeeze()
-                else:
-                    weight = 1.
+            loss += self.criterion(pred, target).mul(weight).sum()
 
-                loss += (self.criterion(pred_i, gt_i).mul(weight).sum())
-
-        loss = loss / num_joints
-        return loss
+        return loss / num_joints
 
 
 @MODELS.register_module()

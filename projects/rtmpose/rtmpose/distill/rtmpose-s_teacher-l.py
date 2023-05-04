@@ -107,13 +107,13 @@ dataset_type = 'CocoDataset'
 data_mode = 'topdown'
 data_root = '../../data/'
 
-# backend_args = dict(backend='local')
-backend_args = dict(
-    backend='petrel',
-    path_mapping=dict({
-        f'{data_root}': 's3://openmmlab/datasets/',
-        f'{data_root}': 's3://openmmlab/datasets/'
-    }))
+backend_args = dict(backend='local')
+# backend_args = dict(
+#     backend='petrel',
+#     path_mapping=dict({
+#         f'{data_root}': 's3://openmmlab/datasets/',
+#         f'{data_root}': 's3://openmmlab/datasets/'
+#     }))
 
 # pipelines
 train_pipeline = [
@@ -125,7 +125,7 @@ train_pipeline = [
         type='RandomBBoxTransform', scale_factor=[0.6, 1.4], rotate_factor=80),
     dict(type='TopdownAffine', input_size=codec['input_size']),
     dict(type='mmdet.YOLOXHSVRandomAug'),
-    dict(type='PhotometricDistortion'),
+    # dict(type='PhotometricDistortion'),
     dict(
         type='Albumentation',
         transforms=[
