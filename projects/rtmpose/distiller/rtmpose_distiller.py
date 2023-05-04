@@ -154,10 +154,10 @@ def head_distill_forward(head,
 
     feats = head.final_layer(feats)  # -> B, K, H, W
 
-    if keep_feats:
-        final_feats = feats.clone()
     # flatten the output heatmap
     feats = torch.flatten(feats, 2)
+    if keep_feats:
+        conv_feats = feats.clone()
 
     feats = head.mlp(feats)  # -> B, K, hidden
 
@@ -167,7 +167,7 @@ def head_distill_forward(head,
     pred_y = head.cls_y(feats)
 
     if keep_feats:
-        return pred_x, pred_y, feats, final_feats
+        return pred_x, pred_y, feats, conv_feats
     return pred_x, pred_y, feats
 
 
@@ -264,20 +264,22 @@ class RTMPoseDistiller(TopdownPoseEstimator):
 
         gau_loss = torch.tensor(0., device=gt_x.device)
         if self.gau_distill:
-            pred_x, pred_y, pred_feats = head_distill_forward(self.head, feats)
+            pred_x, pred_y, pred_feats, pred_conv = head_distill_forward(
+                self.head, feats, True)
 
             with torch.no_grad():
                 self.teacher.eval()
                 teacher_feats = self.teacher.extract_feat(inputs)
-                teacher_x, teacher_y, teacher_feats = head_distill_forward(
-                    self.teacher.head, teacher_feats)
+                t_x, t_y, t_feats, t_conv = head_distill_forward(
+                    self.teacher.head, teacher_feats, True)
 
             student_preds = (pred_x, pred_y)
-            teacher_preds = (teacher_x, teacher_y)
+            teacher_preds = (t_x, t_y)
 
             gau_loss = gau_loss + self.distill_loss.pearson(
-                pred_feats, teacher_feats).mean()
-            gau_loss = gau_loss / pred_feats.size(1)
+                pred_feats, t_feats).mean()
+            gau_loss = gau_loss + self.distill_loss.pearson(pred_conv,
+                                                            t_conv).mean()
         else:
             student_preds = self.head.forward(feats)
             with torch.no_grad():
