@@ -64,26 +64,19 @@ class PKDLoss(nn.Module):
         return kd_loss * self.loss_weight
 
     def forward(self, pred_simcc_S, pred_simcc_T, target_weight_S):
-        output_x_S, output_y_S = pred_simcc_S
-        output_x_T, output_y_T = pred_simcc_T
-        num_joints = output_x_S.size(1)
+        num_joints = pred_simcc_S[0].size(1)
         loss = 0
 
-        for idx in range(num_joints):
-            coord_x_pred_S = output_x_S[:, idx].squeeze()
-            coord_y_pred_S = output_y_S[:, idx].squeeze()
-            coord_x_pred_T = output_x_T[:, idx].squeeze()
-            coord_y_pred_T = output_y_T[:, idx].squeeze()
+        if self.use_target_weight:
+            weight = target_weight_S.reshape(-1)
+        else:
+            weight = 1.
 
-            if self.use_target_weight:
-                weight = target_weight_S[:, idx].squeeze()
-            else:
-                weight = 1.
+        for pred, target in zip(pred_simcc_S, pred_simcc_T):
+            pred = pred.reshape(-1, pred.size(-1))
+            target = target.reshape(-1, target.size(-1))
 
-            loss += self.pearson(coord_x_pred_S,
-                                 coord_x_pred_T).mul(weight).mean()
-            loss += self.pearson(coord_y_pred_S,
-                                 coord_y_pred_T).mul(weight).mean()
+            loss += self.pearson(pred, target).mul(weight).mean()
 
         return loss * self.loss_weight / num_joints
 
@@ -136,28 +129,19 @@ class RTMPoseDistillLoss(nn.Module):
         self.use_target_weight = use_target_weight
 
     def forward(self, pred_simcc_S, pred_simcc_T, target_weight_S):
-        output_x_S, output_y_S = pred_simcc_S
-        output_x_T, output_y_T = pred_simcc_T
-        num_joints = output_x_S.size(1)
+        num_joints = pred_simcc_S[0].size(1)
         loss = 0
 
-        for idx in range(num_joints):
-            coord_x_pred_S = output_x_S[:, idx].squeeze()
-            coord_y_pred_S = output_y_S[:, idx].squeeze()
-            coord_x_pred_T = output_x_T[:, idx].squeeze()
-            coord_y_pred_T = output_y_T[:, idx].squeeze()
+        if self.use_target_weight:
+            weight = target_weight_S.reshape(-1)
+        else:
+            weight = 1.
 
-            if self.use_target_weight:
-                weight = target_weight_S[:, idx].squeeze()
-            else:
-                weight = 1.
+        for pred, target in zip(pred_simcc_S, pred_simcc_T):
+            pred = pred.reshape(-1, pred.size(-1))
+            target = target.reshape(-1, target.size(-1))
 
-            loss += kl_div(
-                coord_x_pred_S, coord_x_pred_T,
-                tau=self.tau).mul(weight).sum()
-            loss += kl_div(
-                coord_y_pred_S, coord_y_pred_T,
-                tau=self.tau).mul(weight).sum()
+            loss += kl_div(pred, target, tau=self.tau).mul(weight).sum()
 
         return loss * self.loss_weight / num_joints
 
@@ -305,7 +289,7 @@ class RTMPoseDistiller(TopdownPoseEstimator):
                                         keypoint_weights)
         distill_loss = self.distill_loss(student_preds, teacher_preds,
                                          keypoint_weights)
-        gau_loss = gau_loss * 0.1
+        # gau_loss = gau_loss * 0.1
 
         losses.update(
             loss_kpt=gt_loss, distill_loss=distill_loss, gau_loss=gau_loss)
