@@ -382,31 +382,44 @@ dataset_posetrack = dict(
 )
 
 # data loaders
-train_batch_size = 1024
+# train_batch_size = 1024
+# train_dataloader = dict(
+#     batch_size=train_batch_size,
+#     num_workers=10,
+#     persistent_workers=True,
+#     # sampler=dict(type='DefaultSampler', shuffle=True),
+#     sampler=dict(
+#         type='MultiSourceSampler',
+#         batch_size=train_batch_size,
+#         source_ratio=[5, 5, 1, 1, 1, 1, 1],
+#         shuffle=True),
+#     dataset=dict(
+#         type='CombinedDataset',
+#         metainfo=dict(from_file='configs/_base_/datasets/coco.py'),
+#         datasets=[
+#             dataset_coco,
+#             dataset_aic,
+#             dataset_crowdpose,
+#             dataset_mpii,
+#             dataset_jhmdb,
+#             dataset_halpe,
+#             dataset_posetrack,
+#         ],
+#         pipeline=train_pipeline,
+#         test_mode=False,
+#     ))
 train_dataloader = dict(
-    batch_size=train_batch_size,
+    batch_size=256,
     num_workers=10,
     persistent_workers=True,
-    # sampler=dict(type='DefaultSampler', shuffle=True),
-    sampler=dict(
-        type='MultiSourceSampler',
-        batch_size=train_batch_size,
-        source_ratio=[5, 5, 1, 1, 1, 1, 1],
-        shuffle=True),
+    sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=dict(
-        type='CombinedDataset',
-        metainfo=dict(from_file='configs/_base_/datasets/coco.py'),
-        datasets=[
-            dataset_coco,
-            dataset_aic,
-            dataset_crowdpose,
-            dataset_mpii,
-            dataset_jhmdb,
-            dataset_halpe,
-            dataset_posetrack,
-        ],
+        type=dataset_type,
+        data_root=data_root,
+        data_mode=data_mode,
+        ann_file='coco/annotations/person_keypoints_train2017.json',
+        data_prefix=dict(img='detection/coco/train2017/'),
         pipeline=train_pipeline,
-        test_mode=False,
     ))
 
 # val datasets
