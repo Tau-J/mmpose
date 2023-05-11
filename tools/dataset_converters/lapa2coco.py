@@ -25,11 +25,12 @@ def convert_labpa_to_coco(ann_dir, out_file):
     cnt = 0
 
     if 'trainval' in ann_dir:
-        ann_dir_list = ['data/LaPa/train', 'data/LaPa/val']
+        ann_dir_list = ['train', 'val']
     else:
         ann_dir_list = [ann_dir]
 
-    for ann_dir in ann_dir_list:
+    for tv in ann_dir_list:
+        ann_dir = 'data/LaPa/' + tv
         landmark_dir = osp.join(ann_dir, 'landmarks')
         ann_list = os.listdir(landmark_dir)
 
@@ -58,7 +59,7 @@ def convert_labpa_to_coco(ann_dir, out_file):
 
             image = {}
             image['id'] = cnt
-            image['file_name'] = file_name
+            image['file_name'] = f'{tv}/images/{file_name}'
             image['height'] = img.shape[0]
             image['width'] = img.shape[1]
             images.append(image)
@@ -107,5 +108,4 @@ if __name__ == '__main__':
         os.makedirs('data/LaPa/annotations')
     for tv in ['val', 'test', 'train', 'trainval']:
         print(f'processing {tv}')
-        convert_labpa_to_coco(f'data/LaPa/{tv}',
-                              f'data/LaPa/annotations/lapa_{tv}.json')
+        convert_labpa_to_coco(tv, f'data/LaPa/annotations/lapa_{tv}.json')
