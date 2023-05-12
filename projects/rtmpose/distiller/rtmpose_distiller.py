@@ -224,9 +224,8 @@ class RTMPoseDistiller(TopdownPoseEstimator):
 
         self.gau_distill = gau_distill
         self.teacher = init_model(teacher_cfg, teacher_ckpt).eval()
-        # self.distill_loss = RTMPoseDistillLoss(use_target_weight=True,
-        #    tau=20.)
-        self.distill_loss = PKDLoss(use_target_weight=True)
+        self.distill_loss = RTMPoseDistillLoss(use_target_weight=True, tau=20.)
+        # self.distill_loss = PKDLoss(use_target_weight=True)
 
         # init tricks
         teacher_head_weights = self.teacher.head.state_dict()
@@ -276,10 +275,12 @@ class RTMPoseDistiller(TopdownPoseEstimator):
             student_preds = (s_x, s_y)
             teacher_preds = (t_x, t_y)
 
-            gau_loss = gau_loss + self.distill_loss.pearson(s_feats,
-                                                            t_feats).mean()
-            gau_loss = gau_loss + self.distill_loss.pearson(s_conv,
-                                                            t_conv).mean()
+            # gau_loss = gau_loss + self.distill_loss.pearson(s_feats,
+            #                                                 t_feats).mean()
+            # gau_loss = gau_loss + self.distill_loss.pearson(s_conv,
+            #                                                 t_conv).mean()
+            gau_loss = gau_loss + kl_div(s_feats, t_feats, tau=20).mean()
+            gau_loss = gau_loss + kl_div(s_conv, t_conv, tau=20).mean()
         else:
             student_preds = self.head.forward(feats)
             with torch.no_grad():

@@ -1,11 +1,10 @@
-_base_ = ['../../../_base_/default_runtime.py']
-
-# lapa coco wflw 300w cofw halpe
-
+_base_ = ['mmpose::_base_/default_runtime.py']
+custom_imports = dict(imports=['distiller'])
 # runtime
 max_epochs = 60
 stage2_num_epochs = 5
 base_lr = 4e-3
+find_unused_parameters = True
 
 train_cfg = dict(max_epochs=max_epochs, val_interval=1)
 randomness = dict(seed=21)
@@ -13,7 +12,7 @@ randomness = dict(seed=21)
 # optimizer
 optim_wrapper = dict(
     type='OptimWrapper',
-    optimizer=dict(type='AdamW', lr=base_lr, weight_decay=0.),
+    optimizer=dict(type='AdamW', lr=base_lr, weight_decay=0.0),
     paramwise_cfg=dict(
         norm_decay_mult=0, bias_decay_mult=0, bypass_duplicate=True))
 
@@ -26,7 +25,7 @@ param_scheduler = [
         begin=0,
         end=1000),
     dict(
-        # use cosine lr from 150 to 300 epoch
+        # use cosine lr from 210 to 420 epoch
         type='CosineAnnealingLR',
         eta_min=base_lr * 0.05,
         begin=max_epochs // 2,
@@ -37,7 +36,7 @@ param_scheduler = [
 ]
 
 # automatically scaling LR based on the actual training batch size
-auto_scale_lr = dict(base_batch_size=512)
+auto_scale_lr = dict(base_batch_size=1024)
 
 # codec settings
 codec = dict(
@@ -48,9 +47,15 @@ codec = dict(
     normalize=False,
     use_dark=False)
 
+teacher_config = '/home/jiangtao/mmpose/configs/face_2d_keypoint/rtmpose/lapa/rtmpose-l_8xb64-60e_face-cocktail6-256x256_trainval.py'  # noqa
+teacher_ckpt = '/home/jiangtao/ckpts/rtmpose-l-face6/best_NME_epoch_60.pth'  # noqa
+
 # model settings
 model = dict(
-    type='TopdownPoseEstimator',
+    type='RTMPoseDistiller',
+    teacher_cfg=teacher_config,
+    teacher_ckpt=teacher_ckpt,
+    gau_distill=True,
     data_preprocessor=dict(
         type='PoseDataPreprocessor',
         mean=[123.675, 116.28, 103.53],
@@ -61,8 +66,8 @@ model = dict(
         type='CSPNeXt',
         arch='P5',
         expand_ratio=0.5,
-        deepen_factor=1.,
-        widen_factor=1.,
+        deepen_factor=0.33,
+        widen_factor=0.5,
         out_indices=(4, ),
         channel_attention=True,
         norm_cfg=dict(type='SyncBN'),
@@ -71,11 +76,11 @@ model = dict(
             type='Pretrained',
             prefix='backbone.',
             checkpoint='https://download.openmmlab.com/mmdetection/v3.0/'
-            'rtmdet/cspnext_rsb_pretrain/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'  # noqa
-        )),
+            'rtmdet/cspnext_rsb_pretrain/cspnext-s_imagenet_600e-ea671761.pth')
+    ),
     head=dict(
         type='RTMCCHead',
-        in_channels=1024,
+        in_channels=512,
         out_channels=106,
         input_size=codec['input_size'],
         in_featuremap_size=(8, 8),
@@ -96,7 +101,7 @@ model = dict(
             beta=10.,
             label_softmax=True),
         decoder=codec),
-    test_cfg=dict(flip_test=True, ))
+    test_cfg=dict(flip_test=True))
 
 # base dataset settings
 dataset_type = 'LapaDataset'
