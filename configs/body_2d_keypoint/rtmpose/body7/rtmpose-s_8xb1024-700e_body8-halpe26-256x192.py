@@ -68,8 +68,8 @@ model = dict(
         init_cfg=dict(
             type='Pretrained',
             prefix='backbone.',
-            checkpoint='/mnt/petrelfs/jiangtao/ckpts/'
-            'cspnext-s-body-cocktail7-udp-pretrain-bs256/best_coco/AP_epoch_210.pth'  # noqa
+            checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
+            'rtmposev1/rtmpose-s_simcc-body7_pt-body7_420e-256x192-acd4a1ef_20230504.pth'  # noqa
         )),
     head=dict(
         type='RTMCCHead',
@@ -97,7 +97,7 @@ model = dict(
     test_cfg=dict(flip_test=True))
 
 # base dataset settings
-dataset_type = 'CocoDataset'
+dataset_type = 'CocoWholeBodyDataset'
 data_mode = 'topdown'
 data_root = '/nvme/data/'
 
@@ -190,7 +190,8 @@ mpii_halpe26 = [
     (4, 13),
     (5, 15),
     (8, 18),
-    (9, 17)(10, 10),
+    (9, 17),
+    (10, 10),
     (11, 8),
     (12, 6),
     (13, 5),
