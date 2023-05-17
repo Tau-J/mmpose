@@ -101,7 +101,7 @@ model = dict(
 # base dataset settings
 dataset_type = 'LapaDataset'
 data_mode = 'topdown'
-data_root = '/nvme/data/'
+data_root = 'data/'
 
 backend_args = dict(backend='local')
 # backend_args = dict(
