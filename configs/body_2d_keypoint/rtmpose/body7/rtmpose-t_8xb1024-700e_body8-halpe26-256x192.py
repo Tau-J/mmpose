@@ -12,6 +12,7 @@ randomness = dict(seed=21)
 optim_wrapper = dict(
     type='OptimWrapper',
     optimizer=dict(type='AdamW', lr=base_lr, weight_decay=0.),
+    clip_grad=dict(max_norm=35, norm_type=2),
     paramwise_cfg=dict(
         norm_decay_mult=0, bias_decay_mult=0, bypass_duplicate=True))
 
@@ -112,7 +113,6 @@ train_pipeline = [
     dict(
         type='RandomBBoxTransform', scale_factor=[0.6, 1.4], rotate_factor=80),
     dict(type='TopdownAffine', input_size=codec['input_size']),
-    dict(type='mmdet.YOLOXHSVRandomAug'),
     dict(type='PhotometricDistortion'),
     dict(
         type='Albumentation',
@@ -150,7 +150,6 @@ train_pipeline_stage2 = [
         scale_factor=[0.6, 1.4],
         rotate_factor=80),
     dict(type='TopdownAffine', input_size=codec['input_size']),
-    dict(type='mmdet.YOLOXHSVRandomAug'),
     dict(
         type='Albumentation',
         transforms=[
@@ -455,6 +454,7 @@ val_posetrack = dict(
 val_dataloader = dict(
     batch_size=64,
     num_workers=10,
+    pin_memory=True,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
