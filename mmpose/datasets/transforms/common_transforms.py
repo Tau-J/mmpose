@@ -21,6 +21,8 @@ from mmpose.utils.typing import MultiConfig
 
 try:
     import albumentations
+    import cv2
+    cv2.setNumThreads(0)
 except ImportError:
     albumentations = None
 

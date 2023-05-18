@@ -99,7 +99,7 @@ model = dict(
 # base dataset settings
 dataset_type = 'CocoWholeBodyDataset'
 data_mode = 'topdown'
-data_root = '/nvme/data/'
+data_root = 'data/'
 
 backend_args = dict(backend='local')
 
@@ -147,8 +147,8 @@ train_pipeline_stage2 = [
     dict(
         type='RandomBBoxTransform',
         shift_factor=0.,
-        scale_factor=[0.75, 1.25],
-        rotate_factor=60),
+        scale_factor=[0.6, 1.4],
+        rotate_factor=80),
     dict(type='TopdownAffine', input_size=codec['input_size']),
     dict(type='mmdet.YOLOXHSVRandomAug'),
     dict(
@@ -330,6 +330,7 @@ dataset_posetrack = dict(
 train_dataloader = dict(
     batch_size=1024,
     num_workers=10,
+    pin_memory=True,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=dict(
