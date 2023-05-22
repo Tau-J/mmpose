@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .ae_loss import AssociativeEmbeddingLoss
 from .classification_loss import (BCELoss, JSDiscretLoss, KLDiscretLoss,
-                                  PKDLoss, SimCCBoneLoss)
+                                  OksKLDiscretLoss, PKDLoss, SimCCBoneLoss)
 from .heatmap_loss import (AdaptiveWingLoss, KeypointMSELoss,
                            KeypointOHKMMSELoss)
 from .loss_wrappers import CombinedLoss, MultipleLossWrapper
@@ -15,5 +15,5 @@ __all__ = [
     'SemiSupervisionLoss', 'SoftWingLoss', 'AdaptiveWingLoss', 'RLELoss',
     'KLDiscretLoss', 'MultipleLossWrapper', 'JSDiscretLoss', 'CombinedLoss',
     'AssociativeEmbeddingLoss', 'SoftWeightSmoothL1Loss', 'SimCCBoneLoss',
-    'PKDLoss'
+    'PKDLoss', 'OksKLDiscretLoss'
 ]

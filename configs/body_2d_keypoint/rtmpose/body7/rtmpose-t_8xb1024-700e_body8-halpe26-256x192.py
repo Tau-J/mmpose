@@ -129,7 +129,10 @@ train_pipeline = [
                 min_width=0.2,
                 p=1.0),
         ]),
-    dict(type='GenerateTarget', encoder=codec),
+    dict(
+        type='GenerateTarget',
+        encoder=codec,
+        use_dataset_keypoint_weights=True),
     dict(type='PackPoseInputs')
 ]
 val_pipeline = [
@@ -165,7 +168,10 @@ train_pipeline_stage2 = [
                 min_width=0.2,
                 p=0.5),
         ]),
-    dict(type='GenerateTarget', encoder=codec),
+    dict(
+        type='GenerateTarget',
+        encoder=codec,
+        use_dataset_keypoint_weights=True),
     dict(type='PackPoseInputs')
 ]
 

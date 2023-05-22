@@ -27,10 +27,10 @@ param_scheduler = [
     dict(
         # use cosine lr from 210 to 420 epoch
         type='CosineAnnealingLR',
-        eta_min=base_lr * 0.05,
-        begin=max_epochs // 2,
+        eta_min=base_lr * 0.005,
+        begin=210,
         end=max_epochs,
-        T_max=max_epochs // 2,
+        T_max=700 - 210,
         by_epoch=True,
         convert_to_iter_based=True),
 ]
@@ -327,7 +327,7 @@ dataset_posetrack = dict(
 
 # data loaders
 train_dataloader = dict(
-    batch_size=512,
+    batch_size=448,
     num_workers=10,
     pin_memory=True,
     persistent_workers=True,

@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from mmpose.datasets.datasets.utils import parse_pose_metainfo
 from mmpose.registry import MODELS
 
 
@@ -333,3 +334,78 @@ class SimCCBoneLoss(nn.Module):
                 loss = loss * w
 
         return loss.mean() / num_joints
+
+
+@MODELS.register_module()
+class OksKLDiscretLoss(nn.Module):
+    """Discrete KL Divergence loss for SimCC with Gaussian Label Smoothing.
+    Modified from `the official implementation.
+
+    <https://github.com/leeyegy/SimCC>`_.
+    Args:
+        beta (float): Temperature factor of Softmax.
+        label_softmax (bool): Whether to use Softmax on labels.
+        use_target_weight (bool): Option to use weighted loss.
+            Different joint types may have different target weights.
+    """
+
+    def __init__(self,
+                 beta=1.0,
+                 label_softmax=False,
+                 metainfo=None,
+                 use_target_weight=True):
+        super(OksKLDiscretLoss, self).__init__()
+        self.beta = beta
+        self.label_softmax = label_softmax
+        self.use_target_weight = use_target_weight
+        if metainfo is not None:
+            metainfo = parse_pose_metainfo(dict(from_file=metainfo))
+            sigmas = metainfo.get('sigmas', None)
+            if sigmas is not None:
+                self.register_buffer('sigmas', torch.as_tensor(sigmas))
+
+        self.log_softmax = nn.LogSoftmax(dim=1)
+        self.kl_loss = nn.KLDivLoss(reduction='none')
+
+    def criterion(self, dec_outs, labels):
+        """Criterion function."""
+        log_pt = self.log_softmax(dec_outs * self.beta)
+        if self.label_softmax:
+            labels = F.softmax(labels * self.beta, dim=1)
+        loss = torch.mean(self.kl_loss(log_pt, labels), dim=1)
+        return loss
+
+    def forward(self, pred_simcc, gt_simcc, target_weight):
+        """Forward function.
+
+        Args:
+            pred_simcc (Tuple[Tensor, Tensor]): Predicted SimCC vectors of
+                x-axis and y-axis.
+            gt_simcc (Tuple[Tensor, Tensor]): Target representations.
+            target_weight (torch.Tensor[N, K] or torch.Tensor[N]):
+                Weights across different labels.
+        """
+        num_joints = pred_simcc[0].size(1)
+        loss = 0
+
+        if self.use_target_weight:
+            weight = target_weight.reshape(-1, num_joints)
+        else:
+            weight = 1.
+
+        for pred, target in zip(pred_simcc, gt_simcc):
+            pred = pred.reshape(-1, pred.size(-1))
+            target = target.reshape(-1, target.size(-1))
+
+            dist = self.criterion(pred, target).reshape(-1, num_joints)
+            if hasattr(self, 'sigmas'):
+                sigmas = self.sigmas.reshape(1, -1)
+                dist = dist / sigmas
+            # t_loss = (torch.exp(-dist.pow(2) / 2) * weight).sum(
+            #     dim=-1) / weight.sum(dim=-1).clip(min=1e-8)
+            # loss += 1 - t_loss.mean()
+            t_loss = dist.mul(weight).sum(dim=-1) / weight.sum(dim=-1).clip(
+                min=1e-8)
+            loss += t_loss.mean()
+
+        return loss
