@@ -11,7 +11,7 @@ randomness = dict(seed=21)
 # optimizer
 optim_wrapper = dict(
     type='OptimWrapper',
-    optimizer=dict(type='AdamW', lr=base_lr, weight_decay=0.0),
+    optimizer=dict(type='AdamW', lr=base_lr, weight_decay=0.05),
     clip_grad=dict(max_norm=35, norm_type=2),
     paramwise_cfg=dict(
         norm_decay_mult=0, bias_decay_mult=0, bypass_duplicate=True))
@@ -41,8 +41,8 @@ auto_scale_lr = dict(base_batch_size=1024)
 # codec settings
 codec = dict(
     type='SimCCLabel',
-    input_size=(192, 256),
-    sigma=(4.9, 5.66),
+    input_size=(288, 384),
+    sigma=(6., 6.93),
     simcc_split_ratio=2.0,
     normalize=False,
     use_dark=False)
@@ -60,8 +60,8 @@ model = dict(
         type='CSPNeXt',
         arch='P5',
         expand_ratio=0.5,
-        deepen_factor=0.33,
-        widen_factor=0.5,
+        deepen_factor=0.67,
+        widen_factor=0.75,
         out_indices=(4, ),
         channel_attention=True,
         norm_cfg=dict(type='SyncBN'),
@@ -70,14 +70,14 @@ model = dict(
             type='Pretrained',
             prefix='backbone.',
             checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
-            'rtmposev1/rtmpose-s_simcc-body7_pt-body7_420e-256x192-acd4a1ef_20230504.pth'  # noqa
+            'rtmposev1/rtmpose-m_simcc-body7_pt-body7_420e-384x288-65e718c4_20230504.pth'  # noqa
         )),
     head=dict(
         type='RTMCCHead',
-        in_channels=512,
+        in_channels=768,
         out_channels=26,
         input_size=codec['input_size'],
-        in_featuremap_size=(6, 8),
+        in_featuremap_size=(9, 12),
         simcc_split_ratio=codec['simcc_split_ratio'],
         final_layer_kernel_size=7,
         gau_cfg=dict(
@@ -102,7 +102,13 @@ dataset_type = 'CocoWholeBodyDataset'
 data_mode = 'topdown'
 data_root = 'data/'
 
-backend_args = dict(backend='local')
+# backend_args = dict(backend='local')
+backend_args = dict(
+    backend='petrel',
+    path_mapping=dict({
+        f'{data_root}': 's3://openmmlab/datasets/',
+        f'{data_root}': 's3://openmmlab/datasets/'
+    }))
 
 # pipelines
 train_pipeline = [
@@ -111,7 +117,7 @@ train_pipeline = [
     dict(type='RandomFlip', direction='horizontal'),
     dict(type='RandomHalfBody'),
     dict(
-        type='RandomBBoxTransform', scale_factor=[0.6, 1.4], rotate_factor=80),
+        type='RandomBBoxTransform', scale_factor=[0.5, 1.5], rotate_factor=90),
     dict(type='TopdownAffine', input_size=codec['input_size']),
     dict(type='PhotometricDistortion'),
     dict(
@@ -150,8 +156,8 @@ train_pipeline_stage2 = [
     dict(
         type='RandomBBoxTransform',
         shift_factor=0.,
-        scale_factor=[0.6, 1.4],
-        rotate_factor=80),
+        scale_factor=[0.5, 1.5],
+        rotate_factor=90),
     dict(type='TopdownAffine', input_size=codec['input_size']),
     dict(
         type='Albumentation',
@@ -333,7 +339,7 @@ dataset_posetrack = dict(
 
 # data loaders
 train_dataloader = dict(
-    batch_size=1024,
+    batch_size=512,
     num_workers=10,
     pin_memory=True,
     persistent_workers=True,

@@ -129,7 +129,10 @@ train_pipeline = [
                 min_width=0.2,
                 p=1.0),
         ]),
-    dict(type='GenerateTarget', encoder=codec),
+    dict(
+        type='GenerateTarget',
+        encoder=codec,
+        use_dataset_keypoint_weights=True),
     dict(type='PackPoseInputs')
 ]
 val_pipeline = [
@@ -165,7 +168,10 @@ train_pipeline_stage2 = [
                 min_width=0.2,
                 p=0.5),
         ]),
-    dict(type='GenerateTarget', encoder=codec),
+    dict(
+        type='GenerateTarget',
+        encoder=codec,
+        use_dataset_keypoint_weights=True),
     dict(type='PackPoseInputs')
 ]
 
@@ -328,7 +334,7 @@ dataset_posetrack = dict(
 # data loaders
 train_dataloader = dict(
     batch_size=512,
-    num_workers=10,
+    num_workers=5,
     pin_memory=True,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
@@ -453,7 +459,7 @@ val_posetrack = dict(
 
 val_dataloader = dict(
     batch_size=64,
-    num_workers=10,
+    num_workers=5,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
