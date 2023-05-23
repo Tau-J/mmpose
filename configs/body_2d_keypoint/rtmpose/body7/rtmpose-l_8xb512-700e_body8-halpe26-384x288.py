@@ -41,8 +41,8 @@ auto_scale_lr = dict(base_batch_size=1024)
 # codec settings
 codec = dict(
     type='SimCCLabel',
-    input_size=(192, 256),
-    sigma=(4.9, 5.66),
+    input_size=(288, 384),
+    sigma=(6., 6.93),
     simcc_split_ratio=2.0,
     normalize=False,
     use_dark=False)
@@ -70,14 +70,14 @@ model = dict(
             type='Pretrained',
             prefix='backbone.',
             checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
-            'rtmposev1/rtmpose-l_simcc-body7_pt-body7_420e-256x192-4dba18fc_20230504.pth'  # noqa
+            'rtmposev1/rtmpose-l_simcc-body7_pt-body7_420e-384x288-3f5a1437_20230504.pth'  # noqa
         )),
     head=dict(
         type='RTMCCHead',
         in_channels=1024,
         out_channels=26,
         input_size=codec['input_size'],
-        in_featuremap_size=(6, 8),
+        in_featuremap_size=(9, 12),
         simcc_split_ratio=codec['simcc_split_ratio'],
         final_layer_kernel_size=7,
         gau_cfg=dict(
@@ -102,7 +102,13 @@ dataset_type = 'CocoWholeBodyDataset'
 data_mode = 'topdown'
 data_root = 'data/'
 
-backend_args = dict(backend='local')
+# backend_args = dict(backend='local')
+backend_args = dict(
+    backend='petrel',
+    path_mapping=dict({
+        f'{data_root}': 's3://openmmlab/datasets/',
+        f'{data_root}': 's3://openmmlab/datasets/'
+    }))
 
 # pipelines
 train_pipeline = [
@@ -129,7 +135,10 @@ train_pipeline = [
                 min_width=0.2,
                 p=1.0),
         ]),
-    dict(type='GenerateTarget', encoder=codec),
+    dict(
+        type='GenerateTarget',
+        encoder=codec,
+        use_dataset_keypoint_weights=True),
     dict(type='PackPoseInputs')
 ]
 val_pipeline = [
@@ -165,7 +174,10 @@ train_pipeline_stage2 = [
                 min_width=0.2,
                 p=0.5),
         ]),
-    dict(type='GenerateTarget', encoder=codec),
+    dict(
+        type='GenerateTarget',
+        encoder=codec,
+        use_dataset_keypoint_weights=True),
     dict(type='PackPoseInputs')
 ]
 
@@ -327,7 +339,7 @@ dataset_posetrack = dict(
 
 # data loaders
 train_dataloader = dict(
-    batch_size=448,
+    batch_size=512,
     num_workers=10,
     pin_memory=True,
     persistent_workers=True,

@@ -91,9 +91,10 @@ model = dict(
             use_rel_bias=False,
             pos_enc=False),
         loss=dict(
-            type='KLDiscretLoss',
+            type='OksKLDiscretLoss',
             use_target_weight=True,
             beta=10.,
+            metainfo=dict(from_file='configs/_base_/datasets/lapa.py'),
             label_softmax=True),
         decoder=codec),
     test_cfg=dict(flip_test=True, ))
@@ -136,10 +137,7 @@ train_pipeline = [
                 min_width=0.2,
                 p=1.0),
         ]),
-    dict(
-        type='GenerateTarget',
-        encoder=codec,
-        use_dataset_keypoint_weights=True),
+    dict(type='GenerateTarget', encoder=codec),
     dict(type='PackPoseInputs')
 ]
 val_pipeline = [
@@ -176,10 +174,7 @@ train_pipeline_stage2 = [
                 min_width=0.2,
                 p=0.5),
         ]),
-    dict(
-        type='GenerateTarget',
-        encoder=codec,
-        use_dataset_keypoint_weights=True),
+    dict(type='GenerateTarget', encoder=codec),
     dict(type='PackPoseInputs')
 ]
 # train dataset

@@ -406,6 +406,6 @@ class OksKLDiscretLoss(nn.Module):
             # loss += 1 - t_loss.mean()
             t_loss = dist.mul(weight).sum(dim=-1) / weight.sum(dim=-1).clip(
                 min=1e-8)
-            loss += t_loss.mean()
+            loss += t_loss.sum()
 
-        return loss
+        return loss / num_joints
