@@ -13,7 +13,8 @@ randomness = dict(seed=21)
 # optimizer
 optim_wrapper = dict(
     type='OptimWrapper',
-    optimizer=dict(type='AdamW', lr=base_lr, weight_decay=0.),
+    optimizer=dict(type='AdamW', lr=base_lr, weight_decay=0.05),
+    clip_grad=dict(max_norm=35, norm_type=2),
     paramwise_cfg=dict(
         norm_decay_mult=0, bias_decay_mult=0, bypass_duplicate=True))
 
@@ -61,8 +62,8 @@ model = dict(
         type='CSPNeXt',
         arch='P5',
         expand_ratio=0.5,
-        deepen_factor=0.167,
-        widen_factor=0.375,
+        deepen_factor=1.,
+        widen_factor=1.,
         out_indices=(4, ),
         channel_attention=True,
         norm_cfg=dict(type='SyncBN'),
@@ -71,11 +72,11 @@ model = dict(
             type='Pretrained',
             prefix='backbone.',
             checkpoint='https://download.openmmlab.com/mmdetection/v3.0/'
-            'rtmdet/cspnext_rsb_pretrain/cspnext-tiny_imagenet_600e-3a2dd350.pth'  # noqa
+            'rtmdet/cspnext_rsb_pretrain/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'  # noqa
         )),
     head=dict(
         type='RTMCCHead',
-        in_channels=384,
+        in_channels=1024,
         out_channels=106,
         input_size=codec['input_size'],
         in_featuremap_size=(8, 8),
@@ -157,8 +158,8 @@ train_pipeline_stage2 = [
     dict(
         type='RandomBBoxTransform',
         shift_factor=0.,
-        scale_factor=[0.75, 1.25],
-        rotate_factor=60),
+        scale_factor=[0.5, 1.5],
+        rotate_factor=80),
     dict(type='TopdownAffine', input_size=codec['input_size']),
     dict(type='mmdet.YOLOXHSVRandomAug'),
     dict(
@@ -675,12 +676,12 @@ default_hooks = dict(
         save_best='NME', rule='less', max_keep_ckpts=1, interval=1))
 
 custom_hooks = [
-    # dict(
-    #     type='EMAHook',
-    #     ema_type='ExpMomentumEMA',
-    #     momentum=0.0002,
-    #     update_buffers=True,
-    #     priority=49),
+    dict(
+        type='EMAHook',
+        ema_type='ExpMomentumEMA',
+        momentum=0.0002,
+        update_buffers=True,
+        priority=49),
     dict(
         type='mmdet.PipelineSwitchHook',
         switch_epoch=max_epochs - stage2_num_epochs,
