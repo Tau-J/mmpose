@@ -86,7 +86,7 @@ def predict(input, draw_heatmap=False, model_type='body', input_type='image'):
         det_config = 'demo/mmdetection_cfg/yolox-s_8xb8-300e_coco-face.py'  # noqa
         det_checkpoint = 'https://download.openmmlab.com/mmpose/mmdet_pretrained/yolo-x_8xb8-300e_coco-face_13274d7c.pth'  # noqa
         pose_config = 'projects/rtmpose/rtmpose/face_2d_keypoint/rtmpose-m_8xb64-120e_lapa-256x256.py'  # noqa
-        pose_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-m_simcc-face6_pt-aic-coco_60e-256x256-c28598e0_20230422.pth'  # noqa
+        pose_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-m_simcc-face6_pt-in1k_120e-256x256-72a37400_20230529.pth'  # noqa
     elif model_type == 'wholebody':
         det_config = 'projects/rtmpose/rtmdet/person/rtmdet_m_640-8xb32_coco-person.py'  # noqa
         det_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmdet_m_8xb32-100e_coco-obj365-person-235e8209.pth'  # noqa
@@ -96,7 +96,7 @@ def predict(input, draw_heatmap=False, model_type='body', input_type='image'):
         det_config = 'projects/rtmpose/rtmdet/person/rtmdet_m_640-8xb32_coco-person.py'  # noqa
         det_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmdet_m_8xb32-100e_coco-obj365-person-235e8209.pth'  # noqa
         pose_config = 'projects/rtmpose/rtmpose/body_2d_keypoint/rtmpose-l_8xb256-420e_coco-384x288.py'  # noqa
-        pose_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-aic-coco_pt-aic-coco_420e-384x288-97d6cb0f_20230228.pth'  # noqa
+        pose_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-body7_pt-body7_420e-384x288-3f5a1437_20230504.pth'  # noqa
 
     parser = ArgumentParser()
     parser.add_argument(
