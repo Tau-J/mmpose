@@ -14,7 +14,6 @@ randomness = dict(seed=21)
 optim_wrapper = dict(
     type='OptimWrapper',
     optimizer=dict(type='AdamW', lr=base_lr, weight_decay=0.05),
-    clip_grad=dict(max_norm=35, norm_type=2),
     paramwise_cfg=dict(
         norm_decay_mult=0, bias_decay_mult=0, bypass_duplicate=True))
 
@@ -62,8 +61,8 @@ model = dict(
         type='CSPNeXt',
         arch='P5',
         expand_ratio=0.5,
-        deepen_factor=1.,
-        widen_factor=1.,
+        deepen_factor=0.67,
+        widen_factor=0.75,
         out_indices=(4, ),
         channel_attention=True,
         norm_cfg=dict(type='SyncBN'),
@@ -72,11 +71,11 @@ model = dict(
             type='Pretrained',
             prefix='backbone.',
             checkpoint='https://download.openmmlab.com/mmdetection/v3.0/'
-            'rtmdet/cspnext_rsb_pretrain/cspnext-l_8xb256-rsb-a1-600e_in1k-6a760974.pth'  # noqa
+            'rtmdet/cspnext_rsb_pretrain/cspnext-m_8xb256-rsb-a1-600e_in1k-ecb3bbd9.pth'  # noqa
         )),
     head=dict(
-        type='RTMCCHead',
-        in_channels=1024,
+        type='RTMCCNoiseHead',
+        in_channels=768,
         out_channels=106,
         input_size=codec['input_size'],
         in_featuremap_size=(8, 8),
@@ -105,12 +104,6 @@ data_mode = 'topdown'
 data_root = 'data/'
 
 backend_args = dict(backend='local')
-# backend_args = dict(
-#     backend='petrel',
-#     path_mapping=dict({
-#         f'{data_root}': 's3://openmmlab/datasets/',
-#         f'{data_root}': 's3://openmmlab/datasets/'
-#     }))
 
 # pipelines
 train_pipeline = [
@@ -183,6 +176,7 @@ train_pipeline_stage2 = [
         use_dataset_keypoint_weights=True),
     dict(type='PackPoseInputs')
 ]
+
 # train dataset
 dataset_lapa = dict(
     type=dataset_type,
