@@ -98,7 +98,7 @@ model = dict(
     test_cfg=dict(flip_test=True))
 
 # base dataset settings
-dataset_type = 'CocoDataset'
+dataset_type = 'CocoWholeBodyDataset'
 data_mode = 'topdown'
 data_root = 'data/'
 
