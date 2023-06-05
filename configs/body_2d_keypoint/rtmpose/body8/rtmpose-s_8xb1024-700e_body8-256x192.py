@@ -1,8 +1,8 @@
 _base_ = ['../../../_base_/default_runtime.py']
 
 # runtime
-max_epochs = 210
-stage2_num_epochs = 30
+max_epochs = 700
+stage2_num_epochs = 20
 base_lr = 4e-3
 
 train_cfg = dict(max_epochs=max_epochs, val_interval=10)
@@ -12,6 +12,7 @@ randomness = dict(seed=21)
 optim_wrapper = dict(
     type='OptimWrapper',
     optimizer=dict(type='AdamW', lr=base_lr, weight_decay=0.0),
+    clip_grad=dict(max_norm=35, norm_type=2),
     paramwise_cfg=dict(
         norm_decay_mult=0, bias_decay_mult=0, bypass_duplicate=True))
 
@@ -101,7 +102,13 @@ dataset_type = 'CocoDataset'
 data_mode = 'topdown'
 data_root = 'data/'
 
-backend_args = dict(backend='local')
+# backend_args = dict(backend='local')
+backend_args = dict(
+    backend='petrel',
+    path_mapping=dict({
+        f'{data_root}': 's3://openmmlab/datasets/',
+        f'{data_root}': 's3://openmmlab/datasets/'
+    }))
 
 # pipelines
 train_pipeline = [
@@ -112,7 +119,6 @@ train_pipeline = [
     dict(
         type='RandomBBoxTransform', scale_factor=[0.6, 1.4], rotate_factor=80),
     dict(type='TopdownAffine', input_size=codec['input_size']),
-    dict(type='mmdet.YOLOXHSVRandomAug'),
     dict(type='PhotometricDistortion'),
     dict(
         type='Albumentation',
@@ -129,7 +135,10 @@ train_pipeline = [
                 min_width=0.2,
                 p=1.0),
         ]),
-    dict(type='GenerateTarget', encoder=codec),
+    dict(
+        type='GenerateTarget',
+        encoder=codec,
+        use_dataset_keypoint_weights=True),
     dict(type='PackPoseInputs')
 ]
 val_pipeline = [
@@ -147,10 +156,9 @@ train_pipeline_stage2 = [
     dict(
         type='RandomBBoxTransform',
         shift_factor=0.,
-        scale_factor=[0.75, 1.25],
-        rotate_factor=60),
+        scale_factor=[0.6, 1.4],
+        rotate_factor=80),
     dict(type='TopdownAffine', input_size=codec['input_size']),
-    dict(type='mmdet.YOLOXHSVRandomAug'),
     dict(
         type='Albumentation',
         transforms=[
@@ -166,7 +174,10 @@ train_pipeline_stage2 = [
                 min_width=0.2,
                 p=0.5),
         ]),
-    dict(type='GenerateTarget', encoder=codec),
+    dict(
+        type='GenerateTarget',
+        encoder=codec,
+        use_dataset_keypoint_weights=True),
     dict(type='PackPoseInputs')
 ]
 
@@ -370,7 +381,7 @@ dataset_posetrack = dict(
 
 # data loaders
 train_dataloader = dict(
-    batch_size=256,
+    batch_size=1024,
     num_workers=10,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
