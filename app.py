@@ -227,7 +227,7 @@ with gr.Blocks() as demo:
 
         gr.Examples([
             'tests/data/coco/000000000785.jpg'
-        ])
+        ], input_img)
 
     with gr.Tab('Upload-Video'):
         input_video = gr.Video(type='mp4')
@@ -241,7 +241,7 @@ with gr.Blocks() as demo:
 
         gr.Examples([
             'resources/tom.mp4'
-        ])
+        ], input_video)
 
 
 gr.close_all()
