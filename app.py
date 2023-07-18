@@ -3,8 +3,6 @@
 
 import os
 
-import mmengine
-
 os.system('python -m mim install "mmcv>=2.0.1"')
 os.system('python -m mim install mmengine')
 os.system('python -m mim install "mmdet>=3.1.0"')
@@ -15,6 +13,7 @@ from typing import Dict
 
 import cv2
 import gradio as gr
+import mmengine
 
 from mmpose.apis.inferencers import MMPoseInferencer, get_model_aliases
 
