@@ -1,4 +1,12 @@
--r requirements/build.txt
--r requirements/runtime.txt
--r requirements/tests.txt
--r requirements/optional.txt
+chumpy
+json_tricks
+matplotlib
+munkres
+numpy
+opencv-python
+openmim
+pillow
+scipy
+torch>=1.8
+torchvision
+xtcocotools>=1.12
