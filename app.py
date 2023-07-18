@@ -2,7 +2,8 @@
 
 
 import os
-from functools import partial
+
+import mmengine
 
 os.system('python -m mim install "mmcv>=2.0.1"')
 os.system('python -m mim install mmengine')
@@ -208,6 +209,11 @@ def predict(input_img, input_type):
         return './pose3d_results.mp4'
 
 
+mmengine.mkdir_or_exist(os.path.join('./', 'resources'))
+
+os.system(
+    f'wget -O resources/tom.mp4 https://download.openmmlab.com/mmpose/v1/projects/just_dance/tom.mp4'  # noqa
+)
 with gr.Blocks() as demo:
 
     with gr.Tab('Upload-Image'):
@@ -218,6 +224,24 @@ with gr.Blocks() as demo:
         out_image = gr.Image(type='numpy')
 
         button.click(predict, [input_img, 'image'], out_image)
+
+        gr.Examples([
+            'tests/data/coco/000000000785.jpg'
+        ])
+
+    with gr.Tab('Upload-Video'):
+        input_video = gr.Video(type='mp4')
+        button = gr.Button('Inference', variant='primary')
+
+        gr.Markdown('## Output')
+        out_video = gr.Video()
+        
+        input_type = 'video'
+        button.click(predict, [input_video, 'video'], out_video)
+
+        gr.Examples([
+            'resources/tom.mp4'
+        ])
 
 
 gr.close_all()
