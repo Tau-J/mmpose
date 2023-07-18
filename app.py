@@ -22,7 +22,7 @@ from mmpose.apis.inferencers import MMPoseInferencer, get_model_aliases
 def parse_args():
     parser = ArgumentParser()
     parser.add_argument(
-        'inputs',
+        '--inputs',
         type=str,
         default=None,
         help='Input image/video path or folder path.')
