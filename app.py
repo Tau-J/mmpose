@@ -2,6 +2,7 @@
 
 
 import os
+from functools import partial
 
 os.system('python -m mim install mmengine')
 os.system('python -m mim install "mmcv>=2.0.1"')
@@ -222,7 +223,7 @@ with gr.Blocks() as demo:
         gr.Markdown('## Output')
         out_image = gr.Image(type='numpy')
 
-        button.click(predict, [input_img, 'image'], out_image)
+        button.click(partial(predict, input_type='image'), [input_img], out_image)
 
         gr.Examples([
             'tests/data/coco/000000000785.jpg'
@@ -236,7 +237,7 @@ with gr.Blocks() as demo:
         out_video = gr.Video()
         
         input_type = 'video'
-        button.click(predict, [input_video, 'video'], out_video)
+        button.click(partial(predict, input_type='video'), [input_video], out_video)
 
         gr.Examples([
             'resources/tom.mp4'
