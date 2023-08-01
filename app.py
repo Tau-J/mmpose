@@ -1,6 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 
-
 import os
 from functools import partial
 
@@ -28,6 +27,7 @@ try:
     has_mmdet = True
 except (ImportError, ModuleNotFoundError):
     has_mmdet = False
+
 
 def process_one_image(args,
                       img,
@@ -74,7 +74,9 @@ def process_one_image(args,
     # if there is no instance detected, return None
     return data_samples.get('pred_instances', None)
 
+
 # input_type = 'image'
+
 
 def predict(input, draw_heatmap=False, model_type='body', input_type='image'):
     """Visualize the demo images.
@@ -91,7 +93,7 @@ def predict(input, draw_heatmap=False, model_type='body', input_type='image'):
         det_config = 'projects/rtmpose/rtmdet/person/rtmdet_m_640-8xb32_coco-person.py'  # noqa
         det_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmdet_m_8xb32-100e_coco-obj365-person-235e8209.pth'  # noqa
         pose_config = 'projects/rtmpose/rtmpose/wholebody_2d_keypoint/rtmpose-l_8xb32-270e_coco-wholebody-384x288.py'  # noqa
-        pose_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-coco-wholebody_pt-aic-coco_270e-384x288-eaeb96c8_20230125.pth'  # noqa
+        pose_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-384x288-2438fd99_20230728.pth'  # noqa
     else:
         det_config = 'projects/rtmpose/rtmdet/person/rtmdet_m_640-8xb32_coco-person.py'  # noqa
         det_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmdet_m_8xb32-100e_coco-obj365-person-235e8209.pth'  # noqa
@@ -175,8 +177,7 @@ def predict(input, draw_heatmap=False, model_type='body', input_type='image'):
     args = parser.parse_args()
 
     # build detector
-    detector = init_detector(
-        det_config, det_checkpoint, device=args.device)
+    detector = init_detector(det_config, det_checkpoint, device=args.device)
     detector.cfg = adapt_mmdet_pipeline(detector.cfg)
 
     # build pose estimator
@@ -205,10 +206,15 @@ def predict(input, draw_heatmap=False, model_type='body', input_type='image'):
             pose_estimator.dataset_meta, skeleton_style=args.skeleton_style)
 
         # inference
-        _ = process_one_image(args, input[:,:,::-1], detector, pose_estimator,
-                              visualizer, draw_heatmap=draw_heatmap)
+        _ = process_one_image(
+            args,
+            input[:, :, ::-1],
+            detector,
+            pose_estimator,
+            visualizer,
+            draw_heatmap=draw_heatmap)
         return visualizer.get_image()
-    
+
     elif input_type == 'video':
         from mmpose.visualization import FastVisualizer
 
@@ -247,10 +253,14 @@ def predict(input, draw_heatmap=False, model_type='body', input_type='image'):
 
             # topdown pose estimation
             if draw_heatmap:
-                pred_instances = process_one_image(args, frame, detector,
-                                                   pose_estimator,
-                                                   local_visualizer, 0.001,
-                                                   draw_heatmap=True)
+                pred_instances = process_one_image(
+                    args,
+                    frame,
+                    detector,
+                    pose_estimator,
+                    local_visualizer,
+                    0.001,
+                    draw_heatmap=True)
             else:
                 pred_instances = process_one_image(args, frame, detector,
                                                    pose_estimator)
@@ -282,7 +292,6 @@ def predict(input, draw_heatmap=False, model_type='body', input_type='image'):
         return output_file
 
     return None
-    
 
 
 # gr.Interface(
@@ -292,60 +301,76 @@ def predict(input, draw_heatmap=False, model_type='body', input_type='image'):
 #         gr.Image(type='webcam', )],
 #     outputs=gr.Image(type='pil'),
 #     examples=['tests/data/coco/000000000785.jpg']).launch()
-
+news1 = '2023-8-1: We have supported [DWPose](https://arxiv.org/pdf/2307.15880.pdf) as the default `wholebody` model.'  # noqa
 with gr.Blocks() as demo:
 
     with gr.Tab('Upload-Image'):
         input_img = gr.Image(type='numpy')
         button = gr.Button('Inference', variant='primary')
-        hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
-        model_type = gr.Dropdown(
-            ["body", "face", "wholebody"], label="Keypoint Type", info="Body / Face / Wholebody"
-        )
+        hm = gr.Checkbox(label='draw-heatmap', info='Whether to draw heatmap')
+        model_type = gr.Dropdown(['body', 'face', 'wholebody'],
+                                 label='Keypoint Type',
+                                 info='Body / Face / Wholebody')
+        gr.Markdown('## News')
+        gr.Markdown(news1)
         gr.Markdown('## Output')
         out_image = gr.Image(type='numpy')
-        
+
         input_type = 'image'
-        button.click(partial(predict, input_type=input_type), [input_img, hm, model_type], out_image)
+        button.click(
+            partial(predict, input_type=input_type),
+            [input_img, hm, model_type], out_image)
 
     with gr.Tab('Webcam-Image'):
         input_img = gr.Image(source='webcam', type='numpy')
         button = gr.Button('Inference', variant='primary')
-        hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
-        model_type = gr.Dropdown(
-            ["body", "face", "wholebody"], label="Keypoint Type", info="Body / Face / Wholebody"
-        )
+        hm = gr.Checkbox(label='draw-heatmap', info='Whether to draw heatmap')
+        model_type = gr.Dropdown(['body', 'face', 'wholebody'],
+                                 label='Keypoint Type',
+                                 info='Body / Face / Wholebody')
+        gr.Markdown('## News')
+        gr.Markdown(news1)
         gr.Markdown('## Output')
         out_image = gr.Image(type='numpy')
-        
+
         input_type = 'image'
-        button.click(partial(predict, input_type=input_type), [input_img, hm, model_type], out_image)
+        button.click(
+            partial(predict, input_type=input_type),
+            [input_img, hm, model_type], out_image)
 
     with gr.Tab('Upload-Video'):
         input_video = gr.Video(type='mp4')
         button = gr.Button('Inference', variant='primary')
-        hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
-        model_type = gr.Dropdown(
-            ["body", "face", "wholebody"], label="Keypoint Type", info="Body / Face / Wholebody"
-        )
+        hm = gr.Checkbox(label='draw-heatmap', info='Whether to draw heatmap')
+        model_type = gr.Dropdown(['body', 'face', 'wholebody'],
+                                 label='Keypoint Type',
+                                 info='Body / Face / Wholebody')
+        gr.Markdown('## News')
+        gr.Markdown(news1)
         gr.Markdown('## Output')
         out_video = gr.Video()
-        
+
         input_type = 'video'
-        button.click(partial(predict, input_type=input_type), [input_video, hm, model_type], out_video)
+        button.click(
+            partial(predict, input_type=input_type),
+            [input_video, hm, model_type], out_video)
 
     with gr.Tab('Webcam-Video'):
         input_video = gr.Video(source='webcam', format='mp4')
         button = gr.Button('Inference', variant='primary')
-        hm = gr.Checkbox(label="draw-heatmap", info="Whether to draw heatmap")
-        model_type = gr.Dropdown(
-            ["body", "face", "wholebody"], label="Keypoint Type", info="Body / Face / Wholebody"
-        )
+        hm = gr.Checkbox(label='draw-heatmap', info='Whether to draw heatmap')
+        model_type = gr.Dropdown(['body', 'face', 'wholebody'],
+                                 label='Keypoint Type',
+                                 info='Body / Face / Wholebody')
+        gr.Markdown('## News')
+        gr.Markdown(news1)
         gr.Markdown('## Output')
         out_video = gr.Video()
 
         input_type = 'video'
-        button.click(partial(predict, input_type=input_type), [input_video, hm, model_type], out_video)
+        button.click(
+            partial(predict, input_type=input_type),
+            [input_video, hm, model_type], out_video)
 
 gr.close_all()
 demo.queue()
