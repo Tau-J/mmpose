@@ -4,7 +4,7 @@ import os
 from functools import partial
 
 os.system('python -m mim install "mmcv>=2.0.0"')
-os.system('python -m mim install mmengine')
+os.system('python -m mim install "mmengine==0.8.2"')
 os.system('python -m mim install "mmdet>=3.0.0"')
 os.system('python -m mim install -e .')
 

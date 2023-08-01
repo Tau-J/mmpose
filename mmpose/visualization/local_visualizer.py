@@ -692,4 +692,4 @@ class PoseLocalVisualizer(OpencvBackendVisualizer):
             # save drawn_img to backends
             self.add_image(name, drawn_img, step)
 
-        return drawn_img[..., ::-1]
+        return self.get_image()
