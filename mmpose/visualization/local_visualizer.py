@@ -687,6 +687,8 @@ class PoseLocalVisualizer(OpencvBackendVisualizer):
         if out_file is not None:
             mmcv.imwrite(drawn_img[..., ::-1], out_file)
         else:
+            print(name)
+            print(type(drawn_img))
             # save drawn_img to backends
             self.add_image(name, drawn_img, step)
 
