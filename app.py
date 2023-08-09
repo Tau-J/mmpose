@@ -89,7 +89,7 @@ def process_one_image(args,
 # input_type = 'image'
 
 
-def predict(input, draw_heatmap=False, model_type='body', input_type='image'):
+def predict(input, draw_heatmap=False, model_type='body', skeleton_style='mmpose', input_type='image'):
     """Visualize the demo images.
 
     Using mmdet to detect the human.
@@ -186,6 +186,7 @@ def predict(input, draw_heatmap=False, model_type='body', input_type='image'):
     assert has_mmdet, 'Please install mmdet to run the demo.'
 
     args = parser.parse_args()
+    args.skeleton_style = skeleton_style
 
     # build detector
     if cached_det[model_type] is not None:
@@ -332,6 +333,9 @@ with gr.Blocks() as demo:
         model_type = gr.Dropdown(['body', 'face', 'wholebody'],
                                  label='Keypoint Type',
                                  info='Body / Face / Wholebody')
+        skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
+                                 label='Skeleton Style',
+                                 info='mmpose style/ openpose style')
         gr.Markdown('## News')
         gr.Markdown(news1)
         gr.Markdown('## Output')
@@ -340,7 +344,7 @@ with gr.Blocks() as demo:
         input_type = 'image'
         button.click(
             partial(predict, input_type=input_type),
-            [input_img, hm, model_type], out_image)
+            [input_img, hm, model_type, skeleton_style], out_image)
 
     with gr.Tab('Webcam-Image'):
         input_img = gr.Image(source='webcam', type='numpy')
@@ -349,6 +353,9 @@ with gr.Blocks() as demo:
         model_type = gr.Dropdown(['body', 'face', 'wholebody'],
                                  label='Keypoint Type',
                                  info='Body / Face / Wholebody')
+        skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
+                                 label='Skeleton Style',
+                                 info='mmpose style/ openpose style')
         gr.Markdown('## News')
         gr.Markdown(news1)
         gr.Markdown('## Output')
@@ -357,7 +364,7 @@ with gr.Blocks() as demo:
         input_type = 'image'
         button.click(
             partial(predict, input_type=input_type),
-            [input_img, hm, model_type], out_image)
+            [input_img, hm, model_type, skeleton_style], out_image)
 
     with gr.Tab('Upload-Video'):
         input_video = gr.Video(type='mp4')
@@ -366,6 +373,9 @@ with gr.Blocks() as demo:
         model_type = gr.Dropdown(['body', 'face', 'wholebody'],
                                  label='Keypoint Type',
                                  info='Body / Face / Wholebody')
+        skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
+                                 label='Skeleton Style',
+                                 info='mmpose style/ openpose style')
         gr.Markdown('## News')
         gr.Markdown(news1)
         gr.Markdown('## Output')
@@ -374,7 +384,7 @@ with gr.Blocks() as demo:
         input_type = 'video'
         button.click(
             partial(predict, input_type=input_type),
-            [input_video, hm, model_type], out_video)
+            [input_video, hm, model_type, skeleton_style], out_video)
 
     with gr.Tab('Webcam-Video'):
         input_video = gr.Video(source='webcam', format='mp4')
@@ -383,6 +393,9 @@ with gr.Blocks() as demo:
         model_type = gr.Dropdown(['body', 'face', 'wholebody'],
                                  label='Keypoint Type',
                                  info='Body / Face / Wholebody')
+        skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
+                                 label='Skeleton Style',
+                                 info='mmpose style/ openpose style')
         gr.Markdown('## News')
         gr.Markdown(news1)
         gr.Markdown('## Output')
@@ -391,7 +404,7 @@ with gr.Blocks() as demo:
         input_type = 'video'
         button.click(
             partial(predict, input_type=input_type),
-            [input_video, hm, model_type], out_video)
+            [input_video, hm, model_type, skeleton_style], out_video)
 
 gr.close_all()
 demo.queue()
