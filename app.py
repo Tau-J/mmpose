@@ -106,6 +106,7 @@ def predict(input, draw_heatmap=False, model_type='body', skeleton_style='mmpose
         pose_config = 'projects/rtmpose/rtmpose/wholebody_2d_keypoint/rtmpose-l_8xb32-270e_coco-wholebody-384x288.py'  # noqa
         pose_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-384x288-2438fd99_20230728.pth'  # noqa
     else:
+        model_type = 'body'
         det_config = 'projects/rtmpose/rtmdet/person/rtmdet_m_640-8xb32_coco-person.py'  # noqa
         det_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmdet_m_8xb32-100e_coco-obj365-person-235e8209.pth'  # noqa
         pose_config = 'projects/rtmpose/rtmpose/body_2d_keypoint/rtmpose-l_8xb256-420e_coco-384x288.py'  # noqa
@@ -333,9 +334,9 @@ with gr.Blocks() as demo:
         model_type = gr.Dropdown(['body', 'face', 'wholebody'],
                                  label='Keypoint Type',
                                  info='Body / Face / Wholebody')
-        skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
-                                 label='Skeleton Style',
-                                 info='mmpose style/ openpose style')
+        # skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
+        #                          label='Skeleton Style',
+        #                          info='mmpose style/ openpose style')
         gr.Markdown('## News')
         gr.Markdown(news1)
         gr.Markdown('## Output')
@@ -344,7 +345,7 @@ with gr.Blocks() as demo:
         input_type = 'image'
         button.click(
             partial(predict, input_type=input_type),
-            [input_img, hm, model_type, skeleton_style], out_image)
+            [input_img, hm, model_type], out_image)
 
     with gr.Tab('Webcam-Image'):
         input_img = gr.Image(source='webcam', type='numpy')
@@ -353,9 +354,9 @@ with gr.Blocks() as demo:
         model_type = gr.Dropdown(['body', 'face', 'wholebody'],
                                  label='Keypoint Type',
                                  info='Body / Face / Wholebody')
-        skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
-                                 label='Skeleton Style',
-                                 info='mmpose style/ openpose style')
+        # skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
+        #                          label='Skeleton Style',
+        #                          info='mmpose style/ openpose style')
         gr.Markdown('## News')
         gr.Markdown(news1)
         gr.Markdown('## Output')
@@ -364,7 +365,7 @@ with gr.Blocks() as demo:
         input_type = 'image'
         button.click(
             partial(predict, input_type=input_type),
-            [input_img, hm, model_type, skeleton_style], out_image)
+            [input_img, hm, model_type], out_image)
 
     with gr.Tab('Upload-Video'):
         input_video = gr.Video(type='mp4')
@@ -373,9 +374,9 @@ with gr.Blocks() as demo:
         model_type = gr.Dropdown(['body', 'face', 'wholebody'],
                                  label='Keypoint Type',
                                  info='Body / Face / Wholebody')
-        skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
-                                 label='Skeleton Style',
-                                 info='mmpose style/ openpose style')
+        # skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
+        #                          label='Skeleton Style',
+        #                          info='mmpose style/ openpose style')
         gr.Markdown('## News')
         gr.Markdown(news1)
         gr.Markdown('## Output')
@@ -384,7 +385,7 @@ with gr.Blocks() as demo:
         input_type = 'video'
         button.click(
             partial(predict, input_type=input_type),
-            [input_video, hm, model_type, skeleton_style], out_video)
+            [input_video, hm, model_type], out_video)
 
     with gr.Tab('Webcam-Video'):
         input_video = gr.Video(source='webcam', format='mp4')
@@ -393,9 +394,9 @@ with gr.Blocks() as demo:
         model_type = gr.Dropdown(['body', 'face', 'wholebody'],
                                  label='Keypoint Type',
                                  info='Body / Face / Wholebody')
-        skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
-                                 label='Skeleton Style',
-                                 info='mmpose style/ openpose style')
+        # skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
+        #                          label='Skeleton Style',
+        #                          info='mmpose style/ openpose style')
         gr.Markdown('## News')
         gr.Markdown(news1)
         gr.Markdown('## Output')
@@ -404,7 +405,7 @@ with gr.Blocks() as demo:
         input_type = 'video'
         button.click(
             partial(predict, input_type=input_type),
-            [input_video, hm, model_type, skeleton_style], out_video)
+            [input_video, hm, model_type], out_video)
 
 gr.close_all()
 demo.queue()
