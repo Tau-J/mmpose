@@ -28,6 +28,17 @@ try:
 except (ImportError, ModuleNotFoundError):
     has_mmdet = False
 
+cached_det = {
+    'body': None,
+    'face': None,
+    'wholebody': None,
+}
+
+cached_pose = {
+    'body': None,
+    'face': None,
+    'wholebody': None,
+}
 
 def process_one_image(args,
                       img,
@@ -177,16 +188,26 @@ def predict(input, draw_heatmap=False, model_type='body', input_type='image'):
     args = parser.parse_args()
 
     # build detector
-    detector = init_detector(det_config, det_checkpoint, device=args.device)
-    detector.cfg = adapt_mmdet_pipeline(detector.cfg)
+    if cached_det[model_type] is not None:
+        detector = cached_det[model_type]
+    else:
+        detector = init_detector(det_config, 
+                                 det_checkpoint, 
+                                 device=args.device)
+        detector.cfg = adapt_mmdet_pipeline(detector.cfg)
+        cached_det[model_type] = detector
 
     # build pose estimator
-    pose_estimator = init_pose_estimator(
-        pose_config,
-        pose_checkpoint,
-        device=args.device,
-        cfg_options=dict(
-            model=dict(test_cfg=dict(output_heatmaps=draw_heatmap))))
+    if cached_pose[model_type] is not None:
+        pose_estimator = cached_pose[model_type]
+    else:
+        pose_estimator = init_pose_estimator(
+            pose_config,
+            pose_checkpoint,
+            device=args.device,
+            cfg_options=dict(
+                model=dict(test_cfg=dict(output_heatmaps=draw_heatmap))))
+        cached_pose[model_type] = pose_estimator
 
     # input_type = 'image'
     # input_type = mimetypes.guess_type(args.input)[0].split('/')[0]
@@ -315,7 +336,7 @@ with gr.Blocks() as demo:
         gr.Markdown(news1)
         gr.Markdown('## Output')
         out_image = gr.Image(type='numpy')
-
+        gr.Examples(['./tests/data/coco/000000000785.jpg'], input_img)
         input_type = 'image'
         button.click(
             partial(predict, input_type=input_type),
