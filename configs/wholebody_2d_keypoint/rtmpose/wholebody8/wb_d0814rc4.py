@@ -113,6 +113,8 @@ data_root = 'data/'
 backend_args = dict(
     backend='petrel',
     path_mapping=dict({
+        f'{data_root}detection/coco/':
+        's254:s3://openmmlab/datasets/detection/coco/',
         f'{data_root}': 's3://openmmlab/datasets/',
     }))
 
@@ -371,7 +373,7 @@ for scene in ubody_scenes:
         data_root=data_root,
         data_mode=data_mode,
         ann_file=f'Ubody/annotations/{scene}/train_annotations.json',
-        data_prefix=dict(img='pose/Ubody/images/'),
+        data_prefix=dict(img='pose/UBody/images/'),
         pipeline=[],
         sample_interval=10)
     train_datasets.append(train_dataset)
