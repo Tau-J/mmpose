@@ -53,8 +53,6 @@ codec = dict(
     use_dark=False)
 
 # model settings
-load_from = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth'  # noqa
-
 model = dict(
     type='TopdownPoseEstimator',
     data_preprocessor=dict(
@@ -73,15 +71,14 @@ model = dict(
         channel_attention=True,
         norm_cfg=dict(type='BN'),
         act_cfg=dict(type='SiLU'),
-        # init_cfg=dict(
-        #     type='Pretrained',
-        #     prefix='backbone.',
-        #     checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
-        #     'rtmposev1/rtmpose-l_simcc-body7_pt-body7_420e-256x192-4dba18fc_20230504.pth'  # noqa
-        # )
-    ),
+        init_cfg=dict(
+            type='Pretrained',
+            prefix='backbone.',
+            checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
+            'rtmposev1/rtmpose-l_simcc-body7_pt-body7_420e-256x192-4dba18fc_20230504.pth'  # noqa
+        )),
     head=dict(
-        type='RTMCCHead',
+        type='RTMCCHead3',
         in_channels=1024,
         out_channels=num_keypoints,
         input_size=input_size,
@@ -352,15 +349,6 @@ dataset_posetrack = dict(
     ],
 )
 
-dataset_humanart = dict(
-    type='HumanArt21Dataset',
-    data_root=data_root,
-    data_mode=data_mode,
-    ann_file='HumanArt/annotations/training_humanart.json',
-    scenes=['real_human'],
-    data_prefix=dict(img='pose/'),
-    pipeline=[])
-
 ubody_scenes = [
     'Magic_show', 'Entertainment', 'ConductMusic', 'Online_class', 'TalkShow',
     'Speech', 'Fitness', 'Interview', 'Olympic', 'TVShow', 'Singing',
@@ -389,13 +377,12 @@ dataset_ubody = dict(
 
 train_datasets = [
     dataset_coco,
-    dataset_aic,
-    dataset_crowdpose,
-    dataset_mpii,
-    dataset_jhmdb,
+    # dataset_aic,
+    # dataset_crowdpose,
+    # dataset_mpii,
+    # dataset_jhmdb,
     dataset_halpe,
-    dataset_posetrack,
-    dataset_humanart,
+    # dataset_posetrack,
     dataset_ubody,
 ]
 
