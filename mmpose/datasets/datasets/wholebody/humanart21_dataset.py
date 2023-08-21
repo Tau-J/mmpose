@@ -1,27 +1,40 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from itertools import filterfalse
-from typing import List
-
 from mmpose.registry import DATASETS
-from .coco_wholebody_dataset import CocoWholeBodyDataset
+from ..body import HumanArtDataset
 
 
 @DATASETS.register_module()
-class UBody2dDataset(CocoWholeBodyDataset):
-    """Ubody2d dataset for pose estimation.
+class HumanArt21Dataset(HumanArtDataset):
+    """Human-Art dataset for pose estimation.
 
-    "One-Stage 3D Whole-Body Mesh Recovery with Component Aware Transformer",
-    CVPR'2023. More details can be found in the `paper
-    <https://arxiv.org/abs/2303.16160>`__ .
+    "Human-Art: A Versatile Human-Centric Dataset
+    Bridging Natural and Artificial Scenes", CVPR'2023.
+    More details can be found in the `paper
+    <https://arxiv.org/abs/2303.02760>`__ .
 
-    Ubody2D keypoints::
+    Human-Art keypoints::
 
-        0-16: 17 body keypoints,
-        17-22: 6 foot keypoints,
-        23-90: 68 face keypoints,
-        91-132: 42 hand keypoints
-
-        In total, we have 133 keypoints for wholebody pose estimation.
+        0: 'nose',
+        1: 'left_eye',
+        2: 'right_eye',
+        3: 'left_ear',
+        4: 'right_ear',
+        5: 'left_shoulder',
+        6: 'right_shoulder',
+        7: 'left_elbow',
+        8: 'right_elbow',
+        9: 'left_wrist',
+        10: 'right_wrist',
+        11: 'left_hip',
+        12: 'right_hip',
+        13: 'left_knee',
+        14: 'right_knee',
+        15: 'left_ankle',
+        16: 'right_ankle',
+        17: 'left_finger',
+        18: 'right_finger',
+        19: 'left_toe',
+        20: 'right_toe',
 
     Args:
         ann_file (str): Annotation file path. Default: ''.
@@ -59,42 +72,6 @@ class UBody2dDataset(CocoWholeBodyDataset):
         max_refetch (int, optional): If ``Basedataset.prepare_data`` get a
             None img. The maximum extra number of cycles to get a valid
             image. Default: 1000.
-        sample_interval (int, optional): The sample interval of the dataset.
-            Default: 1.
     """
 
-    METAINFO: dict = dict(from_file='configs/_base_/datasets/ubody2d.py')
-
-    def filter_data(self) -> List[dict]:
-        """Filter annotations according to filter_cfg. Defaults return full
-        ``data_list``.
-
-        If 'bbox_score_thr` in filter_cfg, the annotation with bbox_score below
-        the threshold `bbox_score_thr` will be filtered out.
-        """
-
-        data_list = self.data_list
-
-        if self.filter_cfg is None:
-            return data_list
-
-        # filter out annotations with a bbox_score below the threshold
-        if 'bbox_score_thr' in self.filter_cfg:
-
-            if self.data_mode != 'topdown':
-                raise ValueError(
-                    f'{self.__class__.__name__} is set to {self.data_mode} '
-                    'mode, while "bbox_score_thr" is only supported in '
-                    'topdown mode.')
-
-            thr = self.filter_cfg['bbox_score_thr']
-            data_list = list(
-                filterfalse(lambda ann: ann['bbox_score'] < thr, data_list))
-
-        if 'scenes' in self.filter_cfg:
-            scenes = self.filter_cfg['scenes']
-            for scene in scenes:
-                data_list = list(
-                    filter(lambda ann: scene in ann['img_path'], data_list))
-
-        return data_list
+    METAINFO: dict = dict(from_file='configs/_base_/datasets/humanart21.py')

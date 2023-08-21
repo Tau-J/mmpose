@@ -70,7 +70,7 @@ model = dict(
         widen_factor=1.,
         out_indices=(4, ),
         channel_attention=True,
-        norm_cfg=dict(type='SyncBN'),
+        norm_cfg=dict(type='BN'),
         act_cfg=dict(type='SiLU'),
         # init_cfg=dict(
         #     type='Pretrained',

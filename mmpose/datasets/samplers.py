@@ -137,6 +137,7 @@ class DynamicMultiSourceSampler(MultiSourceSampler):
                          seed)
         self.resample_interval = resample_interval
         self.mapping_metric_dataset = mapping_metric_dataset
+        self.ori_source_ratio = source_ratio
 
     def resample(self, mh):
         # examples:
@@ -147,15 +148,15 @@ class DynamicMultiSourceSampler(MultiSourceSampler):
         #     'coco-wholebody/lhand': [5, 6],
         #     'coco-wholebody/rhand': [5, 6]
         # }
-        metrics = {
-            m: mh.get_info(m) * 100.
-            for m in self.mapping_metric_dataset
-        }
+        metrics = {m: mh.get_info(m) for m in self.mapping_metric_dataset}
 
         lens_ = {}
         sums = {}
         for k, v in self.mapping_metric_dataset.items():
-            sums[k] = sum([len(self.dataset[i]) for i in v])
+            if self.ori_source_ratio is not None:
+                sums[k] = sum([self.ori_source_ratio[i] for i in v])
+            else:
+                sums[k] = sum([len(self.dataset[i]) for i in v])
             lens_[k] = sums[k] / metrics[k]
 
         new_source_ratio = [0.] * len(self.dataset)
@@ -187,7 +188,7 @@ class DynamicMultiSourceSampler(MultiSourceSampler):
 
         mh = MessageHub.get_current_instance()
         cur_epoch = mh.get_info('epoch')
-        if cur_epoch % self.resample_interval == 0:
+        if (cur_epoch + 1) % self.resample_interval == 0:
             self.resample(mh)
 
         for i in range(num_iters):

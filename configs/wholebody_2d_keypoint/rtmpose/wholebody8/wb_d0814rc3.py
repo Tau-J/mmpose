@@ -71,7 +71,7 @@ model = dict(
         widen_factor=1.,
         out_indices=(4, ),
         channel_attention=True,
-        norm_cfg=dict(type='SyncBN'),
+        norm_cfg=dict(type='BN'),
         act_cfg=dict(type='SiLU'),
         # init_cfg=dict(
         #     type='Pretrained',
@@ -114,6 +114,8 @@ data_root = 'data/'
 backend_args = dict(
     backend='petrel',
     path_mapping=dict({
+        f'{data_root}detection/coco/':
+        's254:s3://openmmlab/datasets/detection/coco/',
         f'{data_root}': 's3://openmmlab/datasets/',
     }))
 

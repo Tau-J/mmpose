@@ -53,6 +53,8 @@ codec = dict(
     use_dark=False)
 
 # model settings
+load_from = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth'  # noqa
+
 model = dict(
     type='TopdownPoseEstimator',
     data_preprocessor=dict(
@@ -71,12 +73,13 @@ model = dict(
         channel_attention=True,
         norm_cfg=dict(type='BN'),
         act_cfg=dict(type='SiLU'),
-        init_cfg=dict(
-            type='Pretrained',
-            prefix='backbone.',
-            checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
-            'rtmposev1/rtmpose-l_simcc-body7_pt-body7_420e-256x192-4dba18fc_20230504.pth'  # noqa
-        )),
+        # init_cfg=dict(
+        #     type='Pretrained',
+        #     prefix='backbone.',
+        #     checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
+        #     'rtmposev1/rtmpose-l_simcc-body7_pt-body7_420e-256x192-4dba18fc_20230504.pth'  # noqa
+        # )
+    ),
     head=dict(
         type='RTMCCHead',
         in_channels=1024,
@@ -349,15 +352,14 @@ dataset_posetrack = dict(
     ],
 )
 
-train_datasets = [
-    dataset_coco,
-    # dataset_aic,
-    # dataset_crowdpose,
-    # dataset_mpii,
-    # dataset_jhmdb,
-    dataset_halpe,
-    # dataset_posetrack,
-]
+dataset_humanart = dict(
+    type='HumanArt21Dataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='HumanArt/annotations/train_humanart.json',
+    scenes=['real_human'],
+    data_prefix=dict(img='pose/'),
+    pipeline=[])
 
 ubody_scenes = [
     'Magic_show', 'Entertainment', 'ConductMusic', 'Online_class', 'TalkShow',
@@ -365,8 +367,9 @@ ubody_scenes = [
     'SignLanguage', 'Movie', 'LiveVlog', 'VideoConference'
 ]
 
+ubody_datasets = []
 for scene in ubody_scenes:
-    train_dataset = dict(
+    each = dict(
         type='UBody2dDataset',
         data_root=data_root,
         data_mode=data_mode,
@@ -374,7 +377,27 @@ for scene in ubody_scenes:
         data_prefix=dict(img='pose/UBody/images/'),
         pipeline=[],
         sample_interval=10)
-    train_datasets.append(train_dataset)
+    ubody_datasets.append(each)
+
+dataset_ubody = dict(
+    type='CombinedDataset',
+    metainfo=dict(from_file='configs/_base_/datasets/ubody2d.py'),
+    datasets=ubody_datasets,
+    pipeline=[],
+    test_mode=False,
+)
+
+train_datasets = [
+    dataset_coco,
+    dataset_aic,
+    dataset_crowdpose,
+    dataset_mpii,
+    dataset_jhmdb,
+    dataset_halpe,
+    dataset_posetrack,
+    dataset_humanart,
+    dataset_ubody,
+]
 
 # data loaders
 train_dataloader = dict(
