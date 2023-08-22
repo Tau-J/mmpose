@@ -258,6 +258,9 @@ class SimCCLabel(BaseKeypointCodec):
         W = np.around(w * self.simcc_split_ratio).astype(int)
         H = np.around(h * self.simcc_split_ratio).astype(int)
 
+        if len(self.sigma.shape) == 1:
+            self.sigma = np.tile(self.sigma, (K, 1))
+
         keypoints_split, keypoint_weights = self._map_coordinates(
             keypoints, keypoints_visible)
 
