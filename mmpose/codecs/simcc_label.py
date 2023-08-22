@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from itertools import product
-from typing import Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -61,7 +61,7 @@ class SimCCLabel(BaseKeypointCodec):
     def __init__(self,
                  input_size: Tuple[int, int],
                  smoothing_type: str = 'gaussian',
-                 sigma: Union[float, int, Tuple[float]] = 6.0,
+                 sigma: Union[float, int, Tuple[float], List[float]] = 6.0,
                  simcc_split_ratio: float = 2.0,
                  label_smooth_weight: float = 0.0,
                  normalize: bool = True,
@@ -77,8 +77,13 @@ class SimCCLabel(BaseKeypointCodec):
 
         if isinstance(sigma, (float, int)):
             self.sigma = np.array([sigma, sigma])
-        else:
+        elif isinstance(sigma, tuple):
+            assert len(sigma) == 2, 'sigma should be a tuple of 2 elements'
             self.sigma = np.array(sigma)
+        elif isinstance(sigma, list):
+            self.sigma = np.array([[s, s] for s in sigma])
+        else:
+            raise NotImplementedError
 
         if self.smoothing_type not in {'gaussian', 'standard'}:
             raise ValueError(
@@ -167,6 +172,8 @@ class SimCCLabel(BaseKeypointCodec):
             scores = scores[None, :]
 
         if self.use_dark:
+            assert self.sigma.shape[0] == 2, (
+                'sigma should be a tuple of 2 elements')
             x_blur = int((self.sigma[0] * 20 - 7) // 3)
             y_blur = int((self.sigma[1] * 20 - 7) // 3)
             x_blur -= int((x_blur % 2) == 0)
@@ -272,8 +279,8 @@ class SimCCLabel(BaseKeypointCodec):
             mu = keypoints_split[n, k]
 
             # check that the gaussian has in-bounds part
-            left, top = mu - radius
-            right, bottom = mu + radius + 1
+            left, top = mu - radius[k, :]
+            right, bottom = mu + radius[k, :] + 1
 
             if left >= W or top >= H or right < 0 or bottom < 0:
                 keypoint_weights[n, k] = 0
@@ -281,8 +288,10 @@ class SimCCLabel(BaseKeypointCodec):
 
             mu_x, mu_y = mu
 
-            target_x[n, k] = np.exp(-((x - mu_x)**2) / (2 * self.sigma[0]**2))
-            target_y[n, k] = np.exp(-((y - mu_y)**2) / (2 * self.sigma[1]**2))
+            target_x[n,
+                     k] = np.exp(-((x - mu_x)**2) / (2 * self.sigma[k, 0]**2))
+            target_y[n,
+                     k] = np.exp(-((y - mu_y)**2) / (2 * self.sigma[k, 1]**2))
 
         if self.normalize:
             norm_value = self.sigma * np.sqrt(np.pi * 2)
