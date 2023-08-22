@@ -257,6 +257,9 @@ posetrack_coco133 = [
     (16, 16),
 ]
 
+humanart_coco133 = [(i, i) for i in range(17)] + [(17, 99), (18, 120),
+                                                  (19, 17), (20, 20)]
+
 # train datasets
 dataset_coco = dict(
     type=dataset_type,
@@ -357,9 +360,14 @@ dataset_humanart = dict(
     data_root=data_root,
     data_mode=data_mode,
     ann_file='HumanArt/annotations/training_humanart.json',
-    scenes=['real_human'],
+    filter_cfg=dict(scenes=['real_human']),
     data_prefix=dict(img='pose/'),
-    pipeline=[])
+    pipeline=[
+        dict(
+            type='KeypointConverter',
+            num_keypoints=num_keypoints,
+            mapping=humanart_coco133)
+    ])
 
 ubody_scenes = [
     'Magic_show', 'Entertainment', 'ConductMusic', 'Online_class', 'TalkShow',
@@ -414,125 +422,6 @@ train_dataloader = dict(
         test_mode=False,
     ))
 
-# val datasets
-# val_coco = dict(
-#     type=dataset_type,
-#     data_root=data_root,
-#     data_mode=data_mode,
-#     ann_file='coco/annotations/coco_wholebody_val_v1.0.json',
-#     data_prefix=dict(img='detection/coco/val2017/'),
-#     pipeline=[],
-# )
-
-# val_aic = dict(
-#     type='AicDataset',
-#     data_root=data_root,
-#     data_mode=data_mode,
-#     ann_file='aic/annotations/aic_val.json',
-#     data_prefix=dict(
-#         img='pose/ai_challenge/ai_challenger_keypoint'
-#         '_validation_20170911/keypoint_validation_images_20170911/'),
-#     pipeline=[
-#         dict(
-#             type='KeypointConverter',
-#             num_keypoints=num_keypoints,
-#             mapping=aic_coco133)
-#     ],
-# )
-
-# val_crowdpose = dict(
-#     type='CrowdPoseDataset',
-#     data_root=data_root,
-#     data_mode=data_mode,
-#     ann_file='crowdpose/annotations/mmpose_crowdpose_test.json',
-#     data_prefix=dict(img='pose/CrowdPose/images/'),
-#     pipeline=[
-#         dict(
-#             type='KeypointConverter',
-#             num_keypoints=num_keypoints,
-#             mapping=crowdpose_coco133)
-#     ],
-# )
-
-# val_mpii = dict(
-#     type='MpiiDataset',
-#     data_root=data_root,
-#     data_mode=data_mode,
-#     ann_file='mpii/annotations/mpii_val.json',
-#     data_prefix=dict(img='pose/MPI/images/'),
-#     pipeline=[
-#         dict(
-#             type='KeypointConverter',
-#             num_keypoints=num_keypoints,
-#             mapping=mpii_coco133)
-#     ],
-# )
-
-# val_jhmdb = dict(
-#     type='JhmdbDataset',
-#     data_root=data_root,
-#     data_mode=data_mode,
-#     ann_file='jhmdb/annotations/Sub1_test.json',
-#     data_prefix=dict(img='pose/JHMDB/'),
-#     pipeline=[
-#         dict(
-#             type='KeypointConverter',
-#             num_keypoints=num_keypoints,
-#             mapping=jhmdb_coco133)
-#     ],
-# )
-
-# val_halpe = dict(
-#     type='HalpeDataset',
-#     data_root=data_root,
-#     data_mode=data_mode,
-#     ann_file='halpe/annotations/halpe_val_v1.json',
-#     data_prefix=dict(img='detection/coco/val2017/'),
-#     pipeline=[
-#         dict(
-#             type='KeypointConverter',
-#             num_keypoints=num_keypoints,
-#             mapping=halpe_coco133)
-#     ],
-# )
-
-# val_posetrack = dict(
-#     type='PoseTrack18Dataset',
-#     data_root=data_root,
-#     data_mode=data_mode,
-#     ann_file='posetrack18/annotations/posetrack18_val.json',
-#     data_prefix=dict(img='pose/PoseChallenge2018/'),
-#     pipeline=[
-#         dict(
-#             type='KeypointConverter',
-#             num_keypoints=num_keypoints,
-#             mapping=posetrack_coco133)
-#     ],
-# )
-
-# val_dataloader = dict(
-#     batch_size=val_batch_size,
-#     num_workers=10,
-#     persistent_workers=True,
-#     drop_last=False,
-#     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
-#     dataset=dict(
-#         type='CombinedDataset',
-#         metainfo=dict(from_file='configs/_base_/datasets/halpe26.py'),
-#         datasets=[
-#             val_coco,
-#             val_aic,
-#             val_crowdpose,
-#             val_mpii,
-#             val_jhmdb,
-#             val_halpe,
-#             val_ochuman,
-#             val_posetrack,
-#         ],
-#         pipeline=val_pipeline,
-#         test_mode=True,
-#     ))
-
 val_dataloader = dict(
     batch_size=val_batch_size,
     num_workers=4,
@@ -542,7 +431,7 @@ val_dataloader = dict(
     dataset=dict(
         type='CocoWholeBodyDataset',
         ann_file='data/coco/annotations/coco_wholebody_val_v1.0.json',
-        data_prefix=dict(img='detection/coco/val2017/'),
+        data_prefix=dict(img='data/detection/coco/val2017/'),
         pipeline=val_pipeline,
         bbox_file='data/coco/person_detection_results/'
         'COCO_val2017_detections_AP_H_56_person.json',

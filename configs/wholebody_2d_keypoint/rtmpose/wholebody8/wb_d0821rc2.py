@@ -423,7 +423,7 @@ val_dataloader = dict(
     dataset=dict(
         type='CocoWholeBodyDataset',
         ann_file='data/coco/annotations/coco_wholebody_val_v1.0.json',
-        data_prefix=dict(img='detection/coco/val2017/'),
+        data_prefix=dict(img='data/detection/coco/val2017/'),
         pipeline=val_pipeline,
         bbox_file='data/coco/person_detection_results/'
         'COCO_val2017_detections_AP_H_56_person.json',

@@ -1,10 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import os.path as osp
 from itertools import filterfalse
-from typing import Callable, List, Optional, Sequence, Tuple, Union
-
-from mmengine.fileio import exists, get_local_path
-from xtcocotools.coco import COCO
+from typing import List
 
 from mmpose.registry import DATASETS
 from ..base import BaseCocoStyleDataset
@@ -78,76 +74,6 @@ class HumanArtDataset(BaseCocoStyleDataset):
     """
 
     METAINFO: dict = dict(from_file='configs/_base_/datasets/humanart.py')
-
-    def __init__(self,
-                 ann_file: str = '',
-                 bbox_file: Optional[str] = None,
-                 data_mode: str = 'topdown',
-                 metainfo: Optional[dict] = None,
-                 data_root: Optional[str] = None,
-                 data_prefix: dict = dict(img=''),
-                 filter_cfg: Optional[dict] = None,
-                 indices: Optional[Union[int, Sequence[int]]] = None,
-                 serialize_data: bool = True,
-                 pipeline: List[Union[dict, Callable]] = [],
-                 test_mode: bool = False,
-                 lazy_init: bool = False,
-                 max_refetch: int = 1000,
-                 sample_interval: int = 1):
-        super().__init__(
-            ann_file=ann_file,
-            bbox_file=bbox_file,
-            data_mode=data_mode,
-            metainfo=metainfo,
-            data_root=data_root,
-            data_prefix=data_prefix,
-            filter_cfg=filter_cfg,
-            indices=indices,
-            serialize_data=serialize_data,
-            pipeline=pipeline,
-            test_mode=test_mode,
-            lazy_init=lazy_init,
-            max_refetch=max_refetch,
-            sample_interval=sample_interval)
-
-    def _load_annotations(self) -> Tuple[List[dict], List[dict]]:
-        """Load data from annotations in COCO format."""
-
-        assert exists(self.ann_file), 'Annotation file does not exist'
-
-        with get_local_path(self.ann_file) as local_path:
-            self.coco = COCO(local_path)
-        # set the metainfo about categories, which is a list of dict
-        # and each dict contains the 'id', 'name', etc. about this category
-        self._metainfo['CLASSES'] = self.coco.loadCats(self.coco.getCatIds())
-
-        instance_list = []
-        image_list = []
-
-        for img_id in self.coco.getImgIds():
-            if img_id % self.sample_interval != 0:
-                continue
-            img = self.coco.loadImgs(img_id)[0]
-            img.update({
-                'img_id':
-                img_id,
-                'img_path':
-                osp.join(self.data_prefix['img'], img['file_name']),
-            })
-            image_list.append(img)
-
-            ann_ids = self.coco.getAnnIds(imgIds=img_id)
-            for ann in self.coco.loadAnns(ann_ids):
-
-                instance_info = self.parse_data_info(
-                    dict(raw_ann_info=ann, raw_img_info=img))
-
-                # skip invalid instance annotation.
-                if not instance_info:
-                    continue
-
-                instance_list.append(instance_info)
-        return instance_list, image_list
 
     def filter_data(self) -> List[dict]:
         """Filter annotations according to filter_cfg. Defaults return full
