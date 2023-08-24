@@ -80,7 +80,7 @@ model = dict(
         # )
     ),
     head=dict(
-        type='RTMCCHead',
+        type='RTMCCHead2',
         in_channels=1024,
         out_channels=num_keypoints,
         input_size=input_size,
@@ -98,6 +98,7 @@ model = dict(
             pos_enc=False),
         loss=dict(
             type='KLDiscretLoss',
+            use_2d=True,
             use_target_weight=True,
             beta=10.,
             label_softmax=True),

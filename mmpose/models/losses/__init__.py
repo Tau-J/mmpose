@@ -4,13 +4,13 @@ from .bbox_loss import IoULoss
 from .classification_loss import BCELoss, JSDiscretLoss, KLDiscretLoss
 from .fea_dis_loss import FeaLoss
 from .heatmap_loss import (AdaptiveWingLoss, KeypointMSELoss,
-                           KeypointOHKMMSELoss)
+                           KeypointOHKMMSELoss,)
 from .logit_dis_loss import KDLoss
 from .loss_wrappers import CombinedLoss, MultipleLossWrapper
 from .regression_loss import (BoneLoss, L1Loss, MPJPELoss,
                               MPJPEVelocityJointLoss, MSELoss, OKSLoss,
                               RLELoss, SemiSupervisionLoss, SmoothL1Loss,
-                              SoftWeightSmoothL1Loss, SoftWingLoss, WingLoss)
+                              SoftWeightSmoothL1Loss, SoftWingLoss, WingLoss,)
 
 __all__ = [
     'KeypointMSELoss', 'KeypointOHKMMSELoss', 'SmoothL1Loss', 'WingLoss',

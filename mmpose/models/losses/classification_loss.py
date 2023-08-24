@@ -151,11 +151,16 @@ class KLDiscretLoss(nn.Module):
             Different joint types may have different target weights.
     """
 
-    def __init__(self, beta=1.0, label_softmax=False, use_target_weight=True):
+    def __init__(self,
+                 beta=1.0,
+                 label_softmax=False,
+                 use_target_weight=True,
+                 use_2d=False):
         super(KLDiscretLoss, self).__init__()
         self.beta = beta
         self.label_softmax = label_softmax
         self.use_target_weight = use_target_weight
+        self.use_2d = use_2d
 
         self.log_softmax = nn.LogSoftmax(dim=1)
         self.kl_loss = nn.KLDivLoss(reduction='none')
@@ -186,11 +191,33 @@ class KLDiscretLoss(nn.Module):
         else:
             weight = 1.
 
-        for pred, target in zip(pred_simcc, gt_simcc):
+        if self.use_2d:
+            pred_x, pred_y = pred_simcc
+            target_x, target_y = gt_simcc
+            B, K, _ = pred_x.shape
+            # B, K, Wx -> B, K, Wx, 1
+            x = pred_x.reshape(B, K, 1, -1)
+            # B, K, Wy -> B, K, 1, Wy
+            y = pred_y.reshape(B, K, -1, 1)
+            # B, K, Wx, Wy -> B, K, WxWy
+            pred = torch.matmul(y, x).flatten(2)
             pred = pred.reshape(-1, pred.size(-1))
-            target = target.reshape(-1, target.size(-1))
 
+            # B, K, Wx -> B, K, Wx, 1
+            tx = target_x.reshape(B, K, 1, -1)
+            # B, K, Wy -> B, K, 1, Wy
+            ty = target_y.reshape(B, K, -1, 1)
+            # B, K, Wx, Wy -> B, K, WxWy
+            target = torch.matmul(ty, tx).flatten(2)
+            target = target.reshape(-1, target.size(-1))
             loss += self.criterion(pred, target).mul(weight).sum()
+
+        else:
+            for pred, target in zip(pred_simcc, gt_simcc):
+                pred = pred.reshape(-1, pred.size(-1))
+                target = target.reshape(-1, target.size(-1))
+
+                loss += self.criterion(pred, target).mul(weight).sum()
 
         return loss / num_joints
 

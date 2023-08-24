@@ -53,7 +53,6 @@ codec = dict(
     use_dark=False)
 
 # model settings
-load_from = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth'  # noqa
 model = dict(
     type='TopdownPoseEstimator',
     data_preprocessor=dict(
@@ -68,19 +67,22 @@ model = dict(
         expand_ratio=0.5,
         deepen_factor=1.,
         widen_factor=1.,
-        out_indices=(4, ),
+        out_indices=(
+            2,
+            4,
+        ),
         channel_attention=True,
         norm_cfg=dict(type='BN'),
         act_cfg=dict(type='SiLU'),
-        # init_cfg=dict(
-        #     type='Pretrained',
-        #     prefix='backbone.',
-        #     checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
-        #     'rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth'  # noqa
-        # )
-    ),
+        init_cfg=dict(
+            type='Pretrained',
+            prefix='backbone.',
+            checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
+            'rtmposev1/rtmpose-l_simcc-body7_pt-body7_420e-256x192-4dba18f'
+            'c_20230504.pth'  # noqa
+        )),
     head=dict(
-        type='RTMCCHead',
+        type='RTMCCHead4',
         in_channels=1024,
         out_channels=num_keypoints,
         input_size=input_size,
