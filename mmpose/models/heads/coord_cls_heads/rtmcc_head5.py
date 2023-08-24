@@ -9,7 +9,7 @@ from torch import Tensor, nn
 
 from mmpose.codecs.utils import get_simcc_normalized
 from mmpose.evaluation.functional import simcc_pck_accuracy
-from mmpose.models.utils.rtmcc_block import RTMCCBlock, ScaleNorm
+from mmpose.models.utils.rtmcc_block import RTMCCBlock2, ScaleNorm
 from mmpose.models.utils.tta import flip_vectors
 from mmpose.registry import KEYPOINT_CODECS, MODELS
 from mmpose.utils.tensor_utils import to_numpy
@@ -21,7 +21,7 @@ OptIntSeq = Optional[Sequence[int]]
 
 
 @MODELS.register_module()
-class RTMCCHead(BaseHead):
+class RTMCCHead5(BaseHead):
     """Top-down head introduced in RTMPose (2023). The head is composed of a
     large-kernel convolutional layer, a fully-connected layer and a Gated
     Attention Unit to generate 1d representation from low-resolution feature
@@ -71,8 +71,7 @@ class RTMCCHead(BaseHead):
             drop_path=0.,
             act_fn='ReLU',
             use_rel_bias=False,
-            pos_enc=False,
-            use_dwc=False),
+            pos_enc=False),
         loss: ConfigType = dict(type='KLDiscretLoss', use_target_weight=True),
         decoder: OptConfigType = None,
         init_cfg: OptConfigType = None,
@@ -116,7 +115,7 @@ class RTMCCHead(BaseHead):
         W = int(self.input_size[0] * self.simcc_split_ratio)
         H = int(self.input_size[1] * self.simcc_split_ratio)
 
-        self.gau = RTMCCBlock(
+        self.gau = RTMCCBlock2(
             self.out_channels,
             gau_cfg['hidden_dims'],
             gau_cfg['hidden_dims'],
@@ -127,8 +126,7 @@ class RTMCCHead(BaseHead):
             attn_type='self-attn',
             act_fn=gau_cfg['act_fn'],
             use_rel_bias=gau_cfg['use_rel_bias'],
-            pos_enc=gau_cfg['pos_enc'],
-            use_dwc=gau_cfg['use_dwc'])
+            pos_enc=gau_cfg['pos_enc'])
 
         self.cls_x = nn.Linear(gau_cfg['hidden_dims'], W, bias=False)
         self.cls_y = nn.Linear(gau_cfg['hidden_dims'], H, bias=False)

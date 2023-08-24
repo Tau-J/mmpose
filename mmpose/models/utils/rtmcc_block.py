@@ -548,9 +548,3 @@ class RTMCCBlock2(nn.Module):
             return self.res_scale(res_shortcut) + main_branch
         else:
             return self.drop_path(self._forward(x))
-
-
-b = RTMCCBlock2(17, 256, 256)
-inputs = torch.rand(2, 17, 256)
-outputs = b(inputs)
-print(outputs.shape)
