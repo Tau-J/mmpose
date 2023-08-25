@@ -173,6 +173,11 @@ class RTMCCBlock(nn.Module):
         self.pos_enc = pos_enc
         self.use_dwc = use_dwc
 
+        self.drop_path = DropPath(drop_path) \
+            if drop_path > 0. else nn.Identity()
+
+        self.e = int(in_token_dims * expansion_factor)
+
         if use_dwc:
             self.dwc = nn.Conv1d(
                 in_channels=self.e,
@@ -182,10 +187,6 @@ class RTMCCBlock(nn.Module):
                 padding=2,
                 groups=self.e)
 
-        self.drop_path = DropPath(drop_path) \
-            if drop_path > 0. else nn.Identity()
-
-        self.e = int(in_token_dims * expansion_factor)
         if use_rel_bias:
             if attn_type == 'self-attn':
                 self.w = nn.Parameter(
@@ -300,7 +301,8 @@ class RTMCCBlock(nn.Module):
         x = torch.bmm(kernel, v)
 
         if self.use_dwc:
-            x = x + self.dwc(v)
+            v = v.permute(0, 2, 1)
+            x = x + self.dwc(v).permute(0, 2, 1)
 
         x = u * x
         # [B, K, e] -> [B, K, out_token_dims]
