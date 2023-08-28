@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from mmpose.registry import MODELS
+from .fea_dis_loss import DISTLoss
 
 
 @MODELS.register_module()
@@ -155,6 +156,7 @@ class KLDiscretLoss(nn.Module):
                  beta=1.0,
                  label_softmax=False,
                  use_target_weight=True,
+                 criterion='kl',
                  use_2d=False):
         super(KLDiscretLoss, self).__init__()
         self.beta = beta
@@ -163,14 +165,14 @@ class KLDiscretLoss(nn.Module):
         self.use_2d = use_2d
 
         self.log_softmax = nn.LogSoftmax(dim=1)
-        self.kl_loss = nn.KLDivLoss(reduction='none')
+        self.loss_func = nn.KLDivLoss(reduction='none')
 
     def criterion(self, dec_outs, labels):
         """Criterion function."""
         log_pt = self.log_softmax(dec_outs * self.beta)
         if self.label_softmax:
             labels = F.softmax(labels * self.beta, dim=1)
-        loss = torch.mean(self.kl_loss(log_pt, labels), dim=1)
+        loss = torch.mean(self.loss_func(log_pt, labels), dim=1)
         return loss
 
     def forward(self, pred_simcc, gt_simcc, target_weight):
@@ -218,6 +220,53 @@ class KLDiscretLoss(nn.Module):
                 target = target.reshape(-1, target.size(-1))
 
                 loss += self.criterion(pred, target).mul(weight).sum()
+
+        return loss / num_joints
+
+
+@MODELS.register_module()
+class SimCCDISTLoss(nn.Module):
+    """Discrete KL Divergence loss for SimCC with Gaussian Label Smoothing.
+    Modified from `the official implementation.
+
+    <https://github.com/leeyegy/SimCC>`_.
+    Args:
+        beta (float): Temperature factor of Softmax.
+        label_softmax (bool): Whether to use Softmax on labels.
+        use_target_weight (bool): Option to use weighted loss.
+            Different joint types may have different target weights.
+    """
+
+    def __init__(self, tau=1.0, use_target_weight=True):
+        super(SimCCDISTLoss, self).__init__()
+        self.use_target_weight = use_target_weight
+
+        self.log_softmax = nn.LogSoftmax(dim=1)
+        self.loss_func = DISTLoss(tau=tau)
+
+    def forward(self, pred_simcc, gt_simcc, target_weight):
+        """Forward function.
+
+        Args:
+            pred_simcc (Tuple[Tensor, Tensor]): Predicted SimCC vectors of
+                x-axis and y-axis.
+            gt_simcc (Tuple[Tensor, Tensor]): Target representations.
+            target_weight (torch.Tensor[N, K] or torch.Tensor[N]):
+                Weights across different labels.
+        """
+        num_joints = pred_simcc[0].size(1)
+        loss = 0
+
+        if self.use_target_weight:
+            weight = target_weight.reshape(-1)
+        else:
+            weight = 1.
+
+        for pred, target in zip(pred_simcc, gt_simcc):
+            pred = pred.reshape(-1, pred.size(-1)).mul(weight[:, None])
+            target = target.reshape(-1, target.size(-1)).mul(weight[:, None])
+
+            loss = loss + self.loss_func(pred, target)
 
         return loss / num_joints
 

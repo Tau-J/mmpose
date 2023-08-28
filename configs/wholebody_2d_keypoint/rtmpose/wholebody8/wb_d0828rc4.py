@@ -80,7 +80,7 @@ model = dict(
         # )
     ),
     head=dict(
-        type='RTMCCHead2',
+        type='RTMCCHead',
         in_channels=1024,
         out_channels=num_keypoints,
         input_size=input_size,
@@ -99,7 +99,7 @@ model = dict(
         loss=dict(
             type='KLDiscretLoss',
             use_target_weight=True,
-            beta=10.,
+            beta=1.,
             label_softmax=True),
         decoder=codec),
     test_cfg=dict(flip_test=True))
@@ -117,6 +117,7 @@ backend_args = dict(
         's254:s3://openmmlab/datasets/detection/coco/',
         f'{data_root}': 's3://openmmlab/datasets/',
     }))
+
 # pipelines
 train_pipeline = [
     dict(type='LoadImage', backend_args=backend_args),
@@ -530,8 +531,7 @@ test_dataloader = val_dataloader
 
 # hooks
 default_hooks = dict(
-    checkpoint=dict(save_best='coco-wholebody/AP', rule='greater'),
-    badcase=dict(backend_args=backend_args))
+    checkpoint=dict(save_best='coco-wholebody/AP', rule='greater'))
 
 custom_hooks = [
     dict(

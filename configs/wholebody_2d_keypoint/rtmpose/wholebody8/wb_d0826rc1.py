@@ -68,7 +68,6 @@ model = dict(
         expand_ratio=0.5,
         deepen_factor=1.,
         widen_factor=1.,
-        out_indices=(4, ),
         channel_attention=True,
         norm_cfg=dict(type='BN'),
         act_cfg=dict(type='SiLU'),
@@ -79,9 +78,17 @@ model = dict(
         #     'rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth'  # noqa
         # )
     ),
+    neck=dict(
+        type='CSPNeXtPAFPN',
+        in_channels=[256, 512, 1024],
+        out_channels=256,
+        num_csp_blocks=3,
+        expand_ratio=0.5,
+        norm_cfg=dict(type='SyncBN'),
+        act_cfg=dict(type='SiLU', inplace=True)),
     head=dict(
-        type='RTMCCHead2',
-        in_channels=1024,
+        type='RTMCCHead',
+        in_channels=256,
         out_channels=num_keypoints,
         input_size=input_size,
         in_featuremap_size=tuple([s // 32 for s in input_size]),
@@ -117,6 +124,7 @@ backend_args = dict(
         's254:s3://openmmlab/datasets/detection/coco/',
         f'{data_root}': 's3://openmmlab/datasets/',
     }))
+
 # pipelines
 train_pipeline = [
     dict(type='LoadImage', backend_args=backend_args),
@@ -530,8 +538,7 @@ test_dataloader = val_dataloader
 
 # hooks
 default_hooks = dict(
-    checkpoint=dict(save_best='coco-wholebody/AP', rule='greater'),
-    badcase=dict(backend_args=backend_args))
+    checkpoint=dict(save_best='coco-wholebody/AP', rule='greater'))
 
 custom_hooks = [
     dict(

@@ -52,6 +52,20 @@ codec = dict(
     normalize=False,
     use_dark=False)
 
+wholebody_tau = [
+    1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+    1.0, 1.0, 1.0, 1.0, 1.0, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05,
+    0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05,
+    0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05,
+    0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05,
+    0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05,
+    0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05,
+    0.05, 0.05, 0.05, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+    1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+    1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+    1.0
+]
+
 # model settings
 load_from = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth'  # noqa
 model = dict(
@@ -80,7 +94,7 @@ model = dict(
         # )
     ),
     head=dict(
-        type='RTMCCHead2',
+        type='RTMCCHead',
         in_channels=1024,
         out_channels=num_keypoints,
         input_size=input_size,
@@ -97,10 +111,10 @@ model = dict(
             use_rel_bias=False,
             pos_enc=False),
         loss=dict(
-            type='KLDiscretLoss',
+            type='SimCCDISTLoss',
+            tau=wholebody_tau,
             use_target_weight=True,
-            beta=10.,
-            label_softmax=True),
+        ),
         decoder=codec),
     test_cfg=dict(flip_test=True))
 
@@ -117,6 +131,7 @@ backend_args = dict(
         's254:s3://openmmlab/datasets/detection/coco/',
         f'{data_root}': 's3://openmmlab/datasets/',
     }))
+
 # pipelines
 train_pipeline = [
     dict(type='LoadImage', backend_args=backend_args),
@@ -392,125 +407,6 @@ train_dataloader = dict(
         test_mode=False,
     ))
 
-# val datasets
-# val_coco = dict(
-#     type=dataset_type,
-#     data_root=data_root,
-#     data_mode=data_mode,
-#     ann_file='coco/annotations/coco_wholebody_val_v1.0.json',
-#     data_prefix=dict(img='detection/coco/val2017/'),
-#     pipeline=[],
-# )
-
-# val_aic = dict(
-#     type='AicDataset',
-#     data_root=data_root,
-#     data_mode=data_mode,
-#     ann_file='aic/annotations/aic_val.json',
-#     data_prefix=dict(
-#         img='pose/ai_challenge/ai_challenger_keypoint'
-#         '_validation_20170911/keypoint_validation_images_20170911/'),
-#     pipeline=[
-#         dict(
-#             type='KeypointConverter',
-#             num_keypoints=num_keypoints,
-#             mapping=aic_coco133)
-#     ],
-# )
-
-# val_crowdpose = dict(
-#     type='CrowdPoseDataset',
-#     data_root=data_root,
-#     data_mode=data_mode,
-#     ann_file='crowdpose/annotations/mmpose_crowdpose_test.json',
-#     data_prefix=dict(img='pose/CrowdPose/images/'),
-#     pipeline=[
-#         dict(
-#             type='KeypointConverter',
-#             num_keypoints=num_keypoints,
-#             mapping=crowdpose_coco133)
-#     ],
-# )
-
-# val_mpii = dict(
-#     type='MpiiDataset',
-#     data_root=data_root,
-#     data_mode=data_mode,
-#     ann_file='mpii/annotations/mpii_val.json',
-#     data_prefix=dict(img='pose/MPI/images/'),
-#     pipeline=[
-#         dict(
-#             type='KeypointConverter',
-#             num_keypoints=num_keypoints,
-#             mapping=mpii_coco133)
-#     ],
-# )
-
-# val_jhmdb = dict(
-#     type='JhmdbDataset',
-#     data_root=data_root,
-#     data_mode=data_mode,
-#     ann_file='jhmdb/annotations/Sub1_test.json',
-#     data_prefix=dict(img='pose/JHMDB/'),
-#     pipeline=[
-#         dict(
-#             type='KeypointConverter',
-#             num_keypoints=num_keypoints,
-#             mapping=jhmdb_coco133)
-#     ],
-# )
-
-# val_halpe = dict(
-#     type='HalpeDataset',
-#     data_root=data_root,
-#     data_mode=data_mode,
-#     ann_file='halpe/annotations/halpe_val_v1.json',
-#     data_prefix=dict(img='detection/coco/val2017/'),
-#     pipeline=[
-#         dict(
-#             type='KeypointConverter',
-#             num_keypoints=num_keypoints,
-#             mapping=halpe_coco133)
-#     ],
-# )
-
-# val_posetrack = dict(
-#     type='PoseTrack18Dataset',
-#     data_root=data_root,
-#     data_mode=data_mode,
-#     ann_file='posetrack18/annotations/posetrack18_val.json',
-#     data_prefix=dict(img='pose/PoseChallenge2018/'),
-#     pipeline=[
-#         dict(
-#             type='KeypointConverter',
-#             num_keypoints=num_keypoints,
-#             mapping=posetrack_coco133)
-#     ],
-# )
-
-# val_dataloader = dict(
-#     batch_size=val_batch_size,
-#     num_workers=10,
-#     persistent_workers=True,
-#     drop_last=False,
-#     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
-#     dataset=dict(
-#         type='CombinedDataset',
-#         metainfo=dict(from_file='configs/_base_/datasets/halpe26.py'),
-#         datasets=[
-#             val_coco,
-#             val_aic,
-#             val_crowdpose,
-#             val_mpii,
-#             val_jhmdb,
-#             val_halpe,
-#             val_ochuman,
-#             val_posetrack,
-#         ],
-#         pipeline=val_pipeline,
-#         test_mode=True,
-#     ))
-
 val_dataloader = dict(
     batch_size=val_batch_size,
     num_workers=4,
@@ -530,8 +426,7 @@ test_dataloader = val_dataloader
 
 # hooks
 default_hooks = dict(
-    checkpoint=dict(save_best='coco-wholebody/AP', rule='greater'),
-    badcase=dict(backend_args=backend_args))
+    checkpoint=dict(save_best='coco-wholebody/AP', rule='greater'))
 
 custom_hooks = [
     dict(

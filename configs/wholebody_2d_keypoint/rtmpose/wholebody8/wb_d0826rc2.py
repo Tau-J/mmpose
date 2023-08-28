@@ -53,7 +53,7 @@ codec = dict(
     use_dark=False)
 
 # model settings
-load_from = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth'  # noqa
+# load_from = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-m_simcc-ucoco_dw-ucoco_270e-256x192-c8b76419_20230728.pth'  # noqa
 model = dict(
     type='TopdownPoseEstimator',
     data_preprocessor=dict(
@@ -66,22 +66,22 @@ model = dict(
         type='CSPNeXt',
         arch='P5',
         expand_ratio=0.5,
-        deepen_factor=1.,
-        widen_factor=1.,
+        deepen_factor=0.67,
+        widen_factor=0.75,
         out_indices=(4, ),
         channel_attention=True,
-        norm_cfg=dict(type='BN'),
+        norm_cfg=dict(type='SyncBN'),
         act_cfg=dict(type='SiLU'),
-        # init_cfg=dict(
-        #     type='Pretrained',
-        #     prefix='backbone.',
-        #     checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
-        #     'rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth'  # noqa
-        # )
-    ),
+        init_cfg=dict(
+            type='Pretrained',
+            prefix='backbone.',
+            checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
+            'rtmposev1/'
+            'rtmpose-m_simcc-ucoco_dw-ucoco_270e-256x192-c8b76419_20230728.pth'
+        )),
     head=dict(
-        type='RTMCCHead2',
-        in_channels=1024,
+        type='RTMCCHead',
+        in_channels=768,
         out_channels=num_keypoints,
         input_size=input_size,
         in_featuremap_size=tuple([s // 32 for s in input_size]),
@@ -117,6 +117,7 @@ backend_args = dict(
         's254:s3://openmmlab/datasets/detection/coco/',
         f'{data_root}': 's3://openmmlab/datasets/',
     }))
+
 # pipelines
 train_pipeline = [
     dict(type='LoadImage', backend_args=backend_args),
@@ -350,6 +351,32 @@ dataset_posetrack = dict(
     ],
 )
 
+ubody_scenes = [
+    'Magic_show', 'Entertainment', 'ConductMusic', 'Online_class', 'TalkShow',
+    'Speech', 'Fitness', 'Interview', 'Olympic', 'TVShow', 'Singing',
+    'SignLanguage', 'Movie', 'LiveVlog', 'VideoConference'
+]
+
+ubody_datasets = []
+for scene in ubody_scenes:
+    each = dict(
+        type='UBody2dDataset',
+        data_root=data_root,
+        data_mode=data_mode,
+        ann_file=f'Ubody/annotations/{scene}/train_annotations.json',
+        data_prefix=dict(img='pose/UBody/images/'),
+        pipeline=[],
+        sample_interval=10)
+    ubody_datasets.append(each)
+
+dataset_ubody = dict(
+    type='CombinedDataset',
+    metainfo=dict(from_file='configs/_base_/datasets/ubody2d.py'),
+    datasets=ubody_datasets,
+    pipeline=[],
+    test_mode=False,
+)
+
 train_datasets = [
     dataset_coco,
     # dataset_aic,
@@ -358,24 +385,8 @@ train_datasets = [
     # dataset_jhmdb,
     dataset_halpe,
     # dataset_posetrack,
+    dataset_ubody,
 ]
-
-ubody_scenes = [
-    'Magic_show', 'Entertainment', 'ConductMusic', 'Online_class', 'TalkShow',
-    'Speech', 'Fitness', 'Interview', 'Olympic', 'TVShow', 'Singing',
-    'SignLanguage', 'Movie', 'LiveVlog', 'VideoConference'
-]
-
-for scene in ubody_scenes:
-    train_dataset = dict(
-        type='UBody2dDataset',
-        data_root=data_root,
-        data_mode=data_mode,
-        ann_file=f'Ubody/annotations/{scene}/train_annotations.json',
-        data_prefix=dict(img='pose/UBody/images/'),
-        pipeline=[],
-        sample_interval=10)
-    train_datasets.append(train_dataset)
 
 # data loaders
 train_dataloader = dict(
@@ -530,8 +541,7 @@ test_dataloader = val_dataloader
 
 # hooks
 default_hooks = dict(
-    checkpoint=dict(save_best='coco-wholebody/AP', rule='greater'),
-    badcase=dict(backend_args=backend_args))
+    checkpoint=dict(save_best='coco-wholebody/AP', rule='greater'))
 
 custom_hooks = [
     dict(

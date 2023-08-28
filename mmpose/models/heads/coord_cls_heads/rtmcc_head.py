@@ -128,7 +128,7 @@ class RTMCCHead(BaseHead):
             act_fn=gau_cfg['act_fn'],
             use_rel_bias=gau_cfg['use_rel_bias'],
             pos_enc=gau_cfg['pos_enc'],
-            use_dwc=gau_cfg['use_dwc'])
+            use_dwc=gau_cfg.get('use_dwc', False))
 
         self.cls_x = nn.Linear(gau_cfg['hidden_dims'], W, bias=False)
         self.cls_y = nn.Linear(gau_cfg['hidden_dims'], H, bias=False)

@@ -21,7 +21,7 @@ OptIntSeq = Optional[Sequence[int]]
 
 
 @MODELS.register_module()
-class RTMCCHead2(BaseHead):
+class RTMCCHead6(BaseHead):
     """Top-down head introduced in RTMPose (2023). The head is composed of a
     large-kernel convolutional layer, a fully-connected layer and a Gated
     Attention Unit to generate 1d representation from low-resolution feature
@@ -71,7 +71,8 @@ class RTMCCHead2(BaseHead):
             drop_path=0.,
             act_fn='ReLU',
             use_rel_bias=False,
-            pos_enc=False),
+            pos_enc=False,
+            use_dwc=False),
         loss: ConfigType = dict(type='KLDiscretLoss', use_target_weight=True),
         decoder: OptConfigType = None,
         init_cfg: OptConfigType = None,
@@ -103,7 +104,7 @@ class RTMCCHead2(BaseHead):
         flatten_dims = self.in_featuremap_size[0] * self.in_featuremap_size[1]
 
         self.final_layer = nn.Conv2d(
-            in_channels,
+            7 * in_channels // 4,
             out_channels,
             kernel_size=final_layer_kernel_size,
             stride=1,
@@ -144,7 +145,12 @@ class RTMCCHead2(BaseHead):
             pred_x (Tensor): 1d representation of x.
             pred_y (Tensor): 1d representation of y.
         """
-        feats = feats[-1]
+        feats_b, feats_m, feats_t = feats
+        W, H = self.in_featuremap_size
+        feats_b = nn.functional.adaptive_avg_pool2d(feats_b, [H, W])
+        feats_m = nn.functional.adaptive_avg_pool2d(feats_m, [H, W])
+
+        feats = torch.cat([feats_b, feats_m, feats_t], dim=1)
 
         feats = self.final_layer(feats)  # -> B, K, H, W
 
@@ -153,41 +159,7 @@ class RTMCCHead2(BaseHead):
 
         feats = self.mlp(feats)  # -> B, K, hidden
 
-        groups = [
-            # head
-            [0, 1, 2, 3, 4] + list(range(23, 91)),
-            # body
-            list(range(5, 17)),
-            # left hand
-            list(range(91, 112)),
-            # right hand
-            list(range(112, 133)),
-            # left foot
-            [17, 18, 19],
-            # right foot
-            [20, 21, 22],
-        ]
-        idx_back = []
-        for group in groups:
-            idx_back = idx_back + group
-        len_groups = [len(group) for group in groups]
-        feats = torch.split(feats, len_groups, dim=1)
-
-        group_feats = []
-        for idx, group in enumerate(groups):
-            each = feats[idx]
-            each = self.gau(each)
-            group_feats.append(each)
-            # for part_idx, wb_idx in enumerate(group):
-            # group_feats[wb_idx].append(each[:, part_idx:part_idx + 1, :])
-            # group_feats[wb_idx] = each[:, part_idx:part_idx + 1, :]
-
-        # for i in range(self.out_channels):
-        #     group_feats[i] = torch.mean(
-        #         torch.cat(group_feats[i], dim=1), dim=1, keepdim=True)
-        feats = torch.cat(group_feats, dim=1)
-        feats[:, idx_back, :] = feats.clone()
-        # feats = self.gau(feats)
+        feats = self.gau(feats)
 
         pred_x = self.cls_x(feats)
         pred_y = self.cls_y(feats)

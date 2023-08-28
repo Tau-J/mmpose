@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import torch
 import torch.nn as nn
 
 from mmpose.registry import MODELS
@@ -22,10 +23,16 @@ class FeaLoss(nn.Module):
         use_this,
         student_channels,
         teacher_channels,
+        loss_func='mse',
         alpha_fea=0.00007,
     ):
         super(FeaLoss, self).__init__()
         self.alpha_fea = alpha_fea
+
+        if loss_func == 'mse':
+            self.loss_func = nn.MSELoss(reduction='sum')
+        else:
+            self.loss_func = DISTLoss()
 
         if teacher_channels != student_channels:
             self.align = nn.Conv2d(
@@ -55,9 +62,67 @@ class FeaLoss(nn.Module):
         return loss
 
     def get_dis_loss(self, preds_S, preds_T):
-        loss_mse = nn.MSELoss(reduction='sum')
+        # loss_mse = nn.MSELoss(reduction='sum')
         N, C, H, W = preds_T.shape
 
-        dis_loss = loss_mse(preds_S, preds_T) / N * self.alpha_fea
+        dis_loss = self.loss_func(preds_S, preds_T) / N * self.alpha_fea
 
         return dis_loss
+
+
+def cosine_similarity(a, b, eps=1e-8):
+    return (a * b).sum(1) / (a.norm(dim=1) * b.norm(dim=1) + eps)
+
+
+def pearson_correlation(a, b, eps=1e-8):
+    return cosine_similarity(a - a.mean(1, keepdim=True),
+                             b - b.mean(1, keepdim=True), eps)
+
+
+def inter_class_relation(y_s, y_t):
+    return 1 - pearson_correlation(y_s, y_t).mean()
+
+
+def intra_class_relation(y_s, y_t):
+    return inter_class_relation(y_s.transpose(0, 1), y_t.transpose(0, 1))
+
+
+@MODELS.register_module()
+class DISTLoss(nn.Module):
+
+    def __init__(
+        self,
+        name=None,
+        use_this=None,
+        inter_loss_weight=1.0,
+        intra_loss_weight=1.0,
+        tau=1.0,
+        loss_weight: float = 1.0,
+        teacher_detach: bool = True,
+    ):
+        super(DISTLoss, self).__init__()
+        self.inter_loss_weight = inter_loss_weight
+        self.intra_loss_weight = intra_loss_weight
+        self.tau = tau
+
+        self.loss_weight = loss_weight
+        self.teacher_detach = teacher_detach
+
+    def forward(self, logits_S, logits_T: torch.Tensor):
+        self.tau = logits_S.new_tensor(self.tau)
+        if self.teacher_detach:
+            logits_T = logits_T.detach()
+        y_s = (logits_S / self.tau).softmax(dim=1)
+        y_t = (logits_T / self.tau).softmax(dim=1)
+        inter_loss = self.tau**2 * inter_class_relation(y_s, y_t)
+        intra_loss = self.tau**2 * intra_class_relation(y_s, y_t)
+        kd_loss = self.inter_loss_weight * inter_loss + self.intra_loss_weight * intra_loss  # noqa
+        return kd_loss * self.loss_weight
+
+
+# s = torch.rand(3, 5)
+# t = torch.rand(3, 5)
+# l = DISTLoss()
+
+# res = l(s, t)
+# print(res.shape)

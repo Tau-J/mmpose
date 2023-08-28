@@ -68,7 +68,6 @@ model = dict(
         expand_ratio=0.5,
         deepen_factor=1.,
         widen_factor=1.,
-        out_indices=(4, ),
         channel_attention=True,
         norm_cfg=dict(type='BN'),
         act_cfg=dict(type='SiLU'),
@@ -80,13 +79,13 @@ model = dict(
         # )
     ),
     head=dict(
-        type='RTMCCHead2',
+        type='RTMCCHead6',
         in_channels=1024,
         out_channels=num_keypoints,
         input_size=input_size,
         in_featuremap_size=tuple([s // 32 for s in input_size]),
         simcc_split_ratio=codec['simcc_split_ratio'],
-        final_layer_kernel_size=7,
+        final_layer_kernel_size=3,
         gau_cfg=dict(
             hidden_dims=256,
             s=128,
@@ -117,6 +116,7 @@ backend_args = dict(
         's254:s3://openmmlab/datasets/detection/coco/',
         f'{data_root}': 's3://openmmlab/datasets/',
     }))
+
 # pipelines
 train_pipeline = [
     dict(type='LoadImage', backend_args=backend_args),
@@ -530,8 +530,7 @@ test_dataloader = val_dataloader
 
 # hooks
 default_hooks = dict(
-    checkpoint=dict(save_best='coco-wholebody/AP', rule='greater'),
-    badcase=dict(backend_args=backend_args))
+    checkpoint=dict(save_best='coco-wholebody/AP', rule='greater'))
 
 custom_hooks = [
     dict(
