@@ -109,13 +109,27 @@ class DISTLoss(nn.Module):
         self.teacher_detach = teacher_detach
 
     def forward(self, logits_S, logits_T: torch.Tensor):
-        self.tau = logits_S.new_tensor(self.tau)
+        if logits_S.dim() == 4:
+            B, C, H, W = logits_S.size()
+            logits_S = logits_S.reshape(B * C, H * W)
+            logits_T = logits_T.reshape(B * C, H * W)
+        elif logits_S.dim() == 3:
+            B, C, H = logits_S.size()
+            logits_S = logits_S.reshape(B * C, H)
+            logits_T = logits_T.reshape(B * C, H)
+
+        if isinstance(self.tau, list):
+            num_repeat = logits_S.size(0) // len(self.tau)
+            tau = logits_S.new_tensor(self.tau).reshape(-1, 1).repeat(
+                (num_repeat, 1))
+        else:
+            tau = logits_S.new_tensor(self.tau)
         if self.teacher_detach:
             logits_T = logits_T.detach()
-        y_s = (logits_S / self.tau).softmax(dim=1)
-        y_t = (logits_T / self.tau).softmax(dim=1)
-        inter_loss = self.tau**2 * inter_class_relation(y_s, y_t)
-        intra_loss = self.tau**2 * intra_class_relation(y_s, y_t)
+        y_s = (logits_S / tau).softmax(dim=1)
+        y_t = (logits_T / tau).softmax(dim=1)
+        inter_loss = tau**2 * inter_class_relation(y_s, y_t)
+        intra_loss = tau**2 * intra_class_relation(y_s, y_t)
         kd_loss = self.inter_loss_weight * inter_loss + self.intra_loss_weight * intra_loss  # noqa
         return kd_loss * self.loss_weight
 
