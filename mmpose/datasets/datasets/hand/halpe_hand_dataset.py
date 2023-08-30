@@ -3,7 +3,7 @@ import os.path as osp
 from typing import List, Tuple
 
 import numpy as np
-from mmengine.fileio import exists, get_local_path
+from mmengine.utils import check_file_exist
 from xtcocotools.coco import COCO
 
 from mmpose.registry import DATASETS
@@ -12,14 +12,12 @@ from ..base import BaseCocoStyleDataset
 
 
 @DATASETS.register_module()
-class CocoWholeBodyHandDataset(BaseCocoStyleDataset):
-    """CocoWholeBodyDataset for hand pose estimation.
+class HalpeHandDataset(BaseCocoStyleDataset):
+    """HalpeDataset for hand pose estimation.
 
-    "Whole-Body Human Pose Estimation in the Wild", ECCV'2020.
-    More details can be found in the `paper
-    <https://arxiv.org/abs/2007.11858>`__ .
+    'https://github.com/Fang-Haoshu/Halpe-FullBody'
 
-    COCO-WholeBody Hand keypoints::
+    Halpe Hand keypoints::
 
         0: 'wrist',
         1: 'thumb1',
@@ -81,23 +79,27 @@ class CocoWholeBodyHandDataset(BaseCocoStyleDataset):
             image. Default: 1000.
     """
 
-    METAINFO: dict = dict(
-        from_file='configs/_base_/datasets/coco_wholebody_hand.py')
+    METAINFO: dict = dict(from_file='configs/_base_/datasets/halpe_hand.py')
 
     def _load_annotations(self) -> Tuple[List[dict], List[dict]]:
         """Load data from annotations in COCO format."""
 
-        assert exists(self.ann_file), (
-            f'Annotation file `{self.ann_file}` does not exist')
+        def get_bbox(keypoints):
+            """Get bbox from keypoints."""
+            x1, y1, _ = np.amin(keypoints, axis=0)
+            x2, y2, _ = np.amax(keypoints, axis=0)
+            w, h = x2 - x1, y2 - y1
+            return [x1, y1, w, h]
 
-        with get_local_path(self.ann_file) as local_path:
-            self.coco = COCO(local_path)
+        check_file_exist(self.ann_file)
+
+        coco = COCO(self.ann_file)
         instance_list = []
         image_list = []
         id = 0
 
-        for img_id in self.coco.getImgIds():
-            img = self.coco.loadImgs(img_id)[0]
+        for img_id in coco.getImgIds():
+            img = coco.loadImgs(img_id)[0]
 
             img.update({
                 'img_id':
@@ -107,23 +109,37 @@ class CocoWholeBodyHandDataset(BaseCocoStyleDataset):
             })
             image_list.append(img)
 
-            ann_ids = self.coco.getAnnIds(imgIds=img_id, iscrowd=False)
-            anns = self.coco.loadAnns(ann_ids)
+            ann_ids = coco.getAnnIds(imgIds=img_id, iscrowd=False)
+            anns = coco.loadAnns(ann_ids)
             for ann in anns:
+                keypoints = np.array(ann['keypoints']).reshape(-1, 3)
+                lefthand_kpts = keypoints[-42:-21, :]
+                righthand_kpts = keypoints[-21:, :]
+
+                left_mask = lefthand_kpts[:, 2] > 0
+                lefthand_box = get_bbox(lefthand_kpts[left_mask, :])
+                right_mask = righthand_kpts[:, 2] > 0
+                righthand_box = get_bbox(righthand_kpts[right_mask, :])
+                t_ann = {
+                    'lefthand_kpts': lefthand_kpts,
+                    'righthand_kpts': righthand_kpts,
+                    'lefthand_valid': np.max(lefthand_kpts) > 0,
+                    'righthand_valid': np.max(righthand_kpts) > 0,
+                    'lefthand_box': lefthand_box,
+                    'righthand_box': righthand_box,
+                }
                 for hand_type in ['left', 'right']:
                     # filter invalid hand annotations, there might be two
                     # valid instances (left and right hand) in one image
-                    if ann[f'{hand_type}hand_valid'] and max(
-                            ann[f'{hand_type}hand_kpts']) > 0:
-
+                    if t_ann[f'{hand_type}hand_valid']:
                         bbox_xywh = np.array(
-                            ann[f'{hand_type}hand_box'],
+                            t_ann[f'{hand_type}hand_box'],
                             dtype=np.float32).reshape(1, 4)
 
                         bbox = bbox_xywh2xyxy(bbox_xywh)
 
                         _keypoints = np.array(
-                            ann[f'{hand_type}hand_kpts'],
+                            t_ann[f'{hand_type}hand_kpts'],
                             dtype=np.float32).reshape(1, -1, 3)
                         keypoints = _keypoints[..., :2]
                         keypoints_visible = np.minimum(1, _keypoints[..., 2])
@@ -144,7 +160,6 @@ class CocoWholeBodyHandDataset(BaseCocoStyleDataset):
                             'hand_type': self.encode_handtype(hand_type),
                             'hand_type_valid': hand_type_valid,
                             'iscrowd': ann['iscrowd'],
-                            'segmentation': ann['segmentation'],
                             'id': id,
                         }
                         instance_list.append(instance_info)
@@ -155,9 +170,6 @@ class CocoWholeBodyHandDataset(BaseCocoStyleDataset):
 
     @staticmethod
     def encode_handtype(hand_type):
-        if isinstance(hand_type, np.array):
-            return hand_type
-
         if hand_type == 'right':
             return np.array([[1, 0]], dtype=np.float32)
         elif hand_type == 'left':

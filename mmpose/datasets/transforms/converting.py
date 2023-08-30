@@ -170,3 +170,43 @@ class KeypointConverter(BaseTransform):
         repr_str += f'(num_keypoints={self.num_keypoints}, '\
                     f'mapping={self.mapping})'
         return repr_str
+
+
+@TRANSFORMS.register_module()
+class SingleHandConverter(BaseTransform):
+
+    def __init__(self, num_keypoints: int,
+                 left_hand_mapping: Union[List[Tuple[int, int]],
+                                          List[Tuple[Tuple, int]]],
+                 right_hand_mapping: Union[List[Tuple[int, int]],
+                                           List[Tuple[Tuple, int]]]):
+        self.num_keypoints = num_keypoints
+        self.left_hand_converter = KeypointConverter(num_keypoints,
+                                                     left_hand_mapping)
+        self.right_hand_converter = KeypointConverter(num_keypoints,
+                                                      right_hand_mapping)
+
+    def transform(self, results: dict) -> dict:
+        """Transforms the keypoint results to match the target keypoints."""
+        assert 'hand_type' in results, (
+            'hand_type should be provided in results')
+        hand_type = results['hand_type']
+
+        if hand_type == 0:
+            results = self.left_hand_converter(results)
+        else:
+            results = self.right_hand_converter(results)
+
+        return results
+
+    def __repr__(self) -> str:
+        """print the basic information of the transform.
+
+        Returns:
+            str: Formatted string.
+        """
+        repr_str = self.__class__.__name__
+        repr_str += f'(num_keypoints={self.num_keypoints}, '\
+                    f'left_hand_converter={self.left_hand_converter}, '\
+                    f'right_hand_converter={self.right_hand_converter})'
+        return repr_str

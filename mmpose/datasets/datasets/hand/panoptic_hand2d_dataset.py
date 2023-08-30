@@ -120,6 +120,9 @@ class PanopticHand2DDataset(BaseCocoStyleDataset):
 
         num_keypoints = np.count_nonzero(keypoints.max(axis=2))
 
+        hand_type = ann.get('hand_type', None)
+        hand_type_valid = ann.get('hand_type_valid', 0)
+
         data_info = {
             'img_id': ann['image_id'],
             'img_path': img_path,
@@ -128,6 +131,8 @@ class PanopticHand2DDataset(BaseCocoStyleDataset):
             'num_keypoints': num_keypoints,
             'keypoints': keypoints,
             'keypoints_visible': keypoints_visible,
+            'hand_type': self.encode_handtype(hand_type),
+            'hand_type_valid': hand_type_valid,
             'iscrowd': ann['iscrowd'],
             'segmentation': ann['segmentation'],
             'head_size': ann['head_size'],
@@ -135,3 +140,17 @@ class PanopticHand2DDataset(BaseCocoStyleDataset):
         }
 
         return data_info
+
+    @staticmethod
+    def encode_handtype(hand_type):
+        if isinstance(hand_type, np.array):
+            return hand_type
+
+        if hand_type == 'right':
+            return np.array([[1, 0]], dtype=np.float32)
+        elif hand_type == 'left':
+            return np.array([[0, 1]], dtype=np.float32)
+        elif hand_type == 'interacting':
+            return np.array([[1, 1]], dtype=np.float32)
+        else:
+            return np.array([[-1, -1]], dtype=np.float32)
