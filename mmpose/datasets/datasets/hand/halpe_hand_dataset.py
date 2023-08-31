@@ -147,7 +147,8 @@ class HalpeHandDataset(BaseCocoStyleDataset):
                         num_keypoints = np.count_nonzero(keypoints.max(axis=2))
 
                         hand_type = ann.get('hand_type', None)
-                        hand_type_valid = ann.get('hand_type_valid', 0)
+                        hand_type_valid = ann.get('hand_type_valid',
+                                                  int(hand_type is not None))
 
                         instance_info = {
                             'img_id': ann['image_id'],

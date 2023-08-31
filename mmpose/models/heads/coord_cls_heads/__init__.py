@@ -5,9 +5,11 @@ from .rtmcc_head3 import RTMCCHead3
 from .rtmcc_head4 import RTMCCHead4
 from .rtmcc_head5 import RTMCCHead5
 from .rtmcc_head6 import RTMCCHead6
+from .rtmcc_head7 import RTMCCHead7
+from .rtmcc_head8 import RTMCCHead8
 from .simcc_head import SimCCHead
 
 __all__ = [
     'SimCCHead', 'RTMCCHead5', 'RTMCCHead', 'RTMCCHead2', 'RTMCCHead3',
-    'RTMCCHead4', 'RTMCCHead6'
+    'RTMCCHead4', 'RTMCCHead6', 'RTMCCHead7', 'RTMCCHead8'
 ]

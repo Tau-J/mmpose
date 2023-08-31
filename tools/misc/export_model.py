@@ -212,7 +212,7 @@ for cfg, url in model_cfg:
     else:
         scripts = [
             'python tools/deploy.py',
-            'configs/mmpose/pose-detection_simcc_onnxruntime-fp16_dynamic.py',
+            'configs/mmpose/pose-detection_simcc_onnxruntime_dynamic.py',
             f'{cfg}',
             f'{url}',
             'demo/resources/human-pose.jpg',

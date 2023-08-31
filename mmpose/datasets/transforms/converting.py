@@ -192,10 +192,13 @@ class SingleHandConverter(BaseTransform):
             'hand_type should be provided in results')
         hand_type = results['hand_type']
 
-        if hand_type == 0:
+        if np.sum(hand_type - [[0, 1]]) <= 1e-6:
+            # left hand
             results = self.left_hand_converter(results)
-        else:
+        elif np.sum(hand_type - [[1, 0]]) <= 1e-6:
             results = self.right_hand_converter(results)
+        else:
+            raise ValueError('hand_type should be left or right')
 
         return results
 
