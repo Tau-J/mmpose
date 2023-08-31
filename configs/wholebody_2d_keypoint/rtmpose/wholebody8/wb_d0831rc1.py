@@ -533,8 +533,8 @@ test_dataloader = val_dataloader
 
 # hooks
 default_hooks = dict(
-    checkpoint=dict(save_best='coco-wholebody/AP', rule='greater'))
-
+    checkpoint=dict(
+        save_best='coco-wholebody/AP', rule='greater', max_keep_ckpts=1))
 custom_hooks = [
     dict(
         type='EMAHook',
