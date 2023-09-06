@@ -2,9 +2,10 @@
 import warnings
 from typing import Optional, Sequence, Tuple, Union
 
+import mmengine.dist as dist
 import torch
+import torch.nn.functional as F
 from mmcv.cnn import ConvModule
-from mmengine.dist import get_dist_info
 from mmengine.structures import PixelData
 from torch import Tensor, nn
 
@@ -21,8 +22,122 @@ from ..base_head import BaseHead
 OptIntSeq = Optional[Sequence[int]]
 
 
+def all_reduce(tensor, op='sum'):
+    world_size = dist.get_world_size()
+
+    if world_size == 1:
+        return tensor
+
+    dist.all_reduce(tensor, op=op)
+
+    return tensor
+
+
+class ResBlock(nn.Module):
+
+    def __init__(self, in_channel, channel):
+        super().__init__()
+
+        self.conv = nn.Sequential(
+            nn.ReLU(),
+            nn.Conv2d(in_channel, channel, 3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(channel, in_channel, 1),
+        )
+
+    def forward(self, input):
+        out = self.conv(input)
+        out += input
+
+        return out
+
+
+class Decoder(nn.Module):
+
+    def __init__(self, in_channel, out_channel, channel, n_res_block,
+                 n_res_channel, stride):
+        super().__init__()
+
+        blocks = [nn.Conv2d(in_channel, channel, 3, padding=1)]
+
+        for i in range(n_res_block):
+            blocks.append(ResBlock(channel, n_res_channel))
+
+        blocks.append(nn.ReLU(inplace=True))
+
+        if stride == 4:
+            blocks.extend([
+                nn.ConvTranspose2d(
+                    channel, channel // 2, 4, stride=2, padding=1),
+                nn.ReLU(inplace=True),
+                nn.ConvTranspose2d(
+                    channel // 2, out_channel, 4, stride=2, padding=1),
+            ])
+
+        elif stride == 2:
+            blocks.append(
+                nn.ConvTranspose2d(
+                    channel, out_channel, 4, stride=2, padding=1))
+
+        self.blocks = nn.Sequential(*blocks)
+
+    def forward(self, input):
+        return self.blocks(input)
+
+
+class Quantize(nn.Module):
+
+    def __init__(self, dim, n_embed, decay=0.99, eps=1e-5):
+        super().__init__()
+
+        self.dim = dim
+        self.n_embed = n_embed
+        self.decay = decay
+        self.eps = eps
+
+        embed = torch.randn(dim, n_embed)
+        self.register_buffer('embed', embed)
+        self.register_buffer('cluster_size', torch.zeros(n_embed))
+        self.register_buffer('embed_avg', embed.clone())
+
+    def forward(self, input):
+        flatten = input.reshape(-1, self.dim)
+        dist = (
+            flatten.pow(2).sum(1, keepdim=True) - 2 * flatten @ self.embed +
+            self.embed.pow(2).sum(0, keepdim=True))
+        _, embed_ind = (-dist).max(1)
+        embed_onehot = F.one_hot(embed_ind, self.n_embed).type(flatten.dtype)
+        embed_ind = embed_ind.view(*input.shape[:-1])
+        quantize = self.embed_code(embed_ind)
+
+        if self.training:
+            embed_onehot_sum = embed_onehot.sum(0)
+            embed_sum = flatten.transpose(0, 1) @ embed_onehot
+
+            all_reduce(embed_onehot_sum)
+            all_reduce(embed_sum)
+
+            self.cluster_size.data.mul_(self.decay).add_(
+                embed_onehot_sum, alpha=1 - self.decay)
+            self.embed_avg.data.mul_(self.decay).add_(
+                embed_sum, alpha=1 - self.decay)
+            n = self.cluster_size.sum()
+            cluster_size = ((self.cluster_size + self.eps) /
+                            (n + self.n_embed * self.eps) * n)
+            embed_normalized = self.embed_avg / cluster_size.unsqueeze(0)
+            self.embed.data.copy_(embed_normalized)
+
+        diff = (quantize.detach() - input).pow(2).mean()
+        quantize = input + (quantize - input).detach()
+
+        return quantize, diff, embed_ind
+
+    def embed_code(self, embed_id):
+        return F.embedding(embed_id, self.embed.transpose(0, 1))
+
+
 @MODELS.register_module()
-class RTMCCHead8(BaseHead):
+class RTMCCHead9(BaseHead):
     """Top-down head introduced in RTMPose (2023). The head is composed of a
     large-kernel convolutional layer, a fully-connected layer and a Gated
     Attention Unit to generate 1d representation from low-resolution feature
@@ -64,7 +179,6 @@ class RTMCCHead8(BaseHead):
         in_featuremap_size: Tuple[int, int],
         simcc_split_ratio: float = 2.0,
         final_layer_kernel_size: int = 1,
-        ps=4,
         gau_cfg: ConfigType = dict(
             hidden_dims=256,
             s=128,
@@ -105,16 +219,20 @@ class RTMCCHead8(BaseHead):
         # Define SimCC layers
         flatten_dims = self.in_featuremap_size[0] * self.in_featuremap_size[1]
 
+        embed_dim = 128
+        n_embed = 512
+        channels = 256
+        self.quantize_conv_t = nn.Conv2d(in_channels, embed_dim, 1)
+        self.quantize_t = Quantize(embed_dim, n_embed)
+        self.dec_t = Decoder(embed_dim, embed_dim, channels, 2, 32, stride=2)
+        self.quantize_conv_b = nn.Conv2d(embed_dim + in_channels // 2,
+                                         embed_dim, 1)
+        self.quantize_b = Quantize(embed_dim, n_embed)
+        self.upsample_t = nn.ConvTranspose2d(
+            embed_dim, embed_dim, 4, stride=2, padding=1)
+
         self.final_layer = ConvModule(
-            in_channels,
-            out_channels,
-            kernel_size=final_layer_kernel_size,
-            stride=1,
-            padding=final_layer_kernel_size // 2,
-            norm_cfg=dict(type='BN', requires_grad=True),
-            act_cfg=dict(type='ReLU'))
-        self.final_layer2 = ConvModule(
-            in_channels // ps + in_channels // 4,
+            channels,
             out_channels,
             kernel_size=final_layer_kernel_size,
             stride=1,
@@ -123,13 +241,8 @@ class RTMCCHead8(BaseHead):
             act_cfg=dict(type='ReLU'))
 
         self.mlp = nn.Sequential(
-            ScaleNorm(flatten_dims),
-            nn.Linear(flatten_dims, gau_cfg['hidden_dims'] // 2, bias=False))
-
-        self.mlp2 = nn.Sequential(
-            ScaleNorm(flatten_dims * ps**2),
-            nn.Linear(
-                flatten_dims * ps**2, gau_cfg['hidden_dims'] // 2, bias=False))
+            ScaleNorm(flatten_dims * 4),
+            nn.Linear(flatten_dims * 4, gau_cfg['hidden_dims'], bias=False))
 
         W = int(self.input_size[0] * self.simcc_split_ratio)
         H = int(self.input_size[1] * self.simcc_split_ratio)
@@ -178,15 +291,6 @@ class RTMCCHead8(BaseHead):
 
         self.cls_x = nn.Linear(gau_cfg['hidden_dims'], W, bias=False)
         self.cls_y = nn.Linear(gau_cfg['hidden_dims'], H, bias=False)
-        self.ps = nn.PixelShuffle(ps)
-        self.conv_dec = ConvModule(
-            in_channels // ps**2,
-            in_channels // 4,
-            kernel_size=final_layer_kernel_size,
-            stride=1,
-            padding=final_layer_kernel_size // 2,
-            norm_cfg=dict(type='BN', requires_grad=True),
-            act_cfg=dict(type='ReLU'))
 
     def forward(self, feats: Tuple[Tensor]) -> Tuple[Tensor, Tensor]:
         """Forward the network.
@@ -204,21 +308,32 @@ class RTMCCHead8(BaseHead):
         enc_b, enc_t = feats
         # enc_b  n / 4, 32, 32
         # enc_t  n, 8,  8
+        quant_t = self.quantize_conv_t(enc_t).permute(0, 2, 3, 1)
+        quant_t, diff_t, _ = self.quantize_t(quant_t)
+        quant_t = quant_t.permute(0, 3, 1, 2)
+        diff_t = diff_t.unsqueeze(0)
 
-        feats_t = self.final_layer(enc_t)  # -> B, K, 8, 8
+        dec_t = self.dec_t(quant_t)
+        # print('dec_t', dec_t.shape)
+        # print('enc_b', enc_b.shape)
+        enc_b = torch.cat([dec_t, enc_b], dim=1)
+
+        quant_b = self.quantize_conv_b(enc_b).permute(0, 2, 3, 1)
+        quant_b, diff_b, _ = self.quantize_b(quant_b)
+        quant_b = quant_b.permute(0, 3, 1, 2)
+        diff_b = diff_b.unsqueeze(0)
+
+        diff = diff_t + diff_b
+
+        upsample_t = self.upsample_t(quant_t)
+        feats = torch.cat([upsample_t, quant_b], dim=1)
+
+        feats = self.final_layer(feats)  # -> B, K, H, W
+
         # flatten the output heatmap
-        feats_t = torch.flatten(feats_t, 2)
-        feats_t = self.mlp(feats_t)  # -> B, K, hidden // 2
+        feats = torch.flatten(feats, 2)
 
-        dec_t = self.ps(enc_t)  # n, 8, 8 -> B, n / 16, 32, 32
-        dec_t = self.conv_dec(dec_t)  # n / 16, 32, 32 -> 64, 32, 32
-        enc_b = torch.cat([dec_t, enc_b], dim=1)  # n / 4 + n / 16, 32, 32
-
-        feats_b = self.final_layer2(enc_b)  # -> B, K, 32, 32
-        feats_b = torch.flatten(feats_b, 2)  # -> K, 1024
-        feats_b = self.mlp2(feats_b)  # -> K, hidden // 2
-
-        feats = torch.cat([feats_t, feats_b], dim=2)  # -> K, hidden
+        feats = self.mlp(feats)  # -> B, K, hidden
 
         if self.gau_group[0]:
             feats = self.global_gau1(feats)
@@ -260,6 +375,9 @@ class RTMCCHead8(BaseHead):
 
         pred_x = self.cls_x(feats)
         pred_y = self.cls_y(feats)
+
+        if self.training:
+            return pred_x, pred_y, diff.mean()
 
         return pred_x, pred_y
 
@@ -315,7 +433,7 @@ class RTMCCHead8(BaseHead):
         preds = self.decode((batch_pred_x, batch_pred_y))
 
         if test_cfg.get('output_heatmaps', False):
-            rank, _ = get_dist_info()
+            rank, _ = dist.get_dist_info()
             if rank == 0:
                 warnings.warn('The predicted simcc values are normalized for '
                               'visualization. This may cause discrepancy '
@@ -356,7 +474,7 @@ class RTMCCHead8(BaseHead):
     ) -> dict:
         """Calculate losses from a batch of inputs and data samples."""
 
-        pred_x, pred_y = self.forward(feats)
+        pred_x, pred_y, diff = self.forward(feats)
 
         gt_x = torch.cat([
             d.gt_instance_labels.keypoint_x_labels for d in batch_data_samples
@@ -381,7 +499,7 @@ class RTMCCHead8(BaseHead):
         losses = dict()
         loss = self.loss_module(pred_simcc, gt_simcc, keypoint_weights)
 
-        losses.update(loss_kpt=loss)
+        losses.update(loss_kpt=loss, latent_loss=diff * 0.25)
 
         # calculate accuracy
         _, avg_acc, _ = simcc_pck_accuracy(
