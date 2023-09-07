@@ -3,7 +3,6 @@ import warnings
 from typing import Optional, Sequence, Tuple, Union
 
 import torch
-from mmcv.cnn import ConvModule
 from mmengine.dist import get_dist_info
 from mmengine.structures import PixelData
 from torch import Tensor, nn
@@ -22,7 +21,7 @@ OptIntSeq = Optional[Sequence[int]]
 
 
 @MODELS.register_module()
-class RTMCCHead10(BaseHead):
+class RTMCCHead12(BaseHead):
     """Top-down head introduced in RTMPose (2023). The head is composed of a
     large-kernel convolutional layer, a fully-connected layer and a Gated
     Attention Unit to generate 1d representation from low-resolution feature
@@ -72,8 +71,7 @@ class RTMCCHead10(BaseHead):
             drop_path=0.,
             act_fn='ReLU',
             use_rel_bias=False,
-            pos_enc=False,
-            group=[0, 0, 0]),
+            pos_enc=False),
         loss: ConfigType = dict(type='KLDiscretLoss', use_target_weight=True),
         decoder: OptConfigType = None,
         init_cfg: OptConfigType = None,
@@ -101,39 +99,65 @@ class RTMCCHead10(BaseHead):
                 f'{self.__class__.__name__} does not support selecting '
                 'multiple input features.')
 
+        # self.pafpn = [MODELS.build(dict(
+        #     type='CSPNeXtPAFPN',
+        #     in_channels=[256, 512, 1024],
+        #     out_channels=1024,
+        #     out_indices=(0, 1, 2, ) if i != 1 else (2, ),
+        #     num_csp_blocks=1,
+        #     expand_ratio=0.5,
+        #     norm_cfg=dict(type='SyncBN'),
+        #     act_cfg=dict(type='SiLU', inplace=True)))
+        #     for i in range(2)
+        # ]
+
+        self.pafpn = [
+            MODELS.build(
+                dict(
+                    type='CSPNeXtPAFPN',
+                    in_channels=[256, 512, 1024],
+                    out_channels=1024,
+                    out_indices=(
+                        1,
+                        2,
+                    ),
+                    num_csp_blocks=1,
+                    expand_ratio=0.5,
+                    norm_cfg=dict(type='SyncBN'),
+                    act_cfg=dict(type='SiLU', inplace=True))),
+            MODELS.build(
+                dict(
+                    type='CSPNeXtPAFPN',
+                    in_channels=[512, 1024],
+                    out_channels=1024,
+                    out_indices=(1, ),
+                    num_csp_blocks=1,
+                    expand_ratio=0.5,
+                    norm_cfg=dict(type='SyncBN'),
+                    act_cfg=dict(type='SiLU', inplace=True)))
+        ]
+
+        self.pafpn = nn.ModuleList(self.pafpn)
         # Define SimCC layers
         flatten_dims = self.in_featuremap_size[0] * self.in_featuremap_size[1]
 
-        self.final_layer = [
-            ConvModule(
-                in_channels // 2**i,
-                out_channels,
-                kernel_size=final_layer_kernel_size,
-                stride=1,
-                padding=final_layer_kernel_size // 2,
-                norm_cfg=dict(type='BN', requires_grad=True),
-                act_cfg=dict(type='ReLU')) for i in [2, 1, 0]
-        ]
-        self.final_layer = nn.ModuleList(self.final_layer)
-
-        self.mlp = [
-            nn.Sequential(
-                ScaleNorm(flatten_dims * 4**i),
-                nn.Linear(
-                    flatten_dims * 4**i,
-                    gau_cfg['hidden_dims'] // 3,
-                    bias=False)) for i in [2, 1, 0]
-        ]
-        self.mlp = nn.ModuleList(self.mlp)
+        self.final_layer = nn.Conv2d(
+            in_channels,
+            out_channels,
+            kernel_size=final_layer_kernel_size,
+            stride=1,
+            padding=final_layer_kernel_size // 2)
+        self.mlp = nn.Sequential(
+            ScaleNorm(flatten_dims),
+            nn.Linear(flatten_dims, gau_cfg['hidden_dims'], bias=False))
 
         W = int(self.input_size[0] * self.simcc_split_ratio)
         H = int(self.input_size[1] * self.simcc_split_ratio)
 
-        hidden_dims = gau_cfg['hidden_dims'] // 3 * 3
         self.gau = RTMCCBlock(
             self.out_channels,
-            hidden_dims,
-            hidden_dims,
+            gau_cfg['hidden_dims'],
+            gau_cfg['hidden_dims'],
             s=gau_cfg['s'],
             expansion_factor=gau_cfg['expansion_factor'],
             dropout_rate=gau_cfg['dropout_rate'],
@@ -143,8 +167,8 @@ class RTMCCHead10(BaseHead):
             use_rel_bias=gau_cfg['use_rel_bias'],
             pos_enc=gau_cfg['pos_enc'])
 
-        self.cls_x = nn.Linear(hidden_dims, W, bias=False)
-        self.cls_y = nn.Linear(hidden_dims, H, bias=False)
+        self.cls_x = nn.Linear(gau_cfg['hidden_dims'], W, bias=False)
+        self.cls_y = nn.Linear(gau_cfg['hidden_dims'], H, bias=False)
 
     def forward(self, feats: Tuple[Tensor]) -> Tuple[Tensor, Tensor]:
         """Forward the network.
@@ -159,17 +183,15 @@ class RTMCCHead10(BaseHead):
             pred_x (Tensor): 1d representation of x.
             pred_y (Tensor): 1d representation of y.
         """
-        enc = feats
-        # enc_b  n / 4, 32, 32
-        # enc_t  n, 8,  8
-        _feats = []
-        for i in range(3):
-            t = self.final_layer[i](enc[i])
-            t = torch.flatten(t, 2)
-            t = self.mlp[i](t)
-            _feats.append(t)
+        for i in range(2):
+            feats = self.pafpn[i](feats)
 
-        feats = torch.cat(_feats, dim=2)  # -> K, hidden
+        feats = self.final_layer(feats[-1])  # -> B, K, H, W
+
+        # flatten the output heatmap
+        feats = torch.flatten(feats, 2)
+
+        feats = self.mlp(feats)  # -> B, K, hidden
 
         feats = self.gau(feats)
 
