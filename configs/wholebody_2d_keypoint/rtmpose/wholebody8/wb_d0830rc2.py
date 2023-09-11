@@ -524,7 +524,7 @@ dataset_rhd = dict(
     type='Rhd2DDataset',
     data_root=data_root,
     data_mode=data_mode,
-    ann_file='rhd/annotations/rhd2d_train_with_handtype.json',
+    ann_file='rhd/annotations/rhd2d_train.json',
     data_prefix=dict(img='pose/RHD/'),
     pipeline=[
         dict(
@@ -576,8 +576,8 @@ train_datasets = [
     dataset_300w,
     dataset_cofw,
     dataset_lapa,
-    dataset_onehand10k,
-    dataset_freihand,
+    # dataset_onehand10k,
+    # dataset_freihand,
     dataset_rhd,
 ]
 

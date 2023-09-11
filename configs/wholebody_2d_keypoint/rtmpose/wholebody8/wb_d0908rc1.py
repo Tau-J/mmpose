@@ -572,6 +572,65 @@ dataset_rhd = dict(
     ],
 )
 
+dataset_coco_hand = dict(
+    type='CocoWholeBodyHandDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='coco/annotations/coco_wholebody_train_v1.0.json',
+    data_prefix=dict(img='detection/coco/train2017/'),
+    pipeline=[
+        dict(
+            type='SingleHandConverter',
+            num_keypoints=num_keypoints,
+            left_hand_mapping=[(i, i + 91) for i in range(21)],
+            right_hand_mapping=[(i, i + 112) for i in range(21)],
+        ), *hand_pipeline
+    ],
+)
+
+dataset_halpe_hand = dict(
+    type='HalpeHandDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='halpe/annotations/halpe_train_v1.json',
+    data_prefix=dict(img='pose/Halpe/hico_20160224_det/images/train2015/'),
+    pipeline=[
+        dict(
+            type='SingleHandConverter',
+            num_keypoints=num_keypoints,
+            left_hand_mapping=[(i, i + 91) for i in range(21)],
+            right_hand_mapping=[(i, i + 112) for i in range(21)],
+        ), *hand_pipeline
+    ],
+)
+
+ubody_hand_datasets = []
+for scene in ubody_scenes:
+    each = dict(
+        type='UBodyHandDataset',
+        data_root=data_root,
+        data_mode=data_mode,
+        ann_file=f'Ubody/annotations/{scene}/train_annotations.json',
+        data_prefix=dict(img='pose/UBody/images/'),
+        pipeline=[],
+        sample_interval=10)
+    ubody_hand_datasets.append(each)
+
+dataset_ubody_hand = dict(
+    type='CombinedDataset',
+    metainfo=dict(from_file='configs/_base_/datasets/ubody2d.py'),
+    datasets=ubody_hand_datasets,
+    pipeline=[
+        dict(
+            type='SingleHandConverter',
+            num_keypoints=num_keypoints,
+            left_hand_mapping=[(i, i + 91) for i in range(21)],
+            right_hand_mapping=[(i, i + 112) for i in range(21)],
+        ), *hand_pipeline
+    ],
+    test_mode=False,
+)
+
 train_datasets = [
     dataset_coco,
     dataset_aic,
@@ -589,6 +648,9 @@ train_datasets = [
     # dataset_onehand10k,
     # dataset_freihand,
     dataset_rhd,
+    dataset_coco_hand,
+    dataset_halpe_hand,
+    dataset_ubody_hand,
 ]
 
 # data loaders

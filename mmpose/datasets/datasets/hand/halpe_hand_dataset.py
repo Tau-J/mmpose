@@ -86,6 +86,8 @@ class HalpeHandDataset(BaseCocoStyleDataset):
 
         def get_bbox(keypoints):
             """Get bbox from keypoints."""
+            if len(keypoints) == 0:
+                return None
             x1, y1, _ = np.amin(keypoints, axis=0)
             x2, y2, _ = np.amax(keypoints, axis=0)
             w, h = x2 - x1, y2 - y1
@@ -146,7 +148,6 @@ class HalpeHandDataset(BaseCocoStyleDataset):
 
                         num_keypoints = np.count_nonzero(keypoints.max(axis=2))
 
-                        hand_type = ann.get('hand_type', None)
                         hand_type_valid = ann.get('hand_type_valid',
                                                   int(hand_type is not None))
 
@@ -171,6 +172,9 @@ class HalpeHandDataset(BaseCocoStyleDataset):
 
     @staticmethod
     def encode_handtype(hand_type):
+        if isinstance(hand_type, np.ndarray):
+            return hand_type
+
         if hand_type == 'right':
             return np.array([[1, 0]], dtype=np.float32)
         elif hand_type == 'left':

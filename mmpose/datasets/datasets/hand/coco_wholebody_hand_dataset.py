@@ -130,7 +130,6 @@ class CocoWholeBodyHandDataset(BaseCocoStyleDataset):
 
                         num_keypoints = np.count_nonzero(keypoints.max(axis=2))
 
-                        hand_type = ann.get('hand_type', None)
                         hand_type_valid = ann.get('hand_type_valid',
                                                   int(hand_type is not None))
 
@@ -156,7 +155,7 @@ class CocoWholeBodyHandDataset(BaseCocoStyleDataset):
 
     @staticmethod
     def encode_handtype(hand_type):
-        if isinstance(hand_type, np.array):
+        if isinstance(hand_type, np.ndarray):
             return hand_type
 
         if hand_type == 'right':

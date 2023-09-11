@@ -135,7 +135,7 @@ class FreiHandDataset(BaseCocoStyleDataset):
 
     @staticmethod
     def encode_handtype(hand_type):
-        if isinstance(hand_type, np.array):
+        if isinstance(hand_type, np.ndarray):
             return hand_type
 
         if hand_type == 'right':

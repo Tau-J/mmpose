@@ -225,6 +225,67 @@ class KLDiscretLoss(nn.Module):
 
 
 @MODELS.register_module()
+class MultilabelLoss(nn.Module):
+    """Discrete KL Divergence loss for SimCC with Gaussian Label Smoothing.
+    Modified from `the official implementation.
+
+    <https://github.com/leeyegy/SimCC>`_.
+    Args:
+        beta (float): Temperature factor of Softmax.
+        label_softmax (bool): Whether to use Softmax on labels.
+        use_target_weight (bool): Option to use weighted loss.
+            Different joint types may have different target weights.
+    """
+
+    def __init__(self, beta=1.0, label_softmax=False, use_target_weight=True):
+        super(MultilabelLoss, self).__init__()
+        self.beta = beta
+        self.label_softmax = label_softmax
+        self.use_target_weight = use_target_weight
+        self.log_softmax = nn.LogSoftmax(dim=2)
+
+    def criterion(self, pred, target):
+        pred = self.log_softmax(pred * self.beta)
+        if self.label_softmax:
+            target = F.softmax(target * self.beta, dim=2)
+
+        loss = 0.
+        for j in range(pred.size(2)):
+            for i in range(pred.size(1)):
+                for k in range(pred.size(1)):
+                    if k == j:
+                        continue
+                    up = -pred[:, i, j] + pred[:, i, k]
+                    loss = loss + target[:, i, j] * torch.exp(up)
+        loss = torch.log(1 + loss).mean()
+        return loss
+
+    def forward(self, pred_simcc, gt_simcc, target_weight):
+        """Forward function.
+
+        Args:
+            pred_simcc (Tuple[Tensor, Tensor]): Predicted SimCC vectors of
+                x-axis and y-axis.
+            gt_simcc (Tuple[Tensor, Tensor]): Target representations.
+            target_weight (torch.Tensor[N, K] or torch.Tensor[N]):
+                Weights across different labels.
+        """
+        loss = 0
+
+        if self.use_target_weight:
+            weight = target_weight.unsqueeze(-1)
+        else:
+            weight = 1.
+
+        for pred, target in zip(pred_simcc, gt_simcc):
+            pred = pred * weight
+            target = target * weight
+            loss = loss + self.criterion(pred, target)
+
+        return loss
+
+
+@MODELS.register_module()
 class SimCCDISTLoss(nn.Module):
     """Discrete KL Divergence loss for SimCC with Gaussian Label Smoothing.
     Modified from `the official implementation.

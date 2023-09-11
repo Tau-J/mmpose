@@ -116,7 +116,6 @@ backend_args = dict(
     path_mapping=dict({
         f'{data_root}detection/coco/':
         's254:s3://openmmlab/datasets/detection/coco/',
-        f'{data_root}pose/LaPa/': 's254:s3://openmmlab/datasets/pose/LaPa/',
         f'{data_root}': 's3://openmmlab/datasets/',
     }))
 
@@ -361,7 +360,7 @@ dataset_humanart = dict(
     data_root=data_root,
     data_mode=data_mode,
     ann_file='HumanArt/annotations/training_humanart.json',
-    filter_cfg=dict(scenes=['real_human']),
+    # filter_cfg=dict(scenes=['real_human']),
     data_prefix=dict(img='pose/'),
     pipeline=[
         dict(
@@ -396,182 +395,6 @@ dataset_ubody = dict(
     test_mode=False,
 )
 
-face_pipeline = [
-    dict(type='LoadImage', backend_args=backend_args),
-    dict(type='GetBBoxCenterScale'),
-    dict(
-        type='RandomBBoxTransform',
-        shift_factor=0.,
-        scale_factor=[0.3, 0.5],
-        rotate_factor=0),
-    dict(type='TopdownAffine', input_size=codec['input_size']),
-]
-
-wflw_coco133 = [(i * 2, 20 + i)
-                for i in range(17)] + [(33 + i, 41 + i) for i in range(5)] + [
-                    (42 + i, 46 + i) for i in range(5)
-                ] + [(51 + i, 50 + i)
-                     for i in range(9)] + [(60, 59), (61, 60), (63, 61),
-                                           (64, 62), (65, 63), (67, 64),
-                                           (68, 65), (69, 66), (71, 67),
-                                           (72, 68), (73, 69),
-                                           (75, 70)] + [(76 + i, 71 + i)
-                                                        for i in range(20)]
-dataset_wflw = dict(
-    type='WFLWDataset',
-    data_root=data_root,
-    data_mode=data_mode,
-    ann_file='wflw/annotations/face_landmarks_wflw_train.json',
-    data_prefix=dict(img='pose/WFLW/images/'),
-    pipeline=[
-        dict(
-            type='KeypointConverter',
-            num_keypoints=num_keypoints,
-            mapping=wflw_coco133), *face_pipeline
-    ],
-)
-
-mapping_300w_coco133 = [(i, 20 + i) for i in range(68)]
-dataset_300w = dict(
-    type='Face300WDataset',
-    data_root=data_root,
-    data_mode=data_mode,
-    ann_file='300w/annotations/face_landmarks_300w_train.json',
-    data_prefix=dict(img='pose/300w/images/'),
-    pipeline=[
-        dict(
-            type='KeypointConverter',
-            num_keypoints=num_keypoints,
-            mapping=mapping_300w_coco133), *face_pipeline
-    ],
-)
-
-cofw_coco133 = [(0, 41), (2, 45), (4, 43), (1, 47), (3, 49), (6, 45), (8, 59),
-                (10, 62), (9, 68), (11, 65), (18, 54), (19, 58), (20, 53),
-                (21, 56), (22, 71), (23, 77), (24, 74), (25, 85), (26, 89),
-                (27, 80), (28, 28)]
-dataset_cofw = dict(
-    type='COFWDataset',
-    data_root=data_root,
-    data_mode=data_mode,
-    ann_file='cofw/annotations/cofw_train.json',
-    data_prefix=dict(img='pose/COFW/images/'),
-    pipeline=[
-        dict(
-            type='KeypointConverter',
-            num_keypoints=num_keypoints,
-            mapping=cofw_coco133), *face_pipeline
-    ],
-)
-
-lapa_coco133 = [(i * 2, 20 + i) for i in range(17)] + [
-    (33 + i, 41 + i) for i in range(5)
-] + [(42 + i, 46 + i) for i in range(5)] + [
-    (51 + i, 50 + i) for i in range(4)
-] + [(58 + i, 54 + i) for i in range(5)] + [(66, 59), (67, 60), (69, 61),
-                                            (70, 62), (71, 63), (73, 64),
-                                            (75, 65), (76, 66), (78, 67),
-                                            (79, 68), (80, 69),
-                                            (82, 70)] + [(84 + i, 71 + i)
-                                                         for i in range(20)]
-dataset_lapa = dict(
-    type='LapaDataset',
-    data_root=data_root,
-    data_mode=data_mode,
-    ann_file='LaPa/annotations/lapa_trainval.json',
-    data_prefix=dict(img='pose/LaPa/'),
-    pipeline=[
-        dict(
-            type='KeypointConverter',
-            num_keypoints=num_keypoints,
-            mapping=lapa_coco133), *face_pipeline
-    ],
-)
-
-hand_pipeline = [
-    dict(type='LoadImage', backend_args=backend_args),
-    dict(type='GetBBoxCenterScale'),
-    dict(
-        type='RandomBBoxTransform',
-        shift_factor=0.,
-        scale_factor=[0.2, 1.0],
-        rotate_factor=0),
-    dict(type='TopdownAffine', input_size=codec['input_size']),
-]
-dataset_onehand10k = dict(
-    type='OneHand10KDataset',
-    data_root=data_root,
-    data_mode=data_mode,
-    ann_file='onehand10k/annotations/onehand10k_train_with_handtype.json',
-    data_prefix=dict(img='pose/OneHand10K/'),
-    pipeline=[
-        dict(
-            type='SingleHandConverter',
-            num_keypoints=num_keypoints,
-            left_hand_mapping=[(i, i + 91) for i in range(21)],
-            right_hand_mapping=[(i, i + 112) for i in range(21)],
-        ), *hand_pipeline
-    ],
-)
-
-dataset_freihand = dict(
-    type='FreiHandDataset',
-    data_root=data_root,
-    data_mode=data_mode,
-    ann_file='freihand/annotations/freihand_train_with_handtype.json',
-    data_prefix=dict(img='pose/FreiHand/'),
-    pipeline=[
-        dict(
-            type='SingleHandConverter',
-            num_keypoints=num_keypoints,
-            left_hand_mapping=[(i, i + 91) for i in range(21)],
-            right_hand_mapping=[(i, i + 112) for i in range(21)],
-        ), *hand_pipeline
-    ],
-)
-
-dataset_rhd = dict(
-    type='Rhd2DDataset',
-    data_root=data_root,
-    data_mode=data_mode,
-    ann_file='rhd/annotations/rhd_train.json',
-    data_prefix=dict(img='pose/RHD/'),
-    pipeline=[
-        dict(
-            type='KeypointConverter',
-            num_keypoints=21,
-            mapping=[
-                (0, 0),
-                (1, 4),
-                (2, 3),
-                (3, 2),
-                (4, 1),
-                (5, 8),
-                (6, 7),
-                (7, 6),
-                (8, 5),
-                (9, 12),
-                (10, 11),
-                (11, 10),
-                (12, 9),
-                (13, 16),
-                (14, 15),
-                (15, 14),
-                (16, 13),
-                (17, 20),
-                (18, 19),
-                (19, 18),
-                (20, 17),
-            ]),
-        dict(
-            type='SingleHandConverter',
-            num_keypoints=num_keypoints,
-            left_hand_mapping=[(i, i + 91) for i in range(21)],
-            right_hand_mapping=[(i, i + 112) for i in range(21)],
-        ), *hand_pipeline
-    ],
-)
-
 train_datasets = [
     dataset_coco,
     dataset_aic,
@@ -582,13 +405,6 @@ train_datasets = [
     dataset_posetrack,
     dataset_humanart,
     dataset_ubody,
-    dataset_wflw,
-    dataset_300w,
-    dataset_cofw,
-    dataset_lapa,
-    # dataset_onehand10k,
-    # dataset_freihand,
-    dataset_rhd,
 ]
 
 # data loaders

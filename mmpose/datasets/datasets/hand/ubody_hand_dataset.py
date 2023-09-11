@@ -1,23 +1,25 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import copy
-from typing import Optional
+import os.path as osp
+from typing import List, Tuple
 
 import numpy as np
+from mmengine.fileio import exists, get_local_path
+from xtcocotools.coco import COCO
 
 from mmpose.registry import DATASETS
+from mmpose.structures.bbox import bbox_xywh2xyxy
 from ..base import BaseCocoStyleDataset
 
 
 @DATASETS.register_module()
-class OneHand10KDataset(BaseCocoStyleDataset):
-    """OneHand10K dataset for hand pose estimation.
+class UBodyHandDataset(BaseCocoStyleDataset):
+    """CocoWholeBodyDataset for hand pose estimation.
 
-    "Mask-pose Cascaded CNN for 2D Hand Pose Estimation from
-    Single Color Images", TCSVT'2019.
+    "Whole-Body Human Pose Estimation in the Wild", ECCV'2020.
     More details can be found in the `paper
-    <https://www.yangangwang.com/papers/WANG-MCC-2018-10.pdf>`__ .
+    <https://arxiv.org/abs/2007.11858>`__ .
 
-    OneHand10K keypoints::
+    COCO-WholeBody Hand keypoints::
 
         0: 'wrist',
         1: 'thumb1',
@@ -79,79 +81,76 @@ class OneHand10KDataset(BaseCocoStyleDataset):
             image. Default: 1000.
     """
 
-    METAINFO: dict = dict(from_file='configs/_base_/datasets/onehand10k.py')
+    METAINFO: dict = dict(
+        from_file='configs/_base_/datasets/coco_wholebody_hand.py')
 
-    def parse_data_info(self, raw_data_info: dict) -> Optional[dict]:
-        """Parse raw COCO annotation of an instance.
+    def _load_annotations(self) -> Tuple[List[dict], List[dict]]:
+        """Load data from annotations in COCO format."""
 
-        Args:
-            raw_data_info (dict): Raw data information loaded from
-                ``ann_file``. It should have following contents:
+        assert exists(self.ann_file), 'Annotation file does not exist'
 
-                - ``'raw_ann_info'``: Raw annotation of an instance
-                - ``'raw_img_info'``: Raw information of the image that
-                    contains the instance
+        with get_local_path(self.ann_file) as local_path:
+            self.coco = COCO(local_path)
+        instance_list = []
+        image_list = []
+        id = 0
 
-        Returns:
-            dict | None: Parsed instance annotation
-        """
+        for img_id in self.coco.getImgIds():
+            img = self.coco.loadImgs(img_id)[0]
 
-        ann = raw_data_info['raw_ann_info']
-        img = raw_data_info['raw_img_info']
+            img.update({
+                'img_id':
+                img_id,
+                'img_path':
+                osp.join(self.data_prefix['img'], img['file_name']),
+            })
+            image_list.append(img)
 
-        # filter invalid instance
-        if 'bbox' not in ann or 'keypoints' not in ann:
-            return None
+            ann_ids = self.coco.getAnnIds(imgIds=img_id, iscrowd=False)
+            anns = self.coco.loadAnns(ann_ids)
+            for ann in anns:
+                for hand_type in ['left', 'right']:
+                    # filter invalid hand annotations, there might be two
+                    # valid instances (left and right hand) in one image
+                    if ann[f'{hand_type}hand_valid'] and max(
+                            ann[f'{hand_type}hand_kpts']) > 0:
 
-        img_w, img_h = img['width'], img['height']
+                        bbox_xywh = np.array(
+                            ann[f'{hand_type}hand_box'],
+                            dtype=np.float32).reshape(1, 4)
 
-        # get bbox in shape [1, 4], formatted as xywh
-        x, y, w, h = ann['bbox']
-        x1 = np.clip(x, 0, img_w - 1)
-        y1 = np.clip(y, 0, img_h - 1)
-        x2 = np.clip(x + w, 0, img_w - 1)
-        y2 = np.clip(y + h, 0, img_h - 1)
+                        bbox = bbox_xywh2xyxy(bbox_xywh)
 
-        bbox = np.array([x1, y1, x2, y2], dtype=np.float32).reshape(1, 4)
+                        _keypoints = np.array(
+                            ann[f'{hand_type}hand_kpts'],
+                            dtype=np.float32).reshape(1, -1, 3)
+                        keypoints = _keypoints[..., :2]
+                        keypoints_visible = np.minimum(1, _keypoints[..., 2])
 
-        # keypoints in shape [1, K, 2] and keypoints_visible in [1, K]
-        _keypoints = np.array(
-            ann['keypoints'], dtype=np.float32).reshape(1, -1, 3)
-        keypoints = _keypoints[..., :2]
-        keypoints_visible = np.minimum(1, _keypoints[..., 2])
+                        num_keypoints = np.count_nonzero(keypoints.max(axis=2))
 
-        if 'num_keypoints' in ann:
-            num_keypoints = ann['num_keypoints']
-        else:
-            num_keypoints = np.count_nonzero(keypoints.max(axis=2))
+                        hand_type_valid = ann.get('hand_type_valid',
+                                                  int(hand_type is not None))
 
-        hand_type = ann.get('hand_type', None)
-        hand_type_valid = ann.get('hand_type_valid',
-                                  int(hand_type is not None))
+                        instance_info = {
+                            'img_id': ann['image_id'],
+                            'img_path': img['img_path'],
+                            'bbox': bbox,
+                            'bbox_score': np.ones(1, dtype=np.float32),
+                            'num_keypoints': num_keypoints,
+                            'keypoints': keypoints,
+                            'keypoints_visible': keypoints_visible,
+                            'hand_type': self.encode_handtype(hand_type),
+                            'hand_type_valid': hand_type_valid,
+                            'iscrowd': ann['iscrowd'],
+                            'segmentation': ann['segmentation'],
+                            'id': id,
+                        }
+                        instance_list.append(instance_info)
+                        id = id + 1
 
-        data_info = {
-            'img_id': ann['image_id'],
-            'img_path': img['img_path'],
-            'bbox': bbox,
-            'bbox_score': np.ones(1, dtype=np.float32),
-            'num_keypoints': num_keypoints,
-            'keypoints': keypoints,
-            'keypoints_visible': keypoints_visible,
-            'hand_type': self.encode_handtype(hand_type),
-            'hand_type_valid': hand_type_valid,
-            'iscrowd': ann.get('iscrowd', 0),
-            'segmentation': ann.get('segmentation', None),
-            'id': ann['id'],
-            'category_id': ann['category_id'],
-            # store the raw annotation of the instance
-            # it is useful for evaluation without providing ann_file
-            'raw_ann_info': copy.deepcopy(ann),
-        }
-
-        if 'crowdIndex' in img:
-            data_info['crowd_index'] = img['crowdIndex']
-
-        return data_info
+        instance_list = sorted(instance_list, key=lambda x: x['id'])
+        return instance_list, image_list
 
     @staticmethod
     def encode_handtype(hand_type):
