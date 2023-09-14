@@ -17,5 +17,5 @@ __all__ = [
     'MSRAHeatmap', 'MegviiHeatmap', 'UDPHeatmap', 'RegressionLabel',
     'SimCCLabel', 'IntegralRegressionLabel', 'AssociativeEmbedding', 'SPR',
     'DecoupledHeatmap', 'VideoPoseLifting', 'ImagePoseLifting',
-    'MotionBERTLabel', 'YOLOXPoseAnnotationProcessor'
+    'MotionBERTLabel', 'YOLOXPoseAnnotationProcessor', 'SimCCOrder'
 ]
