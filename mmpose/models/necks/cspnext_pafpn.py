@@ -236,7 +236,11 @@ class CSPNeXtPAFPN(BaseModule):
         self,
         in_channels: Sequence[int],
         out_channels: int,
-        out_indices=(2, ),
+        out_indices=(
+            0,
+            1,
+            2,
+        ),
         num_csp_blocks: int = 3,
         use_depthwise: bool = False,
         expand_ratio: float = 0.5,
@@ -312,25 +316,26 @@ class CSPNeXtPAFPN(BaseModule):
                     norm_cfg=norm_cfg,
                     act_cfg=act_cfg))
 
-        # self.out_convs = nn.ModuleList()
-        # for i in range(len(in_channels)):
-        #     self.out_convs.append(
-        #         conv(
-        #             in_channels[i],
-        #             out_channels,
-        #             3,
-        #             padding=1,
-        #             conv_cfg=conv_cfg,
-        #             norm_cfg=norm_cfg,
-        #             act_cfg=act_cfg))
-        # self.out_convs = conv(
-        #     in_channels[-1],
-        #     out_channels,
-        #     3,
-        #     padding=1,
-        #     conv_cfg=conv_cfg,
-        #     norm_cfg=norm_cfg,
-        #     act_cfg=act_cfg)
+        if self.out_channels is not None:
+            self.out_convs = nn.ModuleList()
+            for i in range(len(in_channels)):
+                self.out_convs.append(
+                    conv(
+                        in_channels[i],
+                        out_channels,
+                        3,
+                        padding=1,
+                        conv_cfg=conv_cfg,
+                        norm_cfg=norm_cfg,
+                        act_cfg=act_cfg))
+            self.out_convs = conv(
+                in_channels[-1],
+                out_channels,
+                3,
+                padding=1,
+                conv_cfg=conv_cfg,
+                norm_cfg=norm_cfg,
+                act_cfg=act_cfg)
 
     def forward(self, inputs: Tuple[Tensor, ...]) -> Tuple[Tensor, ...]:
         """
@@ -367,19 +372,11 @@ class CSPNeXtPAFPN(BaseModule):
                 torch.cat([downsample_feat, feat_high], 1))
             outs.append(out)
 
-        # outs = inner_outs[0]
-        # for idx in range(len(self.in_channels) - 1):
-        #     feat_high = inner_outs[idx + 1]
-        #     downsample_feat = self.downsamples[idx](outs)
-        #     outs = self.bottom_up_blocks[idx](
-        #         torch.cat([downsample_feat, feat_high], 1))
+        if self.out_channels is not None:
+            # out convs
+            for idx, conv in enumerate(self.out_convs):
+                outs[idx] = conv(outs[idx])
 
-        # out convs
-        # for idx, conv in enumerate(self.out_convs):
-        #     outs[idx] = conv(outs[idx])
-        # outs = self.out_convs(outs)
-
-        # return tuple([outs])
         return tuple([outs[i] for i in self.out_indices])
 
 

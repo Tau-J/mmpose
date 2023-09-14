@@ -60,7 +60,7 @@ class MultiSourceSampler(Sampler):
         if source_ratio is not None:
             self.source_ratio = source_ratio
         else:
-            self.source_ratio = [len(d) for d in self.dataset]
+            self.source_ratio = [len(d) for d in self.dataset.datasets]
 
         self.num_samples = int(math.ceil(len(self.dataset) * 1.0 / world_size))
         self.num_per_source = [
@@ -149,6 +149,9 @@ class DynamicMultiSourceSampler(MultiSourceSampler):
         #     'coco-wholebody/rhand': [5, 6]
         # }
         metrics = {m: mh.get_info(m) for m in self.mapping_metric_dataset}
+        for m in self.mapping_metric_dataset:
+            each_metric = mh.get_info(m)
+            metrics[m] = 1. if each_metric is None else each_metric
 
         lens_ = {}
         sums = {}
@@ -156,15 +159,16 @@ class DynamicMultiSourceSampler(MultiSourceSampler):
             if self.ori_source_ratio is not None:
                 sums[k] = sum([self.ori_source_ratio[i] for i in v])
             else:
-                sums[k] = sum([len(self.dataset[i]) for i in v])
+                sums[k] = sum([len(self.dataset.datasets[i]) for i in v])
             lens_[k] = sums[k] / metrics[k]
 
-        new_source_ratio = [0.] * len(self.dataset)
+        new_source_ratio = [0.] * len(self.dataset.datasets)
         for k, v in self.mapping_metric_dataset.items():
             for i in v:
                 new_source_ratio[i] += lens_[k] / sums[k] * len(
-                    self.dataset[i])
+                    self.dataset.datasets[i])
 
+        print(f'source_ratio: {self.source_ratio} -> {new_source_ratio}')
         self.source_ratio = new_source_ratio
 
         self.num_samples = int(
@@ -188,7 +192,7 @@ class DynamicMultiSourceSampler(MultiSourceSampler):
 
         mh = MessageHub.get_current_instance()
         cur_epoch = mh.get_info('epoch')
-        if (cur_epoch + 1) % self.resample_interval == 0:
+        if cur_epoch % self.resample_interval == 0:
             self.resample(mh)
 
         for i in range(num_iters):

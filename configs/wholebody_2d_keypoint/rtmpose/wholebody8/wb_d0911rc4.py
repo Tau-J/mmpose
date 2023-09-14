@@ -45,15 +45,19 @@ auto_scale_lr = dict(base_batch_size=1024)
 
 # codec settings
 codec = dict(
-    type='SimCCLabel',
+    type='SimCCOrder',
     input_size=input_size,
-    sigma=(4.9, 5.66),
     simcc_split_ratio=2.0,
-    normalize=False,
-    use_dark=False)
+    use_dark=True)
+
+codec_pure = dict(
+    type='SimCCOrder',
+    input_size=(192, 256),
+    simcc_split_ratio=2.0,
+    use_dark=True)
 
 # model settings
-# load_from = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth'  # noqa
+load_from = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth'  # noqa
 model = dict(
     type='TopdownPoseEstimator',
     data_preprocessor=dict(
@@ -68,30 +72,24 @@ model = dict(
         expand_ratio=0.5,
         deepen_factor=1.,
         widen_factor=1.,
+        out_indices=(4, ),
         channel_attention=True,
         norm_cfg=dict(type='BN'),
         act_cfg=dict(type='SiLU'),
-        init_cfg=dict(
-            type='Pretrained',
-            prefix='backbone.',
-            checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
-            'rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth'  # noqa
-        )),
-    # neck=dict(
-    #     type='CSPNeXtPAFPN',
-    #     in_channels=[256, 512, 1024],
-    #     out_channels=1024,
-    #     out_indices=(0, 1, 2, ),
-    #     num_csp_blocks=1,
-    #     expand_ratio=0.5,
-    #     norm_cfg=dict(type='SyncBN'),
-    #     act_cfg=dict(type='SiLU', inplace=True)),
+        # init_cfg=dict(
+        #     type='Pretrained',
+        #     prefix='backbone.',
+        #     checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
+        #     'rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth'  # noqa
+        # )
+    ),
     head=dict(
-        type='RTMCCHead12',
+        type='MLECCHead',
         in_channels=1024,
         out_channels=num_keypoints,
         input_size=input_size,
         in_featuremap_size=tuple([s // 32 for s in input_size]),
+        dropout_rate=0.3,
         simcc_split_ratio=codec['simcc_split_ratio'],
         final_layer_kernel_size=7,
         gau_cfg=dict(
@@ -103,12 +101,10 @@ model = dict(
             act_fn='SiLU',
             use_rel_bias=False,
             pos_enc=False),
-        loss=dict(
-            type='KLDiscretLoss',
-            use_target_weight=True,
-            beta=10.,
-            label_softmax=True),
-        decoder=codec),
+        loss=dict(type='NLogLoss', use_target_weight=True),
+        loss_order=dict(
+            type='KLDiscretLoss', use_target_weight=True, label_softmax=True),
+        decoder=codec_pure),
     test_cfg=dict(flip_test=True))
 
 # base dataset settings
@@ -152,7 +148,7 @@ train_pipeline = [
         ]),
     dict(
         type='GenerateTarget',
-        encoder=codec,
+        encoder=codec_pure,
         use_dataset_keypoint_weights=True),
     dict(type='PackPoseInputs')
 ]
@@ -191,7 +187,7 @@ train_pipeline_stage2 = [
         ]),
     dict(
         type='GenerateTarget',
-        encoder=codec,
+        encoder=codec_pure,
         use_dataset_keypoint_weights=True),
     dict(type='PackPoseInputs')
 ]

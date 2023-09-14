@@ -8,7 +8,7 @@ from .megvii_heatmap import MegviiHeatmap
 from .motionbert_label import MotionBERTLabel
 from .msra_heatmap import MSRAHeatmap
 from .regression_label import RegressionLabel
-from .simcc_label import SimCCLabel
+from .simcc_label import SimCCLabel, SimCCOrder
 from .spr import SPR
 from .udp_heatmap import UDPHeatmap
 from .video_pose_lifting import VideoPoseLifting

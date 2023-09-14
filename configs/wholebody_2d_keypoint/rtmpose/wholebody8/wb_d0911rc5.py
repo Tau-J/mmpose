@@ -87,7 +87,7 @@ model = dict(
     #     norm_cfg=dict(type='SyncBN'),
     #     act_cfg=dict(type='SiLU', inplace=True)),
     head=dict(
-        type='RTMCCHead12',
+        type='RTMCCHead15',
         in_channels=1024,
         out_channels=num_keypoints,
         input_size=input_size,
@@ -103,6 +103,7 @@ model = dict(
             act_fn='SiLU',
             use_rel_bias=False,
             pos_enc=False),
+        fpn_cfg=[2, 2],
         loss=dict(
             type='KLDiscretLoss',
             use_target_weight=True,

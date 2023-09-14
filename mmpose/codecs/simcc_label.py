@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from itertools import product
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 
@@ -61,7 +61,7 @@ class SimCCLabel(BaseKeypointCodec):
     def __init__(self,
                  input_size: Tuple[int, int],
                  smoothing_type: str = 'gaussian',
-                 sigma: Union[float, int, Tuple[float], List[float]] = 6.0,
+                 sigma: Union[float, int, Tuple[float]] = 6.0,
                  simcc_split_ratio: float = 2.0,
                  label_smooth_weight: float = 0.0,
                  normalize: bool = True,
@@ -77,13 +77,8 @@ class SimCCLabel(BaseKeypointCodec):
 
         if isinstance(sigma, (float, int)):
             self.sigma = np.array([sigma, sigma])
-        elif isinstance(sigma, tuple):
-            assert len(sigma) == 2, 'sigma should be a tuple of 2 elements'
-            self.sigma = np.array(sigma)
-        elif isinstance(sigma, list):
-            self.sigma = np.array([[s, s] for s in sigma])
         else:
-            raise NotImplementedError
+            self.sigma = np.array(sigma)
 
         if self.smoothing_type not in {'gaussian', 'standard'}:
             raise ValueError(
@@ -172,8 +167,6 @@ class SimCCLabel(BaseKeypointCodec):
             scores = scores[None, :]
 
         if self.use_dark:
-            assert self.sigma.shape[0] == 2, (
-                'sigma should be a tuple of 2 elements')
             x_blur = int((self.sigma[0] * 20 - 7) // 3)
             y_blur = int((self.sigma[1] * 20 - 7) // 3)
             x_blur -= int((x_blur % 2) == 0)
@@ -258,9 +251,6 @@ class SimCCLabel(BaseKeypointCodec):
         W = np.around(w * self.simcc_split_ratio).astype(int)
         H = np.around(h * self.simcc_split_ratio).astype(int)
 
-        if len(self.sigma.shape) == 1:
-            self.sigma = np.tile(self.sigma, (K, 1))
-
         keypoints_split, keypoint_weights = self._map_coordinates(
             keypoints, keypoints_visible)
 
@@ -282,8 +272,8 @@ class SimCCLabel(BaseKeypointCodec):
             mu = keypoints_split[n, k]
 
             # check that the gaussian has in-bounds part
-            left, top = mu - radius[k, :]
-            right, bottom = mu + radius[k, :] + 1
+            left, top = mu - radius
+            right, bottom = mu + radius + 1
 
             if left >= W or top >= H or right < 0 or bottom < 0:
                 keypoint_weights[n, k] = 0
@@ -291,10 +281,8 @@ class SimCCLabel(BaseKeypointCodec):
 
             mu_x, mu_y = mu
 
-            target_x[n,
-                     k] = np.exp(-((x - mu_x)**2) / (2 * self.sigma[k, 0]**2))
-            target_y[n,
-                     k] = np.exp(-((y - mu_y)**2) / (2 * self.sigma[k, 1]**2))
+            target_x[n, k] = np.exp(-((x - mu_x)**2) / (2 * self.sigma[0]**2))
+            target_y[n, k] = np.exp(-((y - mu_y)**2) / (2 * self.sigma[1]**2))
 
         if self.normalize:
             norm_value = self.sigma * np.sqrt(np.pi * 2)
@@ -302,3 +290,96 @@ class SimCCLabel(BaseKeypointCodec):
             target_y /= norm_value[1]
 
         return target_x, target_y, keypoint_weights
+
+
+@KEYPOINT_CODECS.register_module()
+class SimCCOrder(SimCCLabel):
+
+    def __init__(self, ipr_decode: bool = False, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.ipr_decode = ipr_decode
+        self.x_coords = np.arange(
+            0, self.input_size[0] *
+            self.simcc_split_ratio) / self.simcc_split_ratio
+        self.y_coords = np.arange(
+            0, self.input_size[1] *
+            self.simcc_split_ratio) / self.simcc_split_ratio
+
+    def encode(self,
+               keypoints: np.ndarray,
+               keypoints_visible: Optional[np.ndarray] = None) -> dict:
+
+        if keypoints_visible is None:
+            keypoints_visible = np.ones(keypoints.shape[:2], dtype=np.float32)
+
+        w, h = self.input_size
+        valid = ((keypoints >= 0) &
+                 (keypoints <= [w - 1, h - 1])).all(axis=-1) & (
+                     keypoints_visible > 0.5)
+
+        keypoint_weights = np.where(valid, 1., 0.).astype(np.float32)
+        keypoint_labels = (keypoints).astype(np.float32)
+
+        keypoint_x_labels = np.abs(keypoints[..., :1] -
+                                   self.x_coords).argsort(axis=2)
+        keypoint_y_labels = np.abs(keypoints[..., 1:2] -
+                                   self.y_coords).argsort(axis=2)
+
+        encoded = dict(
+            keypoint_labels=keypoint_labels,
+            keypoint_x_labels=keypoint_x_labels,
+            keypoint_y_labels=keypoint_y_labels,
+            keypoint_weights=keypoint_weights)
+
+        return encoded
+
+    @staticmethod
+    def _softmax(simcc: np.ndarray, axis=-1):
+        simcc = simcc - simcc.max(axis=axis, keepdims=True)
+        simcc_exp = np.exp(simcc)
+        prob = simcc_exp / (simcc_exp.sum(axis=axis, keepdims=True))
+        return prob
+
+    def decode(self, simcc_x: np.ndarray,
+               simcc_y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """Decode keypoint coordinates from SimCC representations. The decoded
+        coordinates are in the input image space.
+
+        Args:
+            encoded (Tuple[np.ndarray, np.ndarray]): SimCC labels for x-axis
+                and y-axis
+            simcc_x (np.ndarray): SimCC label for x-axis
+            simcc_y (np.ndarray): SimCC label for y-axis
+
+        Returns:
+            tuple:
+            - keypoints (np.ndarray): Decoded coordinates in shape (N, K, D)
+            - socres (np.ndarray): The keypoint scores in shape (N, K).
+                It usually represents the confidence of the keypoint prediction
+        """
+
+        keypoints, scores = get_simcc_maximum(simcc_x, simcc_y)
+
+        # x = (self._softmax(simcc_x) * self.x_coords).sum(axis=-1)
+        # y = (self._softmax(simcc_y) * self.y_coords).sum(axis=-1)
+        # keypoints = np.stack((x, y), axis=-1)
+
+        # Unsqueeze the instance dimension for single-instance results
+        if keypoints.ndim == 2:
+            keypoints = keypoints[None, :]
+            scores = scores[None, :]
+
+        if self.use_dark:
+            x_blur = int((self.sigma[0] * 20 - 7) // 3)
+            y_blur = int((self.sigma[1] * 20 - 7) // 3)
+            x_blur -= int((x_blur % 2) == 0)
+            y_blur -= int((y_blur % 2) == 0)
+            keypoints[:, :, 0] = refine_simcc_dark(keypoints[:, :, 0], simcc_x,
+                                                   x_blur)
+            keypoints[:, :, 1] = refine_simcc_dark(keypoints[:, :, 1], simcc_y,
+                                                   y_blur)
+
+        keypoints /= self.simcc_split_ratio
+
+        return keypoints, scores

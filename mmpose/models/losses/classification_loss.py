@@ -371,3 +371,28 @@ class InfoNCELoss(nn.Module):
         targets = torch.arange(n, dtype=torch.long, device=features.device)
         loss = F.cross_entropy(logits, targets, reduction='sum')
         return loss * self.loss_weight
+
+
+@MODELS.register_module()
+class NLogLoss(nn.Module):
+
+    def __init__(self, use_target_weight=True):
+        super().__init__()
+
+        self.use_target_weight = use_target_weight
+
+    def forward(self, prior_prob, post_prob, target_weight):
+        if isinstance(prior_prob, (tuple, list)):
+            assert isinstance(post_prob, (tuple, list))
+            prob_x = (prior_prob[0] * post_prob[0]).sum(dim=-1)
+            prob_y = (prior_prob[1] * post_prob[1]).sum(dim=-1)
+            prob = prob_x * prob_y
+        else:
+            assert prior_prob.size() == post_prob.size()
+            prob = (prior_prob * post_prob).sum(dim=(-1, -2))
+
+        loss = -torch.log(prob + 1e-8)
+        if self.use_target_weight:
+            loss = loss * target_weight
+
+        return loss.mean(dim=1)

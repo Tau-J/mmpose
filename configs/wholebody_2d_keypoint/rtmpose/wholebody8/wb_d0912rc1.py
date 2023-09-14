@@ -77,23 +77,27 @@ model = dict(
             checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
             'rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth'  # noqa
         )),
-    # neck=dict(
-    #     type='CSPNeXtPAFPN',
-    #     in_channels=[256, 512, 1024],
-    #     out_channels=1024,
-    #     out_indices=(0, 1, 2, ),
-    #     num_csp_blocks=1,
-    #     expand_ratio=0.5,
-    #     norm_cfg=dict(type='SyncBN'),
-    #     act_cfg=dict(type='SiLU', inplace=True)),
+    neck=dict(
+        type='CSPNeXtPAFPN',
+        in_channels=[256, 512, 1024],
+        out_channels=1024,
+        out_indices=(
+            1,
+            2,
+        ),
+        num_csp_blocks=2,
+        expand_ratio=0.5,
+        norm_cfg=dict(type='SyncBN'),
+        act_cfg=dict(type='SiLU', inplace=True)),
     head=dict(
-        type='RTMCCHead12',
+        type='RTMCCHead16',
         in_channels=1024,
         out_channels=num_keypoints,
         input_size=input_size,
         in_featuremap_size=tuple([s // 32 for s in input_size]),
         simcc_split_ratio=codec['simcc_split_ratio'],
         final_layer_kernel_size=7,
+        ps=2,
         gau_cfg=dict(
             hidden_dims=256,
             s=128,
@@ -102,7 +106,8 @@ model = dict(
             drop_path=0.,
             act_fn='SiLU',
             use_rel_bias=False,
-            pos_enc=False),
+            pos_enc=False,
+            group=[0, 1, 0]),
         loss=dict(
             type='KLDiscretLoss',
             use_target_weight=True,
