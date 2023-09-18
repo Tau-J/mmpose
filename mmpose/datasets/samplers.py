@@ -186,13 +186,10 @@ class DynamicMultiSourceSampler(MultiSourceSampler):
         if self.round_up and self.num_samples > num_iters * self.batch_size:
             num_iters += 1
 
-        dataset_name = list(
-            self.mapping_metric_dataset.keys())[0].split('/')[0]
         mh = MessageHub.get_current_instance()
         cur_epoch = mh.get_info('epoch', 0)
 
         if cur_epoch % self.resample_interval == 0:
-            mh = MessageHub.get_instance(dataset_name)
             self.resample(mh)
 
         for i in range(num_iters):

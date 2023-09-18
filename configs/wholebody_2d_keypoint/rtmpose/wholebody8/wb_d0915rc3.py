@@ -601,7 +601,14 @@ custom_hooks = [
     dict(
         type='mmdet.PipelineSwitchHook',
         switch_epoch=max_epochs - stage2_num_epochs,
-        switch_pipeline=train_pipeline_stage2)
+        switch_pipeline=train_pipeline_stage2),
+    dict(
+        type='SyncMessagehubHook',
+        keys=[
+            'coco-wholebody/body', 'coco-wholebody/face',
+            'coco-wholebody/foot', 'coco-wholebody/lhand',
+            'coco-wholebody/rhand', 'coco-wholebody/wholebody'
+        ])
 ]
 
 # evaluators

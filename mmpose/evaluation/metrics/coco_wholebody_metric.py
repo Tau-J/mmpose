@@ -240,7 +240,7 @@ class CocoWholeBodyMetric(CocoMetric):
             0, self.body_num, self.foot_num, self.face_num, self.left_hand_num,
             self.right_hand_num
         ])
-        message_hub = MessageHub.get_instance('coco-wholebody')
+        message_hub = MessageHub.get_current_instance()
 
         coco_eval = COCOeval(
             self.coco,
