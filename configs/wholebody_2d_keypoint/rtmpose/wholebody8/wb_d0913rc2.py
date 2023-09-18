@@ -8,7 +8,7 @@ input_size = (288, 384)
 max_epochs = 270
 stage2_num_epochs = 10
 base_lr = 5e-4
-train_batch_size = 256
+train_batch_size = 320
 val_batch_size = 32
 
 train_cfg = dict(max_epochs=max_epochs, val_interval=10)
@@ -68,7 +68,7 @@ model = dict(
         deepen_factor=1.33,
         widen_factor=1.25,
         channel_attention=True,
-        norm_cfg=dict(type='SyncBN'),
+        norm_cfg=dict(type='BN'),
         act_cfg=dict(type='SiLU'),
         init_cfg=dict(
             type='Pretrained',

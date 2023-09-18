@@ -148,9 +148,10 @@ class DynamicMultiSourceSampler(MultiSourceSampler):
         #     'coco-wholebody/lhand': [5, 6],
         #     'coco-wholebody/rhand': [5, 6]
         # }
-        metrics = {m: mh.get_info(m) for m in self.mapping_metric_dataset}
+        metrics = {}
         for m in self.mapping_metric_dataset:
             each_metric = mh.get_info(m)
+            print(m, each_metric)
             metrics[m] = 1. if each_metric is None else each_metric
 
         lens_ = {}
@@ -168,21 +169,16 @@ class DynamicMultiSourceSampler(MultiSourceSampler):
                 new_source_ratio[i] += lens_[k] / sums[k] * len(
                     self.dataset.datasets[i])
 
-        print(f'source_ratio: {self.source_ratio} -> {new_source_ratio}')
         self.source_ratio = new_source_ratio
 
-        self.num_samples = int(
-            math.ceil(len(self.dataset) * 1.0 / self.world_size))
+        old_num_per_source = self.num_per_source
+
         self.num_per_source = [
             int(self.batch_size * sr / sum(self.source_ratio))
             for sr in self.source_ratio
         ]
         self.num_per_source[0] = self.batch_size - sum(self.num_per_source[1:])
-
-        self.source2inds = {
-            source: self._indices_of_rank(len(ds))
-            for source, ds in enumerate(self.dataset.datasets)
-        }
+        print(f'num_per_source: {old_num_per_source} -> {self.num_per_source}')
 
     def __iter__(self) -> Iterator[int]:
         batch_buffer = []
@@ -190,9 +186,13 @@ class DynamicMultiSourceSampler(MultiSourceSampler):
         if self.round_up and self.num_samples > num_iters * self.batch_size:
             num_iters += 1
 
+        dataset_name = list(
+            self.mapping_metric_dataset.keys())[0].split('/')[0]
         mh = MessageHub.get_current_instance()
-        cur_epoch = mh.get_info('epoch')
+        cur_epoch = mh.get_info('epoch', 0)
+
         if cur_epoch % self.resample_interval == 0:
+            mh = MessageHub.get_instance(dataset_name)
             self.resample(mh)
 
         for i in range(num_iters):

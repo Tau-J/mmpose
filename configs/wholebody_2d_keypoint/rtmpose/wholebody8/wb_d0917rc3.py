@@ -8,7 +8,7 @@ input_size = (192, 256)
 max_epochs = 270
 stage2_num_epochs = 10
 base_lr = 5e-4
-train_batch_size = 640
+train_batch_size = 960
 val_batch_size = 32
 
 train_cfg = dict(max_epochs=max_epochs, val_interval=10)
@@ -46,14 +46,13 @@ auto_scale_lr = dict(base_batch_size=1024)
 # codec settings
 codec = dict(
     type='SimCCLabel',
-    input_size=input_size,
+    input_size=(192, 256),
     sigma=(4.9, 5.66),
     simcc_split_ratio=2.0,
     normalize=False,
     use_dark=False)
 
 # model settings
-# load_from = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth'  # noqa
 model = dict(
     type='TopdownPoseEstimator',
     data_preprocessor=dict(
@@ -80,24 +79,23 @@ model = dict(
     neck=dict(
         type='CSPNeXtPAFPN',
         in_channels=[256, 512, 1024],
-        out_channels=1024,
+        out_channels=None,
         out_indices=(
             1,
             2,
         ),
         num_csp_blocks=2,
         expand_ratio=0.5,
-        norm_cfg=dict(type='BN'),
+        norm_cfg=dict(type='SyncBN'),
         act_cfg=dict(type='SiLU', inplace=True)),
     head=dict(
-        type='RTMCCHead8',
+        type='RTMWHead',
         in_channels=1024,
         out_channels=num_keypoints,
         input_size=input_size,
         in_featuremap_size=tuple([s // 32 for s in input_size]),
         simcc_split_ratio=codec['simcc_split_ratio'],
         final_layer_kernel_size=7,
-        ps=2,
         gau_cfg=dict(
             hidden_dims=256,
             s=128,
@@ -106,8 +104,7 @@ model = dict(
             drop_path=0.,
             act_fn='SiLU',
             use_rel_bias=False,
-            pos_enc=False,
-            group=[0, 1, 0]),
+            pos_enc=False),
         loss=dict(
             type='KLDiscretLoss',
             use_target_weight=True,
@@ -499,20 +496,46 @@ dataset_lapa = dict(
     ],
 )
 
+dataset_wb = dict(
+    type='CombinedDataset',
+    metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
+    datasets=[dataset_coco, dataset_halpe, dataset_ubody],
+    pipeline=[],
+    test_mode=False,
+)
+
+dataset_body = dict(
+    type='CombinedDataset',
+    metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
+    datasets=[
+        dataset_aic,
+        dataset_crowdpose,
+        dataset_mpii,
+        dataset_jhmdb,
+        dataset_posetrack,
+        dataset_humanart,
+    ],
+    pipeline=[],
+    test_mode=False,
+)
+
+dataset_face = dict(
+    type='CombinedDataset',
+    metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
+    datasets=[
+        dataset_wflw,
+        dataset_300w,
+        dataset_cofw,
+        dataset_lapa,
+    ],
+    pipeline=[],
+    test_mode=False,
+)
+
 train_datasets = [
-    dataset_coco,
-    dataset_aic,
-    dataset_crowdpose,
-    dataset_mpii,
-    dataset_jhmdb,
-    dataset_halpe,
-    dataset_posetrack,
-    dataset_humanart,
-    dataset_ubody,
-    dataset_wflw,
-    dataset_300w,
-    dataset_cofw,
-    dataset_lapa,
+    dataset_wb,
+    dataset_body,
+    dataset_face,
 ]
 
 # data loaders
@@ -522,6 +545,11 @@ train_dataloader = dict(
     pin_memory=True,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
+    # sampler=dict(
+    #     type='MultiSourceSampler',
+    #     batch_size=train_batch_size,
+    #     source_ratio=[2, 1, 1],
+    #     shuffle=True),
     dataset=dict(
         type='CombinedDataset',
         metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),

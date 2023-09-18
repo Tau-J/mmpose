@@ -80,14 +80,14 @@ model = dict(
     neck=dict(
         type='CSPNeXtPAFPN',
         in_channels=[256, 512, 1024],
-        out_channels=1024,
+        out_channels=None,
         out_indices=(
             1,
             2,
         ),
         num_csp_blocks=2,
         expand_ratio=0.5,
-        norm_cfg=dict(type='BN'),
+        norm_cfg=dict(type='SyncBN'),
         act_cfg=dict(type='SiLU', inplace=True)),
     head=dict(
         type='RTMCCHead8',
@@ -499,29 +499,69 @@ dataset_lapa = dict(
     ],
 )
 
+dataset_wb = dict(
+    type='CombinedDataset',
+    metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
+    datasets=[dataset_coco, dataset_halpe, dataset_ubody],
+    pipeline=[],
+    test_mode=False,
+)
+
+dataset_body = dict(
+    type='CombinedDataset',
+    metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
+    datasets=[
+        dataset_aic,
+        dataset_crowdpose,
+        dataset_mpii,
+        dataset_jhmdb,
+        dataset_posetrack,
+        dataset_humanart,
+    ],
+    pipeline=[],
+    test_mode=False,
+)
+
+dataset_face = dict(
+    type='CombinedDataset',
+    metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
+    datasets=[
+        dataset_wflw,
+        dataset_300w,
+        dataset_cofw,
+        dataset_lapa,
+    ],
+    pipeline=[],
+    test_mode=False,
+)
+
 train_datasets = [
-    dataset_coco,
-    dataset_aic,
-    dataset_crowdpose,
-    dataset_mpii,
-    dataset_jhmdb,
-    dataset_halpe,
-    dataset_posetrack,
-    dataset_humanart,
-    dataset_ubody,
-    dataset_wflw,
-    dataset_300w,
-    dataset_cofw,
-    dataset_lapa,
+    dataset_wb,
+    dataset_body,
+    dataset_face,
 ]
 
 # data loaders
+mapping_metric_dataset = {
+    'coco-wholebody/body': [0, 1],
+    'coco-wholebody/face': [0, 2],
+    'coco-wholebody/foot': [0, 1],
+    'coco-wholebody/lhand': [0],
+    'coco-wholebody/rhand': [0],
+}
 train_dataloader = dict(
     batch_size=train_batch_size,
     num_workers=10,
     pin_memory=True,
     persistent_workers=True,
-    sampler=dict(type='DefaultSampler', shuffle=True),
+    # sampler=dict(type='DefaultSampler', shuffle=True),
+    sampler=dict(
+        type='DynamicMultiSourceSampler',
+        batch_size=train_batch_size,
+        source_ratio=[2, 1, 1],
+        mapping_metric_dataset=mapping_metric_dataset,
+        resample_interval=1,
+        shuffle=True),
     dataset=dict(
         type='CombinedDataset',
         metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),

@@ -2,13 +2,13 @@ _base_ = ['../../../_base_/default_runtime.py']
 
 # common setting
 num_keypoints = 133
-input_size = (192, 256)
+input_size = (288, 384)
 
 # runtime
 max_epochs = 270
 stage2_num_epochs = 10
 base_lr = 5e-4
-train_batch_size = 640
+train_batch_size = 32
 val_batch_size = 32
 
 train_cfg = dict(max_epochs=max_epochs, val_interval=10)
@@ -47,7 +47,7 @@ auto_scale_lr = dict(base_batch_size=1024)
 codec = dict(
     type='SimCCLabel',
     input_size=input_size,
-    sigma=(4.9, 5.66),
+    sigma=(6., 6.93),
     simcc_split_ratio=2.0,
     normalize=False,
     use_dark=False)
@@ -66,38 +66,37 @@ model = dict(
         type='CSPNeXt',
         arch='P5',
         expand_ratio=0.5,
-        deepen_factor=1.,
-        widen_factor=1.,
+        deepen_factor=1.33,
+        widen_factor=1.25,
         channel_attention=True,
         norm_cfg=dict(type='BN'),
         act_cfg=dict(type='SiLU'),
         init_cfg=dict(
             type='Pretrained',
             prefix='backbone.',
-            checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
-            'rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth'  # noqa
+            checkpoint='https://download.openmmlab.com/mmpose/v1/'
+            'wholebody_2d_keypoint/rtmpose/ubody/rtmpose-x_simcc-ucoco_pt-aic-coco_270e-384x288-f5b50679_20230822.pth'  # noqa
         )),
     neck=dict(
         type='CSPNeXtPAFPN',
-        in_channels=[256, 512, 1024],
-        out_channels=1024,
+        in_channels=[320, 640, 1280],
+        out_channels=None,
         out_indices=(
             1,
             2,
         ),
         num_csp_blocks=2,
         expand_ratio=0.5,
-        norm_cfg=dict(type='BN'),
+        norm_cfg=dict(type='SyncBN'),
         act_cfg=dict(type='SiLU', inplace=True)),
     head=dict(
-        type='RTMCCHead8',
-        in_channels=1024,
+        type='RTMWHead',
+        in_channels=1280,
         out_channels=num_keypoints,
         input_size=input_size,
         in_featuremap_size=tuple([s // 32 for s in input_size]),
         simcc_split_ratio=codec['simcc_split_ratio'],
         final_layer_kernel_size=7,
-        ps=2,
         gau_cfg=dict(
             hidden_dims=256,
             s=128,
@@ -106,8 +105,7 @@ model = dict(
             drop_path=0.,
             act_fn='SiLU',
             use_rel_bias=False,
-            pos_enc=False,
-            group=[0, 1, 0]),
+            pos_enc=False),
         loss=dict(
             type='KLDiscretLoss',
             use_target_weight=True,
@@ -499,35 +497,58 @@ dataset_lapa = dict(
     ],
 )
 
-train_datasets = [
-    dataset_coco,
-    dataset_aic,
-    dataset_crowdpose,
-    dataset_mpii,
-    dataset_jhmdb,
-    dataset_halpe,
-    dataset_posetrack,
-    dataset_humanart,
-    dataset_ubody,
-    dataset_wflw,
-    dataset_300w,
-    dataset_cofw,
-    dataset_lapa,
-]
+dataset_wb = dict(
+    type='CombinedDataset',
+    metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
+    datasets=[dataset_coco, dataset_halpe, dataset_ubody],
+    pipeline=[],
+    test_mode=False,
+)
+
+dataset_body = dict(
+    type='CombinedDataset',
+    metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
+    datasets=[
+        dataset_aic,
+        dataset_crowdpose,
+        dataset_mpii,
+        dataset_jhmdb,
+        dataset_posetrack,
+        dataset_humanart,
+    ],
+    pipeline=[],
+    test_mode=False,
+)
+
+dataset_face = dict(
+    type='CombinedDataset',
+    metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
+    datasets=[
+        dataset_wflw,
+        dataset_300w,
+        dataset_cofw,
+        dataset_lapa,
+    ],
+    pipeline=[],
+    test_mode=False,
+)
+
+train_datasets = [dataset_coco]
 
 # data loaders
+
 train_dataloader = dict(
     batch_size=train_batch_size,
     num_workers=10,
-    pin_memory=True,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=dict(
-        type='CombinedDataset',
-        metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
-        datasets=train_datasets,
+        type=dataset_type,
+        data_root=data_root,
+        data_mode=data_mode,
+        ann_file='coco/annotations/coco_wholebody_train_v1.0.json',
+        data_prefix=dict(img='detection/coco/train2017/'),
         pipeline=train_pipeline,
-        test_mode=False,
     ))
 
 val_dataloader = dict(

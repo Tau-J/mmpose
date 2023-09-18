@@ -240,7 +240,7 @@ class CocoWholeBodyMetric(CocoMetric):
             0, self.body_num, self.foot_num, self.face_num, self.left_hand_num,
             self.right_hand_num
         ])
-        message_hub = MessageHub.get_current_instance()
+        message_hub = MessageHub.get_instance('coco-wholebody')
 
         coco_eval = COCOeval(
             self.coco,
@@ -252,7 +252,8 @@ class CocoWholeBodyMetric(CocoMetric):
         coco_eval.evaluate()
         coco_eval.accumulate()
         coco_eval.summarize()
-        message_hub.update_scalar('coco-wholebody/body', coco_eval.stats[0])
+        message_hub.update_info_dict(
+            {'coco-wholebody/body': coco_eval.stats[0]})
 
         coco_eval = COCOeval(
             self.coco,
@@ -264,7 +265,8 @@ class CocoWholeBodyMetric(CocoMetric):
         coco_eval.evaluate()
         coco_eval.accumulate()
         coco_eval.summarize()
-        message_hub.update_scalar('coco-wholebody/foot', coco_eval.stats[0])
+        message_hub.update_info_dict(
+            {'coco-wholebody/foot': coco_eval.stats[0]})
 
         coco_eval = COCOeval(
             self.coco,
@@ -276,7 +278,8 @@ class CocoWholeBodyMetric(CocoMetric):
         coco_eval.evaluate()
         coco_eval.accumulate()
         coco_eval.summarize()
-        message_hub.update_scalar('coco-wholebody/face', coco_eval.stats[0])
+        message_hub.update_info_dict(
+            {'coco-wholebody/face': coco_eval.stats[0]})
 
         coco_eval = COCOeval(
             self.coco,
@@ -288,7 +291,8 @@ class CocoWholeBodyMetric(CocoMetric):
         coco_eval.evaluate()
         coco_eval.accumulate()
         coco_eval.summarize()
-        message_hub.update_scalar('coco-wholebody/lhand', coco_eval.stats[0])
+        message_hub.update_info_dict(
+            {'coco-wholebody/lhand': coco_eval.stats[0]})
 
         coco_eval = COCOeval(
             self.coco,
@@ -300,7 +304,8 @@ class CocoWholeBodyMetric(CocoMetric):
         coco_eval.evaluate()
         coco_eval.accumulate()
         coco_eval.summarize()
-        message_hub.update_scalar('coco-wholebody/rhand', coco_eval.stats[0])
+        message_hub.update_info_dict(
+            {'coco-wholebody/rhand': coco_eval.stats[0]})
 
         coco_eval = COCOeval(
             self.coco,
@@ -312,8 +317,8 @@ class CocoWholeBodyMetric(CocoMetric):
         coco_eval.evaluate()
         coco_eval.accumulate()
         coco_eval.summarize()
-        message_hub.update_scalar('coco-wholebody/wholebody',
-                                  coco_eval.stats[0])
+        message_hub.update_info_dict(
+            {'coco-wholebody/wholebody': coco_eval.stats[0]})
 
         stats_names = [
             'AP', 'AP .5', 'AP .75', 'AP (M)', 'AP (L)', 'AR', 'AR .5',

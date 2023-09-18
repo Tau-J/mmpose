@@ -16,6 +16,7 @@ from .rtmcc_head13 import RTMCCHead13
 from .rtmcc_head14 import RTMCCHead14
 from .rtmcc_head15 import RTMCCHead15
 from .rtmcc_head16 import RTMCCHead16
+from .rtmcc_head17 import RTMCCHead17
 from .rtmw_head import RTMWHead
 from .simcc_head import SimCCHead
 
@@ -23,5 +24,6 @@ __all__ = [
     'SimCCHead', 'RTMCCHead5', 'RTMCCHead', 'RTMCCHead2', 'RTMCCHead3',
     'RTMCCHead4', 'RTMCCHead6', 'RTMCCHead7', 'RTMCCHead8', 'RTMCCHead9',
     'RTMCCHead10', 'RTMCCHead11', 'RTMCCHead12', 'RTMCCHead13', 'RTMCCHead14',
-    'RTMCCHead15', 'MLECCHead', 'MLECC2DHead', 'RTMCCHead16', 'RTMWHead'
+    'RTMCCHead15', 'MLECCHead', 'MLECC2DHead', 'RTMCCHead16', 'RTMWHead',
+    'RTMCCHead17'
 ]
