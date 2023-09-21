@@ -69,11 +69,6 @@ class DWPoseDistiller(BaseModel, metaclass=ABCMeta):
                 self.teacher, self.teacher_pretrained, map_location='cpu')
         self.student.init_weights()
 
-    def set_epoch(self):
-        self.message_hub = MessageHub.get_current_instance()
-        self.epoch = self.message_hub.get_info('epoch')
-        self.max_epochs = self.message_hub.get_info('max_epochs')
-
     def forward(self,
                 inputs: torch.Tensor,
                 data_samples: OptSampleList,
@@ -103,7 +98,13 @@ class DWPoseDistiller(BaseModel, metaclass=ABCMeta):
         Returns:
             dict: A dictionary of losses.
         """
-        self.set_epoch()
+        message_hub = MessageHub.get_current_instance()
+        epoch = message_hub.get_info('epoch')
+        max_epochs = message_hub.get_info('max_epochs')
+
+        if epoch is None or max_epochs is None:
+            print('epoch or max_epochs is None')
+            print(message_hub)
 
         losses = dict()
 
@@ -128,8 +129,8 @@ class DWPoseDistiller(BaseModel, metaclass=ABCMeta):
             losses[loss_name] = self.distill_losses[loss_name](fea_s[-1],
                                                                fea_t[-1])
             if not self.two_dis:
-                losses[loss_name] = (
-                    1 - self.epoch / self.max_epochs) * losses[loss_name]
+                losses[loss_name] = (1 -
+                                     epoch / max_epochs) * losses[loss_name]
 
         if 'loss_logit' in all_keys:
             loss_name = 'loss_logit'
@@ -137,8 +138,8 @@ class DWPoseDistiller(BaseModel, metaclass=ABCMeta):
                 pred, pred_t, self.student.head.loss_module.beta,
                 target_weight)
             if not self.two_dis:
-                losses[loss_name] = (
-                    1 - self.epoch / self.max_epochs) * losses[loss_name]
+                losses[loss_name] = (1 -
+                                     epoch / max_epochs) * losses[loss_name]
 
         return losses
 
