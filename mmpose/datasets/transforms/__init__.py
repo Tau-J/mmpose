@@ -1,10 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .bottomup_transforms import (BottomupGetHeatmapMask, BottomupRandomAffine,
-                                  BottomupResize,)
+                                  BottomupResize)
 from .common_transforms import (Albumentation, FilterAnnotations,
                                 GenerateTarget, GetBBoxCenterScale,
                                 PhotometricDistortion, RandomBBoxTransform,
-                                RandomFlip, RandomHalfBody, YOLOXHSVRandomAug,)
+                                RandomFlip, RandomHalfBody, YOLOXHSVRandomAug)
 from .converting import KeypointConverter, SingleHandConverter
 from .formatting import PackPoseInputs
 from .loading import LoadImage
@@ -18,6 +18,6 @@ __all__ = [
     'PhotometricDistortion', 'PackPoseInputs', 'LoadImage',
     'BottomupGetHeatmapMask', 'BottomupRandomAffine', 'BottomupResize',
     'GenerateTarget', 'KeypointConverter', 'RandomFlipAroundRoot',
-    'FilterAnnotations', 'YOLOXHSVRandomAug', 'YOLOXMixUp', 'Mosaic'
+    'FilterAnnotations', 'YOLOXHSVRandomAug', 'YOLOXMixUp', 'Mosaic',
     'SingleHandConverter'
 ]
