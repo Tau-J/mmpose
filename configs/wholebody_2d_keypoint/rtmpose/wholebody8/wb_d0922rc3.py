@@ -8,7 +8,7 @@ input_size = (192, 256)
 max_epochs = 270
 stage2_num_epochs = 10
 base_lr = 5e-4
-train_batch_size = 960
+train_batch_size = 64
 val_batch_size = 32
 
 train_cfg = dict(max_epochs=max_epochs, val_interval=10)
@@ -46,13 +46,15 @@ auto_scale_lr = dict(base_batch_size=1024)
 # codec settings
 codec = dict(
     type='SimCCLabel',
-    input_size=(192, 256),
+    input_size=input_size,
     sigma=(4.9, 5.66),
     simcc_split_ratio=2.0,
     normalize=False,
     use_dark=False)
 
 # model settings
+load_from = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth'  # noqa
+
 model = dict(
     type='TopdownPoseEstimator',
     data_preprocessor=dict(
@@ -67,29 +69,19 @@ model = dict(
         expand_ratio=0.5,
         deepen_factor=1.,
         widen_factor=1.,
+        out_indices=(4, ),
         channel_attention=True,
         norm_cfg=dict(type='BN'),
         act_cfg=dict(type='SiLU'),
-        init_cfg=dict(
-            type='Pretrained',
-            prefix='backbone.',
-            checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
-            'rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth'  # noqa
-        )),
-    neck=dict(
-        type='CSPNeXtPAFPN',
-        in_channels=[256, 512, 1024],
-        out_channels=None,
-        out_indices=(
-            1,
-            2,
-        ),
-        num_csp_blocks=2,
-        expand_ratio=0.5,
-        norm_cfg=dict(type='SyncBN'),
-        act_cfg=dict(type='SiLU', inplace=True)),
+        # init_cfg=dict(
+        #     type='Pretrained',
+        #     prefix='backbone.',
+        #     checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
+        #     'rtmposev1/rtmpose-l_simcc-body7_pt-body7_420e-256x192-4dba18fc_20230504.pth'  # noqa
+        # )
+    ),
     head=dict(
-        type='RTMWHead',
+        type='RTMCCHead',
         in_channels=1024,
         out_channels=num_keypoints,
         input_size=input_size,
@@ -125,8 +117,6 @@ backend_args = dict(
         f'{data_root}detection/coco/':
         's254:s3://openmmlab/datasets/detection/coco/',
         f'{data_root}pose/LaPa/': 's254:s3://openmmlab/datasets/pose/LaPa/',
-        # f'{data_root}pose/FreiHand/':
-        # 's254:s3://openmmlab/datasets/pose/FreiHand/',
         f'{data_root}': 's3://openmmlab/datasets/',
     }))
 
@@ -508,12 +498,16 @@ hand_pipeline = [
         rotate_factor=0),
     dict(type='TopdownAffine', input_size=codec['input_size']),
 ]
-dataset_onehand10k = dict(
-    type='OneHand10KDataset',
+dataset_interhand2d = dict(
+    type='InterHand2DDataset',
     data_root=data_root,
     data_mode=data_mode,
-    ann_file='onehand10k/annotations/onehand10k_train.json',
-    data_prefix=dict(img='pose/OneHand10K/'),
+    ann_file='interhand26m/annotations/all/InterHand2.6M_train_data.json',
+    camera_param_file='interhand26m/annotations/all/'
+    'InterHand2.6M_train_camera.json',
+    joint_file='interhand26m/annotations/all/'
+    'InterHand2.6M_train_joint_3d.json',
+    data_prefix=dict(img='pose/images/train/'),
     pipeline=[
         dict(
             type='KeypointConverter',
@@ -523,112 +517,21 @@ dataset_onehand10k = dict(
     ],
 )
 
-dataset_freihand = dict(
-    type='FreiHandDataset',
-    # data_root=data_root,
-    data_mode=data_mode,
-    ann_file='data/freihand/annotations/freihand_train.json',
-    data_prefix=dict(img='s254:s3://openmmlab/datasets/pose/FreiHand/'),
-    pipeline=[
-        dict(
-            type='KeypointConverter',
-            num_keypoints=num_keypoints,
-            mapping=[],
-        ), *hand_pipeline
-    ],
-)
-
-dataset_rhd = dict(
-    type='Rhd2DDataset',
-    data_root=data_root,
-    data_mode=data_mode,
-    ann_file='rhd/annotations/rhd_train.json',
-    data_prefix=dict(img='pose/RHD/'),
-    pipeline=[
-        dict(
-            type='KeypointConverter',
-            num_keypoints=21,
-            mapping=[
-                (0, 0),
-                (1, 4),
-                (2, 3),
-                (3, 2),
-                (4, 1),
-                (5, 8),
-                (6, 7),
-                (7, 6),
-                (8, 5),
-                (9, 12),
-                (10, 11),
-                (11, 10),
-                (12, 9),
-                (13, 16),
-                (14, 15),
-                (15, 14),
-                (16, 13),
-                (17, 20),
-                (18, 19),
-                (19, 18),
-                (20, 17),
-            ]),
-        dict(
-            type='SingleHandConverter',
-            num_keypoints=num_keypoints,
-            left_hand_mapping=[(i, i + 91) for i in range(21)],
-            right_hand_mapping=[(i, i + 112) for i in range(21)],
-        ), *hand_pipeline
-    ],
-)
-
-dataset_wb = dict(
-    type='CombinedDataset',
-    metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
-    datasets=[dataset_coco, dataset_halpe, dataset_ubody],
-    pipeline=[],
-    test_mode=False,
-)
-
-dataset_body = dict(
-    type='CombinedDataset',
-    metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
-    datasets=[
-        dataset_aic,
-        dataset_crowdpose,
-        dataset_mpii,
-        dataset_jhmdb,
-        dataset_posetrack,
-        dataset_humanart,
-    ],
-    pipeline=[],
-    test_mode=False,
-)
-
-dataset_face = dict(
-    type='CombinedDataset',
-    metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
-    datasets=[
-        dataset_wflw,
-        dataset_300w,
-        dataset_cofw,
-        dataset_lapa,
-    ],
-    pipeline=[],
-    test_mode=False,
-)
-
-dataset_hand = dict(
-    type='CombinedDataset',
-    metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
-    datasets=[
-        dataset_onehand10k,
-        dataset_freihand,
-        dataset_rhd,
-    ],
-    pipeline=[],
-    test_mode=False,
-)
-
-train_datasets = [dataset_wb, dataset_body, dataset_face, dataset_hand]
+train_datasets = [
+    dataset_coco,
+    dataset_aic,
+    dataset_crowdpose,
+    dataset_mpii,
+    dataset_jhmdb,
+    dataset_halpe,
+    dataset_posetrack,
+    dataset_humanart,
+    dataset_ubody,
+    dataset_wflw,
+    dataset_300w,
+    dataset_cofw,
+    dataset_lapa,
+]
 
 # data loaders
 train_dataloader = dict(
@@ -637,11 +540,6 @@ train_dataloader = dict(
     pin_memory=True,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
-    # sampler=dict(
-    #     type='MultiSourceSampler',
-    #     batch_size=train_batch_size,
-    #     source_ratio=[2, 1, 1],
-    #     shuffle=True),
     dataset=dict(
         type='CombinedDataset',
         metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
