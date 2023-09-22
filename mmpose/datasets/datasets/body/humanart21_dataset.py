@@ -5,7 +5,7 @@ from typing import Optional
 import numpy as np
 
 from mmpose.registry import DATASETS
-from ..body import HumanArtDataset
+from .humanart_dataset import HumanArtDataset
 
 
 @DATASETS.register_module()

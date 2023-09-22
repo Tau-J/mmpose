@@ -62,7 +62,10 @@ class KeypointConverter(BaseTransform):
                                                                   int]]]):
         self.num_keypoints = num_keypoints
         self.mapping = mapping
-        source_index, target_index = zip(*mapping)
+        if len(mapping):
+            source_index, target_index = zip(*mapping)
+        else:
+            source_index, target_index = [], []
 
         src1, src2 = [], []
         interpolation = False
@@ -89,6 +92,9 @@ class KeypointConverter(BaseTransform):
     def transform(self, results: dict) -> dict:
         """Transforms the keypoint results to match the target keypoints."""
         num_instances = results['keypoints'].shape[0]
+        if len(results['keypoints_visible'].shape) > 2:
+            results['keypoints_visible'] = results['keypoints_visible'][:, :,
+                                                                        0]
 
         # Initialize output arrays
         keypoints = np.zeros((num_instances, self.num_keypoints, 3))
