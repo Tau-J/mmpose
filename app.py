@@ -31,13 +31,15 @@ except (ImportError, ModuleNotFoundError):
 cached_det = {
     'body': None,
     'face': None,
-    'wholebody': None,
+    'wholebody(dwpose)': None,
+    'wholebody(rtmw)': None,
 }
 
 cached_pose = {
     'body': None,
     'face': None,
-    'wholebody': None,
+    'wholebody(dwpose)': None,
+    'wholebody(rtmw)': None,
 }
 
 
