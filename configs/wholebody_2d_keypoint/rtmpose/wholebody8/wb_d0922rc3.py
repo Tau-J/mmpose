@@ -500,6 +500,7 @@ hand_pipeline = [
 ]
 dataset_interhand2d = dict(
     type='InterHand2DDataset',
+    # data_root='/mnt/petrelfs/share_data/yifanw/interhand26m/interhand2.6m/',
     data_root=data_root,
     data_mode=data_mode,
     ann_file='interhand26m/annotations/all/InterHand2.6M_train_data.json',
@@ -507,37 +508,27 @@ dataset_interhand2d = dict(
     'InterHand2.6M_train_camera.json',
     joint_file='interhand26m/annotations/all/'
     'InterHand2.6M_train_joint_3d.json',
-    data_prefix=dict(img='pose/images/train/'),
+    data_prefix=dict(img='interhand2.6m/images/train/'),
     pipeline=[
         dict(
             type='KeypointConverter',
             num_keypoints=num_keypoints,
-            mapping=[],
+            mapping=[(i, i + 91) for i in range(42)],
         ), *hand_pipeline
     ],
 )
 
 train_datasets = [
-    dataset_coco,
-    dataset_aic,
-    dataset_crowdpose,
-    dataset_mpii,
-    dataset_jhmdb,
-    dataset_halpe,
-    dataset_posetrack,
-    dataset_humanart,
-    dataset_ubody,
-    dataset_wflw,
-    dataset_300w,
-    dataset_cofw,
-    dataset_lapa,
+    dataset_coco, dataset_aic, dataset_crowdpose, dataset_mpii, dataset_jhmdb,
+    dataset_halpe, dataset_posetrack, dataset_humanart, dataset_ubody,
+    dataset_wflw, dataset_300w, dataset_cofw, dataset_lapa, dataset_interhand2d
 ]
 
 # data loaders
 train_dataloader = dict(
     batch_size=train_batch_size,
     num_workers=10,
-    pin_memory=True,
+    pin_memory=False,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=dict(

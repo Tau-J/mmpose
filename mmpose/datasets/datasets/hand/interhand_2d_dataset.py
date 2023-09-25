@@ -129,22 +129,23 @@ class InterHand2DDataset(BaseCocoStyleDataset):
                  pipeline: List[Union[dict, Callable]] = [],
                  test_mode: bool = False,
                  lazy_init: bool = False,
-                 max_refetch: int = 1000):
-
+                 max_refetch: int = 1000,
+                 sample_interval: int = 1):
+        self.sample_interval = sample_interval
         _ann_file = ann_file
-        if not is_abs(_ann_file):
+        if data_root is not None and not is_abs(_ann_file):
             _ann_file = osp.join(data_root, _ann_file)
         assert exists(_ann_file), 'Annotation file does not exist.'
         self.ann_file = _ann_file
 
         _camera_param_file = camera_param_file
-        if not is_abs(_camera_param_file):
+        if data_root is not None and not is_abs(_camera_param_file):
             _camera_param_file = osp.join(data_root, _camera_param_file)
         assert exists(_camera_param_file), 'Camera file does not exist.'
         self.camera_param_file = _camera_param_file
 
         _joint_file = joint_file
-        if not is_abs(_joint_file):
+        if data_root is not None and not is_abs(_joint_file):
             _joint_file = osp.join(data_root, _joint_file)
         assert exists(_joint_file), 'Joint file does not exist.'
         self.joint_file = _joint_file
@@ -153,7 +154,7 @@ class InterHand2DDataset(BaseCocoStyleDataset):
         if not self.use_gt_root_depth:
             assert rootnet_result_file is not None
             _rootnet_result_file = rootnet_result_file
-            if not is_abs(_rootnet_result_file):
+            if data_root is not None and not is_abs(_rootnet_result_file):
                 _rootnet_result_file = osp.join(data_root,
                                                 _rootnet_result_file)
             assert exists(
@@ -198,6 +199,8 @@ class InterHand2DDataset(BaseCocoStyleDataset):
         image_list = []
 
         for idx, img_id in enumerate(self.coco.getImgIds()):
+            if img_id % self.sample_interval != 0:
+                continue
             img = self.coco.loadImgs(img_id)[0]
             img.update({
                 'img_id':
@@ -271,19 +274,19 @@ class InterHand2DDataset(BaseCocoStyleDataset):
 
         if self.use_gt_root_depth:
             bbox_xywh = np.array(ann['bbox'], dtype=np.float32).reshape(1, 4)
-            abs_depth = [keypoints_cam[20, 2], keypoints_cam[41, 2]]
+            # abs_depth = [keypoints_cam[20, 2], keypoints_cam[41, 2]]
         else:
             rootnet_ann_data = rootnet_result[str(ann['id'])]
             bbox_xywh = np.array(
                 rootnet_ann_data['bbox'], dtype=np.float32).reshape(1, 4)
-            abs_depth = rootnet_ann_data['abs_depth']
+            # abs_depth = rootnet_ann_data['abs_depth']
         bbox = bbox_xywh2xyxy(bbox_xywh)
 
         # 41: 'l_wrist', left hand root
         # 20: 'r_wrist', right hand root
-        rel_root_depth = keypoints_cam[41, 2] - keypoints_cam[20, 2]
+        # rel_root_depth = keypoints_cam[41, 2] - keypoints_cam[20, 2]
         # if root is not valid, root-relative 3D depth is also invalid.
-        rel_root_valid = joint_valid[20] * joint_valid[41]
+        # rel_root_valid = joint_valid[20] * joint_valid[41]
 
         # if root is not valid -> root-relative 3D pose is also not valid.
         # Therefore, mark all joints as invalid
@@ -313,15 +316,15 @@ class InterHand2DDataset(BaseCocoStyleDataset):
             'img_path': img['img_path'],
             'rotation': 0,
             'keypoints': joints_3d[:, :, :2],
-            'keypoints_cam': keypoints_cam.reshape(1, -1, 3)[:, :, :2],
+            # 'keypoints_cam': keypoints_cam.reshape(1, -1, 3)[:, :, :2],
             'keypoints_visible': joints_3d_visible,
             'hand_type': self.encode_handtype(ann['hand_type']),
             'hand_type_valid': np.array([ann['hand_type_valid']]),
-            'rel_root_depth': rel_root_depth,
-            'rel_root_valid': rel_root_valid,
-            'abs_depth': abs_depth,
-            'focal': focal,
-            'principal_pt': principal_pt,
+            # 'rel_root_depth': rel_root_depth,
+            # 'rel_root_valid': rel_root_valid,
+            # 'abs_depth': abs_depth,
+            # 'focal': focal,
+            # 'principal_pt': principal_pt,
             'dataset': self.metainfo['dataset_name'],
             'bbox': bbox,
             'bbox_score': np.ones(1, dtype=np.float32),

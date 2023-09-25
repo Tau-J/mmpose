@@ -580,6 +580,25 @@ dataset_rhd = dict(
     ],
 )
 
+dataset_interhand2d = dict(
+    type='InterHand2DDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='interhand26m/annotations/all/InterHand2.6M_train_data.json',
+    camera_param_file='interhand26m/annotations/all/'
+    'InterHand2.6M_train_camera.json',
+    joint_file='interhand26m/annotations/all/'
+    'InterHand2.6M_train_joint_3d.json',
+    data_prefix=dict(img='interhand2.6m/images/train/'),
+    pipeline=[
+        dict(
+            type='KeypointConverter',
+            num_keypoints=num_keypoints,
+            mapping=[(i, i + 91) for i in range(42)],
+        ), *hand_pipeline
+    ],
+)
+
 dataset_wb = dict(
     type='CombinedDataset',
     metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
@@ -620,9 +639,7 @@ dataset_hand = dict(
     type='CombinedDataset',
     metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
     datasets=[
-        dataset_onehand10k,
-        dataset_freihand,
-        dataset_rhd,
+        dataset_onehand10k, dataset_freihand, dataset_rhd, dataset_interhand2d
     ],
     pipeline=[],
     test_mode=False,
@@ -633,7 +650,7 @@ train_datasets = [dataset_wb, dataset_body, dataset_face, dataset_hand]
 # data loaders
 train_dataloader = dict(
     batch_size=train_batch_size,
-    num_workers=10,
+    num_workers=8,
     pin_memory=True,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
