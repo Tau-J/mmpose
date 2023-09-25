@@ -151,7 +151,7 @@ def predict(input,
     parser.add_argument(
         '--bbox-thr',
         type=float,
-        default=0.5,
+        default=0.3,
         help='Bounding box score threshold')
     parser.add_argument(
         '--nms-thr',
@@ -161,7 +161,7 @@ def predict(input,
     parser.add_argument(
         '--kpt-thr',
         type=float,
-        default=0.3,
+        default=0.4,
         help='Visualizing keypoint thresholds')
     parser.add_argument(
         '--draw-heatmap',
@@ -351,8 +351,8 @@ with gr.Blocks() as demo:
         #                          label='Skeleton Style',
         #                          info='mmpose style/ openpose style')
         gr.Markdown('## News')
-        gr.Markdown(news1)
         gr.Markdown(news2)
+        gr.Markdown(news1)
         gr.Markdown('## Output')
         out_image = gr.Image(type='numpy')
         gr.Examples(['./tests/data/coco/000000000785.jpg'], input_img)
@@ -373,8 +373,8 @@ with gr.Blocks() as demo:
         #                          label='Skeleton Style',
         #                          info='mmpose style/ openpose style')
         gr.Markdown('## News')
-        gr.Markdown(news1)
         gr.Markdown(news2)
+        gr.Markdown(news1)
         gr.Markdown('## Output')
         out_image = gr.Image(type='numpy')
 
@@ -395,8 +395,8 @@ with gr.Blocks() as demo:
         #                          label='Skeleton Style',
         #                          info='mmpose style/ openpose style')
         gr.Markdown('## News')
-        gr.Markdown(news1)
         gr.Markdown(news2)
+        gr.Markdown(news1)
         gr.Markdown('## Output')
         out_video = gr.Video()
 
@@ -417,8 +417,8 @@ with gr.Blocks() as demo:
         #                          label='Skeleton Style',
         #                          info='mmpose style/ openpose style')
         gr.Markdown('## News')
-        gr.Markdown(news1)
         gr.Markdown(news2)
+        gr.Markdown(news1)
         gr.Markdown('## Output')
         out_video = gr.Video()
 
