@@ -40,6 +40,7 @@ cached_pose = {
     'wholebody': None,
 }
 
+
 def process_one_image(args,
                       img,
                       detector,
@@ -89,7 +90,11 @@ def process_one_image(args,
 # input_type = 'image'
 
 
-def predict(input, draw_heatmap=False, model_type='body', skeleton_style='mmpose', input_type='image'):
+def predict(input,
+            draw_heatmap=False,
+            model_type='body',
+            skeleton_style='mmpose',
+            input_type='image'):
     """Visualize the demo images.
 
     Using mmdet to detect the human.
@@ -100,11 +105,16 @@ def predict(input, draw_heatmap=False, model_type='body', skeleton_style='mmpose
         det_checkpoint = 'https://download.openmmlab.com/mmpose/mmdet_pretrained/yolo-x_8xb8-300e_coco-face_13274d7c.pth'  # noqa
         pose_config = 'projects/rtmpose/rtmpose/face_2d_keypoint/rtmpose-m_8xb64-120e_lapa-256x256.py'  # noqa
         pose_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-m_simcc-face6_pt-in1k_120e-256x256-72a37400_20230529.pth'  # noqa
-    elif model_type == 'wholebody':
+    elif model_type == 'wholebody(dwpose)':
         det_config = 'projects/rtmpose/rtmdet/person/rtmdet_m_640-8xb32_coco-person.py'  # noqa
         det_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmdet_m_8xb32-100e_coco-obj365-person-235e8209.pth'  # noqa
         pose_config = 'projects/rtmpose/rtmpose/wholebody_2d_keypoint/rtmpose-l_8xb32-270e_coco-wholebody-384x288.py'  # noqa
         pose_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-384x288-2438fd99_20230728.pth'  # noqa
+    elif model_type == 'wholebody(rtmw)':
+        det_config = 'projects/rtmpose/rtmdet/person/rtmdet_m_640-8xb32_coco-person.py'  # noqa
+        det_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmdet_m_8xb32-100e_coco-obj365-person-235e8209.pth'  # noqa
+        pose_config = 'projects/rtmpose/rtmpose/wholebody_2d_keypoint/rtmw-x_8xb320-270e_cocktail13-384x288.py'  # noqa
+        pose_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmw/rtmw-x_simcc-cocktail13_pt-ucoco_270e-384x288-0949e3a9_20230925.pth'  # noqa
     else:
         model_type = 'body'
         det_config = 'projects/rtmpose/rtmdet/person/rtmdet_m_640-8xb32_coco-person.py'  # noqa
@@ -193,9 +203,8 @@ def predict(input, draw_heatmap=False, model_type='body', skeleton_style='mmpose
     if cached_det[model_type] is not None:
         detector = cached_det[model_type]
     else:
-        detector = init_detector(det_config, 
-                                 det_checkpoint, 
-                                 device=args.device)
+        detector = init_detector(
+            det_config, det_checkpoint, device=args.device)
         detector.cfg = adapt_mmdet_pipeline(detector.cfg)
         cached_det[model_type] = detector
 
@@ -325,20 +334,23 @@ def predict(input, draw_heatmap=False, model_type='body', skeleton_style='mmpose
 #     outputs=gr.Image(type='pil'),
 #     examples=['tests/data/coco/000000000785.jpg']).launch()
 news1 = '2023-8-1: We have supported [DWPose](https://arxiv.org/pdf/2307.15880.pdf) as the default `wholebody` model.'  # noqa
+news2 = '2023-9-25: We release an alpha version of RTMW model, the technical report will be released soon.'  # noqa
 with gr.Blocks() as demo:
 
     with gr.Tab('Upload-Image'):
         input_img = gr.Image(type='numpy')
         button = gr.Button('Inference', variant='primary')
         hm = gr.Checkbox(label='draw-heatmap', info='Whether to draw heatmap')
-        model_type = gr.Dropdown(['body', 'face', 'wholebody'],
-                                 label='Keypoint Type',
-                                 info='Body / Face / Wholebody')
+        model_type = gr.Dropdown(
+            ['body', 'face', 'wholebody(rtmw)', 'wholebody(dwpose)'],
+            label='Keypoint Type',
+            info='Body / Face / Wholebody')
         # skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
         #                          label='Skeleton Style',
         #                          info='mmpose style/ openpose style')
         gr.Markdown('## News')
         gr.Markdown(news1)
+        gr.Markdown(news2)
         gr.Markdown('## Output')
         out_image = gr.Image(type='numpy')
         gr.Examples(['./tests/data/coco/000000000785.jpg'], input_img)
@@ -351,14 +363,16 @@ with gr.Blocks() as demo:
         input_img = gr.Image(source='webcam', type='numpy')
         button = gr.Button('Inference', variant='primary')
         hm = gr.Checkbox(label='draw-heatmap', info='Whether to draw heatmap')
-        model_type = gr.Dropdown(['body', 'face', 'wholebody'],
-                                 label='Keypoint Type',
-                                 info='Body / Face / Wholebody')
+        model_type = gr.Dropdown(
+            ['body', 'face', 'wholebody(rtmw)', 'wholebody(dwpose)'],
+            label='Keypoint Type',
+            info='Body / Face / Wholebody')
         # skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
         #                          label='Skeleton Style',
         #                          info='mmpose style/ openpose style')
         gr.Markdown('## News')
         gr.Markdown(news1)
+        gr.Markdown(news2)
         gr.Markdown('## Output')
         out_image = gr.Image(type='numpy')
 
@@ -371,14 +385,16 @@ with gr.Blocks() as demo:
         input_video = gr.Video(type='mp4')
         button = gr.Button('Inference', variant='primary')
         hm = gr.Checkbox(label='draw-heatmap', info='Whether to draw heatmap')
-        model_type = gr.Dropdown(['body', 'face', 'wholebody'],
-                                 label='Keypoint Type',
-                                 info='Body / Face / Wholebody')
+        model_type = gr.Dropdown(
+            ['body', 'face', 'wholebody(rtmw)', 'wholebody(dwpose)'],
+            label='Keypoint Type',
+            info='Body / Face / Wholebody')
         # skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
         #                          label='Skeleton Style',
         #                          info='mmpose style/ openpose style')
         gr.Markdown('## News')
         gr.Markdown(news1)
+        gr.Markdown(news2)
         gr.Markdown('## Output')
         out_video = gr.Video()
 
@@ -391,14 +407,16 @@ with gr.Blocks() as demo:
         input_video = gr.Video(source='webcam', format='mp4')
         button = gr.Button('Inference', variant='primary')
         hm = gr.Checkbox(label='draw-heatmap', info='Whether to draw heatmap')
-        model_type = gr.Dropdown(['body', 'face', 'wholebody'],
-                                 label='Keypoint Type',
-                                 info='Body / Face / Wholebody')
+        model_type = gr.Dropdown(
+            ['body', 'face', 'wholebody(rtmw)', 'wholebody(dwpose)'],
+            label='Keypoint Type',
+            info='Body / Face / Wholebody')
         # skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
         #                          label='Skeleton Style',
         #                          info='mmpose style/ openpose style')
         gr.Markdown('## News')
         gr.Markdown(news1)
+        gr.Markdown(news2)
         gr.Markdown('## Output')
         out_video = gr.Video()
 
