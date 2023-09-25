@@ -151,7 +151,7 @@ def predict(input,
     parser.add_argument(
         '--bbox-thr',
         type=float,
-        default=0.3,
+        default=0.5,
         help='Bounding box score threshold')
     parser.add_argument(
         '--nms-thr',
