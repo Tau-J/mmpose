@@ -131,7 +131,6 @@ class InterHand2DDataset(BaseCocoStyleDataset):
                  lazy_init: bool = False,
                  max_refetch: int = 1000,
                  sample_interval: int = 1):
-        self.sample_interval = sample_interval
         _ann_file = ann_file
         if data_root is not None and not is_abs(_ann_file):
             _ann_file = osp.join(data_root, _ann_file)
@@ -173,7 +172,8 @@ class InterHand2DDataset(BaseCocoStyleDataset):
             pipeline=pipeline,
             test_mode=test_mode,
             lazy_init=lazy_init,
-            max_refetch=max_refetch)
+            max_refetch=max_refetch,
+            sample_interval=sample_interval)
 
     def _load_annotations(self) -> Tuple[List[dict], List[dict]]:
         """Load data from annotations in COCO format."""
@@ -199,7 +199,7 @@ class InterHand2DDataset(BaseCocoStyleDataset):
         image_list = []
 
         for idx, img_id in enumerate(self.coco.getImgIds()):
-            if img_id % self.sample_interval != 0:
+            if idx % self.sample_interval != 0:
                 continue
             img = self.coco.loadImgs(img_id)[0]
             img.update({

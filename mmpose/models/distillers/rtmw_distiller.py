@@ -19,8 +19,8 @@ from mmpose.utils.typing import (ForwardResults, OptConfigType, OptMultiConfig,
 
 
 @MODELS.register_module()
-class DWPoseDistiller(BaseModel, metaclass=ABCMeta):
-    """Base distiller for detectors.
+class RTMWDistiller(BaseModel, metaclass=ABCMeta):
+    """distiller for RTMW. Modified from DWPoseDistiller.
 
     It typically consists of teacher_model and student_model.
     """
@@ -108,12 +108,20 @@ class DWPoseDistiller(BaseModel, metaclass=ABCMeta):
         losses = dict()
 
         with torch.no_grad():
-            fea_t = self.teacher.extract_feat(inputs)
+            fea_backbone_t = self.teacher.backbone(inputs)
+            if self.teacher.with_neck:
+                fea_t = self.teacher.neck(fea_backbone_t)
+            else:
+                fea_t = fea_backbone_t
             lt_x, lt_y = self.teacher.head(fea_t)
             pred_t = (lt_x, lt_y)
 
         if not self.two_dis:
-            fea_s = self.student.extract_feat(inputs)
+            fea_backbone_s = self.student.backbone(inputs)
+            if self.student.with_neck:
+                fea_s = self.student.neck(fea_backbone_s)
+            else:
+                fea_s = fea_backbone_s
             ori_loss, pred, gt, target_weight = self.head_loss(
                 fea_s, data_samples, train_cfg=self.train_cfg)
             losses.update(ori_loss)
@@ -124,9 +132,19 @@ class DWPoseDistiller(BaseModel, metaclass=ABCMeta):
         all_keys = self.distill_losses.keys()
 
         if 'loss_fea' in all_keys:
-            loss_name = 'loss_fea'
-            losses[loss_name] = self.distill_losses[loss_name](fea_s[-1],
-                                                               fea_t[-1])
+            loss_name = 'loss_feat'
+            loss_feat = 0.
+
+            # backbone loss
+            for f_s, f_t in zip(fea_backbone_s, fea_backbone_t):
+                loss_feat = loss_feat + self.distill_losses[loss_name](f_s,
+                                                                       f_t)
+            if self.student.with_neck:
+                # neck loss
+                for f_s, f_t in zip(fea_s, fea_t):
+                    loss_feat = loss_feat + self.distill_losses[loss_name](f_s,
+                                                                           f_t)
+            losses[loss_name] = loss_feat
             if not self.two_dis:
                 losses[loss_name] = (
                     1 - self.epoch / self.max_epochs) * losses[loss_name]
