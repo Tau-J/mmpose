@@ -590,6 +590,7 @@ dataset_interhand2d = dict(
     joint_file='interhand26m/annotations/all/'
     'InterHand2.6M_train_joint_3d.json',
     data_prefix=dict(img='interhand2.6m/images/train/'),
+    sample_interval=10,
     pipeline=[
         dict(
             type='KeypointConverter',
