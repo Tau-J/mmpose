@@ -131,23 +131,25 @@ class RTMWDistiller(BaseModel, metaclass=ABCMeta):
 
         all_keys = self.distill_losses.keys()
 
-        if 'loss_fea' in all_keys:
-            loss_name = 'loss_feat'
+        if 'loss_fea0' in all_keys:
+            loss_names = [f'loss_fea{i}' for i in range(3)]
             loss_feat = 0.
 
             # backbone loss
-            for f_s, f_t in zip(fea_backbone_s, fea_backbone_t):
+            for loss_name, f_s, f_t in zip(loss_names, fea_backbone_s,
+                                           fea_backbone_t):
                 loss_feat = loss_feat + self.distill_losses[loss_name](f_s,
                                                                        f_t)
             if self.student.with_neck:
+                loss_names = [f'loss_neck{i}' for i in range(2)]
                 # neck loss
-                for f_s, f_t in zip(fea_s, fea_t):
+                for loss_name, f_s, f_t in zip(loss_names, fea_s, fea_t):
                     loss_feat = loss_feat + self.distill_losses[loss_name](f_s,
                                                                            f_t)
-            losses[loss_name] = loss_feat
+            losses['loss_fea'] = loss_feat
             if not self.two_dis:
-                losses[loss_name] = (
-                    1 - self.epoch / self.max_epochs) * losses[loss_name]
+                losses['loss_fea'] = (
+                    1 - self.epoch / self.max_epochs) * losses['loss_fea']
 
         if 'loss_logit' in all_keys:
             loss_name = 'loss_logit'
