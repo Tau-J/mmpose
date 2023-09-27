@@ -96,12 +96,33 @@ https://user-images.githubusercontent.com/15977946/124654387-0fd3c500-ded1-11eb-
 
 ## 最新进展
 
-- 我们支持了三个新的数据集:
-  - (CVPR 2023) [Human-Art](https://github.com/IDEA-Research/HumanArt)
-  - (CVPR 2022) [Animal Kingdom](https://github.com/sutdcv/Animal-Kingdom)
-  - (AAAI 2020) [LaPa](https://github.com/JDAI-CV/lapa-dataset/)
+- 2023-10-07：MMPose [v1.2.0](https://github.com/open-mmlab/mmpose/releases/tag/v1.2.0) 正式发布了，主要更新包括:
 
-![yolox-pose_intro](https://user-images.githubusercontent.com/26127467/226655503-3cee746e-6e42-40be-82ae-6e7cae2a4c7e.jpg)
+  - 我们支持了七个新的算法:
+
+    - (ICCV 2023) [MotionBERT](https://arxiv.org/abs/2210.06551)
+    - (ICLR 2023) [EDPose](https://github.com/IDEA-Research/ED-Pose) (inference only)
+    - (ICCVW 2023) [DWPose](https://github.com/IDEA-Research/DWPose)
+    - (CVPRW 2022) [YOLO-Pose](https://arxiv.org/abs/2204.06806)
+    - (ICLR 2022) [Uniformer](https://github.com/Sense-X/UniFormer/tree/main/pose_estimation) (inference only)
+    - (ECCV 2020) [InterNet](https://mks0601.github.io/InterHand2.6M/) (Migrated from MMPose 0.x)
+    - [RTMW](https://github.com/open-mmlab/mmpose/blob/dev-1.x/projects/rtmpose/rtmpose/wholebody_2d_keypoint/rtmpose-x_8xb32-270e_coco-wholebody-384x288.py) (The technical report will be released soon)
+
+  - 我们支持了三个新数据集：
+
+    - (CVPR 2023) [UBody](https://github.com/IDEA-Research/OSX)
+    - (CVPR 2016) [DeepFashion](http://mmlab.ie.cuhk.edu.hk/projects/DeepFashion/LandmarkDetection.html) (Migrated from MMPose 0.x)
+    - (ECCV 2020) [InterHand2.6M](https://mks0601.github.io/InterHand2.6M/) (Migrated from MMPose 0.x)
+
+  - 我们新增了一些有用的开发功能：
+
+    - [多数据集评估](https://mmpose.readthedocs.io/zh_CN/dev-1.x/user_guides/train_and_test.html#id21)
+    - [可见性预测头部](https://mmpose.readthedocs.io/zh_CN/dev-1.x/advanced_guides/implement_new_models.html#id6)
+    - [BadCase 可视化](https://github.com/open-mmlab/mmpose/blob/dev-1.x/mmpose/engine/hooks/badcase_hook.py)
+
+  请查看完整的 [版本说明](https://github.com/open-mmlab/mmpose/releases/tag/v1.2.0) 以了解更多 MMPose v1.2.0 带来的更新!
+
+![intro](https://user-images.githubusercontent.com/26127467/226655503-3cee746e-6e42-40be-82ae-6e7cae2a4c7e.jpg)
 
 - 欢迎使用 [*MMPose 项目*](/projects/README.md)。在这里，您可以发现 MMPose 中的最新功能和算法，并且可以通过最快的方式与社区分享自己的创意和代码实现。向 MMPose 中添加新功能从此变得简单丝滑：
 
@@ -113,19 +134,11 @@ https://user-images.githubusercontent.com/15977946/124654387-0fd3c500-ded1-11eb-
     - [YOLOX-Pose](/projects/yolox_pose/)
     - [MMPose4AIGC](/projects/mmpose4aigc/)
     - [Simple Keypoints](/projects/skps/)
+    - [Just Dance](/projects/just_dance/)
+    - [Uniformer](/projects/uniformer/)
   - 从简单的 [示例项目](/projects/example_project/) 开启您的 MMPose 代码贡献者之旅吧，让我们共同打造更好用的 MMPose！
 
 <br/>
-
-- 2023-07-04：MMPose [v1.1.0](https://github.com/open-mmlab/mmpose/releases/tag/v1.1.0) 正式发布了，主要更新包括:
-
-  - 支持新数据集：Human-Art、Animal Kingdom、LaPa。
-  - 支持新的配置文件风格，支持 IDE 跳转和搜索。
-  - 提供更强性能的 RTMPose 模型。
-  - 迁移 3D 姿态估计算法。
-  - 加速推理脚本，全部 demo 脚本支持摄像头推理。
-
-  请查看完整的 [版本说明](https://github.com/open-mmlab/mmpose/releases/tag/v1.1.0) 以了解更多 MMPose v1.1.0 带来的更新!
 
 ## 0.x / 1.x 迁移
 
