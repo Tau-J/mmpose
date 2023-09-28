@@ -147,6 +147,11 @@ class RTMWDistiller(BaseModel, metaclass=ABCMeta):
                     loss_feat = loss_feat + self.distill_losses[loss_name](f_s,
                                                                            f_t)
             losses['loss_fea'] = loss_feat
+            if self.student.with_neck:
+                losses['loss_fea'] = losses['loss_fea'] / 5.
+            else:
+                losses['loss_fea'] = losses['loss_fea'] / 3.
+
             if not self.two_dis:
                 losses['loss_fea'] = (
                     1 - self.epoch / self.max_epochs) * losses['loss_fea']
