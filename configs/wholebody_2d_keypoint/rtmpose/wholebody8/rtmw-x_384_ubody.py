@@ -111,7 +111,6 @@ model = dict(
             beta=10.,
             label_softmax=True),
         decoder=codec),
-    metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
     test_cfg=dict(flip_test=True))
 
 # base dataset settings
@@ -370,7 +369,7 @@ dataset_humanart = dict(
     data_root=data_root,
     data_mode=data_mode,
     ann_file='HumanArt/annotations/training_humanart.json',
-    filter_cfg=dict(scenes=['real_human']),
+    # filter_cfg=dict(scenes=['real_human']),
     data_prefix=dict(img='pose/'),
     pipeline=[
         dict(
@@ -533,17 +532,123 @@ dataset_face = dict(
     test_mode=False,
 )
 
-train_datasets = [
-    dataset_wb,
-    dataset_body,
-    dataset_face,
+hand_pipeline = [
+    dict(type='LoadImage', backend_args=backend_args),
+    dict(type='GetBBoxCenterScale'),
+    dict(
+        type='RandomBBoxTransform',
+        shift_factor=0.,
+        scale_factor=[0.2, 1.0],
+        rotate_factor=0),
+    dict(type='TopdownAffine', input_size=codec['input_size']),
 ]
+dataset_onehand10k = dict(
+    type='OneHand10KDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='onehand10k/annotations/onehand10k_train.json',
+    data_prefix=dict(img='pose/OneHand10K/'),
+    pipeline=[
+        dict(
+            type='KeypointConverter',
+            num_keypoints=num_keypoints,
+            mapping=[],
+        ), *hand_pipeline
+    ],
+)
+
+dataset_freihand = dict(
+    type='FreiHandDataset',
+    # data_root=data_root,
+    data_mode=data_mode,
+    ann_file='data/freihand/annotations/freihand_train.json',
+    data_prefix=dict(img='s254:s3://openmmlab/datasets/pose/FreiHand/'),
+    pipeline=[
+        dict(
+            type='KeypointConverter',
+            num_keypoints=num_keypoints,
+            mapping=[],
+        ), *hand_pipeline
+    ],
+)
+
+dataset_rhd = dict(
+    type='Rhd2DDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='rhd/annotations/rhd_train.json',
+    data_prefix=dict(img='pose/RHD/'),
+    pipeline=[
+        dict(
+            type='KeypointConverter',
+            num_keypoints=21,
+            mapping=[
+                (0, 0),
+                (1, 4),
+                (2, 3),
+                (3, 2),
+                (4, 1),
+                (5, 8),
+                (6, 7),
+                (7, 6),
+                (8, 5),
+                (9, 12),
+                (10, 11),
+                (11, 10),
+                (12, 9),
+                (13, 16),
+                (14, 15),
+                (15, 14),
+                (16, 13),
+                (17, 20),
+                (18, 19),
+                (19, 18),
+                (20, 17),
+            ]),
+        dict(
+            type='SingleHandConverter',
+            num_keypoints=num_keypoints,
+            left_hand_mapping=[(i, i + 91) for i in range(21)],
+            right_hand_mapping=[(i, i + 112) for i in range(21)],
+        ), *hand_pipeline
+    ],
+)
+
+dataset_interhand2d = dict(
+    type='InterHand2DDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='interhand26m/annotations/all/InterHand2.6M_train_data.json',
+    camera_param_file='interhand26m/annotations/all/'
+    'InterHand2.6M_train_camera.json',
+    joint_file='interhand26m/annotations/all/'
+    'InterHand2.6M_train_joint_3d.json',
+    data_prefix=dict(img='interhand2.6m/images/train/'),
+    sample_interval=10,
+    pipeline=[
+        dict(
+            type='KeypointConverter',
+            num_keypoints=num_keypoints,
+            mapping=[(i, i + 91) for i in range(42)],
+        ), *hand_pipeline
+    ],
+)
+
+dataset_hand = dict(
+    type='CombinedDataset',
+    metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
+    datasets=[dataset_interhand2d],
+    pipeline=[],
+    test_mode=False,
+)
+
+train_datasets = [dataset_wb, dataset_body, dataset_face, dataset_hand]
 
 # data loaders
 train_dataloader = dict(
     batch_size=train_batch_size,
-    num_workers=10,
-    pin_memory=True,
+    num_workers=4,
+    pin_memory=False,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
     # sampler=dict(
@@ -559,20 +664,6 @@ train_dataloader = dict(
         test_mode=False,
     ))
 
-# val_dataloader = dict(
-#     batch_size=val_batch_size,
-#     num_workers=4,
-#     persistent_workers=True,
-#     drop_last=False,
-#     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
-#     dataset=dict(
-#         type='CocoWholeBodyDataset',
-#         ann_file='data/coco/annotations/coco_wholebody_val_v1.0.json',
-#         data_prefix=dict(img='data/detection/coco/val2017/'),
-#         pipeline=val_pipeline,
-#         bbox_file='data/coco/person_detection_results/'
-#         'COCO_val2017_detections_AP_H_56_person.json',
-#         test_mode=True))
 val_dataloader = dict(
     batch_size=val_batch_size,
     num_workers=4,
@@ -580,11 +671,14 @@ val_dataloader = dict(
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
     dataset=dict(
-        type='HumanArt21Dataset',
-        ann_file='data/HumanArt/annotations/training_humanart.json',
-        data_prefix=dict(img='data/pose/'),
+        type='CocoWholeBodyDataset',
+        ann_file='data/coco/annotations/coco_wholebody_val_v1.0.json',
+        data_prefix=dict(img='data/detection/coco/val2017/'),
         pipeline=val_pipeline,
+        bbox_file='data/coco/person_detection_results/'
+        'COCO_val2017_detections_AP_H_56_person.json',
         test_mode=True))
+
 test_dataloader = val_dataloader
 
 # hooks
@@ -604,19 +698,8 @@ custom_hooks = [
         switch_pipeline=train_pipeline_stage2)
 ]
 
-humanart_coco133 = [(i, i) for i in range(17)] + [(17, 99), (18, 120),
-                                                  (19, 17), (20, 20)]
-coco133_humanart = dict(
-    type='KeypointConverter',
-    num_keypoints=21,
-    mapping=[(b, a) for a, b in humanart_coco133])
 # evaluators
-# val_evaluator = dict(
-#     type='CocoWholeBodyMetric',
-#     ann_file='data/coco/annotations/coco_wholebody_val_v1.0.json')
-# test_evaluator = val_evaluator
 val_evaluator = dict(
-    type='CocoMetric',
-    ann_file='data/HumanArt/annotations/training_humanart.json',
-    pred_mapping=coco133_humanart)
+    type='CocoWholeBodyMetric',
+    ann_file='data/coco/annotations/coco_wholebody_val_v1.0.json')
 test_evaluator = val_evaluator
