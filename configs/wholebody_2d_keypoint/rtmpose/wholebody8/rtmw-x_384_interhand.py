@@ -559,20 +559,26 @@ train_dataloader = dict(
         test_mode=False,
     ))
 
-# val_dataloader = dict(
-#     batch_size=val_batch_size,
-#     num_workers=4,
-#     persistent_workers=True,
-#     drop_last=False,
-#     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
-#     dataset=dict(
-#         type='CocoWholeBodyDataset',
-#         ann_file='data/coco/annotations/coco_wholebody_val_v1.0.json',
-#         data_prefix=dict(img='data/detection/coco/val2017/'),
-#         pipeline=val_pipeline,
-#         bbox_file='data/coco/person_detection_results/'
-#         'COCO_val2017_detections_AP_H_56_person.json',
-#         test_mode=True))
+val_dataset_interhand2d = dict(
+    type='InterHand2DDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='interhand26m/annotations/all/InterHand2.6M_test_data.json',
+    camera_param_file='interhand26m/annotations/all/'
+    'InterHand2.6M_test_camera.json',
+    joint_file='interhand26m/annotations/all/'
+    'InterHand2.6M_test_joint_3d.json',
+    data_prefix=dict(img='interhand2.6m/images/test/'),
+    sample_interval=10,
+    pipeline=[
+        dict(
+            type='KeypointConverter',
+            num_keypoints=num_keypoints,
+            mapping=[(i, i + 91) for i in range(42)],
+        ),
+    ],
+)
+
 val_dataloader = dict(
     batch_size=val_batch_size,
     num_workers=4,
@@ -580,9 +586,9 @@ val_dataloader = dict(
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
     dataset=dict(
-        type='HumanArt21Dataset',
-        ann_file='data/HumanArt/annotations/validation_humanart.json',
-        data_prefix=dict(img='data/pose/'),
+        type='CombinedDataset',
+        metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
+        datasets=[val_dataset_interhand2d],
         pipeline=val_pipeline,
         test_mode=True))
 test_dataloader = val_dataloader
@@ -604,18 +610,14 @@ custom_hooks = [
         switch_pipeline=train_pipeline_stage2)
 ]
 
-humanart_coco133 = [(i, i) for i in range(17)]
-coco133_humanart = dict(
-    type='KeypointConverter',
-    num_keypoints=17,
-    mapping=[(b, a) for a, b in humanart_coco133])
 # evaluators
 # val_evaluator = dict(
 #     type='CocoWholeBodyMetric',
 #     ann_file='data/coco/annotations/coco_wholebody_val_v1.0.json')
 # test_evaluator = val_evaluator
-val_evaluator = dict(
-    type='CocoMetric',
-    ann_file='data/HumanArt/annotations/validation_humanart.json',
-    pred_mapping=coco133_humanart)
+val_evaluator = [
+    dict(type='PCKAccuracy', thr=0.2),
+    dict(type='AUC'),
+    dict(type='EPE')
+]
 test_evaluator = val_evaluator

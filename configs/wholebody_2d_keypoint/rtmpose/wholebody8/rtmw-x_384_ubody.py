@@ -664,6 +664,27 @@ train_dataloader = dict(
         test_mode=False,
     ))
 
+ubody_datasets = []
+for scene in ubody_scenes:
+    each = dict(
+        type='UBody2dDataset',
+        data_root=data_root,
+        data_mode=data_mode,
+        ann_file=f'Ubody/annotations/{scene}/val_annotations.json',
+        data_prefix=dict(img='pose/UBody/images/'),
+        pipeline=[],
+        # sample_interval=10
+    )
+    ubody_datasets.append(each)
+
+val_dataset_ubody = dict(
+    type='CombinedDataset',
+    metainfo=dict(from_file='configs/_base_/datasets/ubody2d.py'),
+    datasets=ubody_datasets,
+    pipeline=[],
+    test_mode=False,
+)
+
 val_dataloader = dict(
     batch_size=val_batch_size,
     num_workers=4,

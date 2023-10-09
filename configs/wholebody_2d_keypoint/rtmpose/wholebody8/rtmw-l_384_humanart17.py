@@ -65,20 +65,21 @@ model = dict(
         type='CSPNeXt',
         arch='P5',
         expand_ratio=0.5,
-        deepen_factor=1.33,
-        widen_factor=1.25,
+        deepen_factor=1.,
+        widen_factor=1.,
         channel_attention=True,
         norm_cfg=dict(type='BN'),
         act_cfg=dict(type='SiLU'),
-        init_cfg=dict(
-            type='Pretrained',
-            prefix='backbone.',
-            checkpoint='https://download.openmmlab.com/mmpose/v1/'
-            'wholebody_2d_keypoint/rtmpose/ubody/rtmpose-x_simcc-ucoco_pt-aic-coco_270e-384x288-f5b50679_20230822.pth'  # noqa
-        )),
+        # init_cfg=dict(
+        #     type='Pretrained',
+        #     prefix='backbone.',
+        #     checkpoint='https://download.openmmlab.com/mmpose/v1/'
+        #     'wholebody_2d_keypoint/rtmpose/ubody/rtmpose-x_simcc-ucoco_pt-aic-coco_270e-384x288-f5b50679_20230822.pth'  # noqa
+        # )
+    ),
     neck=dict(
         type='CSPNeXtPAFPN',
-        in_channels=[320, 640, 1280],
+        in_channels=[256, 512, 1024],
         out_channels=None,
         out_indices=(
             1,
@@ -90,7 +91,7 @@ model = dict(
         act_cfg=dict(type='SiLU', inplace=True)),
     head=dict(
         type='RTMWHead',
-        in_channels=1280,
+        in_channels=1024,
         out_channels=num_keypoints,
         input_size=input_size,
         in_featuremap_size=tuple([s // 32 for s in input_size]),
