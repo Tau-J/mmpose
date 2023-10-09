@@ -93,7 +93,6 @@ model = dict(
         expand_ratio=0.5,
         deepen_factor=0.67,
         widen_factor=0.75,
-        out_indices=(4, ),
         channel_attention=True,
         norm_cfg=dict(type='BN'),
         act_cfg=dict(type=SiLU),
