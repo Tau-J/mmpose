@@ -671,12 +671,12 @@ val_dataloader = dict(
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
     dataset=dict(
-        type='CocoWholeBodyDataset',
-        ann_file='data/coco/annotations/coco_wholebody_val_v1.0.json',
-        data_prefix=dict(img='data/detection/coco/val2017/'),
+        type='UBody2dDataset',
+        data_root=data_root,
+        data_mode=data_mode,
+        ann_file='Ubody/annotations/val_annotations.json',
+        data_prefix=dict(img='pose/UBody/images/'),
         pipeline=val_pipeline,
-        bbox_file='data/coco/person_detection_results/'
-        'COCO_val2017_detections_AP_H_56_person.json',
         test_mode=True))
 
 test_dataloader = val_dataloader
@@ -701,5 +701,5 @@ custom_hooks = [
 # evaluators
 val_evaluator = dict(
     type='CocoWholeBodyMetric',
-    ann_file='data/coco/annotations/coco_wholebody_val_v1.0.json')
+    ann_file='data/Ubody/annotations/val_annotations.json')
 test_evaluator = val_evaluator
