@@ -302,9 +302,12 @@ class SoftMultiLabelLoss(nn.Module):
             gt_x, gt_y = gt_simcc
             pred = torch.cat([pred_x, pred_y], dim=-1)  # N, K, H+W
             target = torch.cat([gt_x, gt_y], dim=-1)
+            N, K, _ = pred.shape
+            pred = pred * weight.reshape(N, K, 1)  # N, K, H+W
+            target = target * weight.reshape(N, K, 1)
             pred = pred.flatten(1)  # N, K(H+W)
             target = target.flatten(1)
-            loss = loss + self.criterion(pred, target).mul(weight).mean()
+            loss = loss + self.criterion(pred, target).mean()
 
         return loss / num_joints
 
@@ -361,5 +364,12 @@ class HardMultilabelLoss(nn.Module):
             # scenario 2: K H-class
             for pred, target in zip(pred_simcc, gt_simcc):
                 loss = loss + self.criterion(pred, target).mul(weight).mean()
+        elif self.mode == 3:
+            # scenario 3: 2K H-class
+            N, K, _ = pred_simcc[0].shape
+            weight = weight.reshape(N, K, 1)
+            pred = torch.cat(pred_simcc * weight, dim=1)  # N, 2K, H
+            target = torch.cat(gt_simcc * weight, dim=1)
+            loss = loss + self.criterion(pred, target).mean()
 
         return loss
