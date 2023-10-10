@@ -8,7 +8,7 @@ input_size = (192, 256)
 max_epochs = 270
 stage2_num_epochs = 10
 base_lr = 5e-4
-train_batch_size = 960
+train_batch_size = 768
 val_batch_size = 32
 
 train_cfg = dict(max_epochs=max_epochs, val_interval=10)
@@ -182,15 +182,15 @@ train_pipeline_stage2 = [
         transforms=[
             dict(type='Blur', p=0.1),
             dict(type='MedianBlur', p=0.1),
-            dict(
-                type='CoarseDropout',
-                max_holes=1,
-                max_height=0.4,
-                max_width=0.4,
-                min_holes=1,
-                min_height=0.2,
-                min_width=0.2,
-                p=0.5),
+            # dict(
+            #     type='CoarseDropout',
+            #     max_holes=1,
+            #     max_height=0.4,
+            #     max_width=0.4,
+            #     min_holes=1,
+            #     min_height=0.2,
+            #     min_width=0.2,
+            #     p=0.5),
         ]),
     dict(
         type='GenerateTarget',
@@ -410,12 +410,11 @@ face_pipeline = [
     dict(
         type='RandomBBoxTransform',
         shift_factor=0.,
-        scale_factor=[0.3, 0.5],
+        scale_factor=[1.5, 2.0],
         rotate_factor=0),
-    dict(type='TopdownAffine', input_size=codec['input_size']),
 ]
 
-wflw_coco133 = [(i * 2, 20 + i)
+wflw_coco133 = [(i * 2, 23 + i)
                 for i in range(17)] + [(33 + i, 41 + i) for i in range(5)] + [
                     (42 + i, 46 + i) for i in range(5)
                 ] + [(51 + i, 50 + i)
@@ -439,7 +438,7 @@ dataset_wflw = dict(
     ],
 )
 
-mapping_300w_coco133 = [(i, 20 + i) for i in range(68)]
+mapping_300w_coco133 = [(i, 23 + i) for i in range(68)]
 dataset_300w = dict(
     type='Face300WDataset',
     data_root=data_root,
@@ -472,7 +471,7 @@ dataset_cofw = dict(
     ],
 )
 
-lapa_coco133 = [(i * 2, 20 + i) for i in range(17)] + [
+lapa_coco133 = [(i * 2, 23 + i) for i in range(17)] + [
     (33 + i, 41 + i) for i in range(5)
 ] + [(42 + i, 46 + i) for i in range(5)] + [
     (51 + i, 50 + i) for i in range(4)
@@ -532,11 +531,123 @@ dataset_face = dict(
     test_mode=False,
 )
 
-train_datasets = [
-    dataset_wb,
-    dataset_body,
-    dataset_face,
+hand_pipeline = [
+    dict(type='LoadImage', backend_args=backend_args),
+    dict(type='GetBBoxCenterScale'),
+    dict(
+        type='RandomBBoxTransform',
+        shift_factor=0.,
+        scale_factor=[1.5, 2.0],
+        rotate_factor=0),
+    # dict(type=TopdownAffine, input_size=codec['input_size']),
 ]
+# dataset_onehand10k = dict(
+#     type=OneHand10KDataset,
+#     data_root=data_root,
+#     data_mode=data_mode,
+#     ann_file='onehand10k/annotations/onehand10k_train.json',
+#     data_prefix=dict(img='pose/OneHand10K/'),
+#     pipeline=[
+#         dict(
+#             type=KeypointConverter,
+#             num_keypoints=num_keypoints,
+#             mapping=[],
+#         ), *hand_pipeline
+#     ],
+# )
+
+# dataset_freihand = dict(
+#     type=FreiHandDataset,
+#     # data_root=data_root,
+#     data_mode=data_mode,
+#     ann_file='data/freihand/annotations/freihand_train.json',
+#     data_prefix=dict(img='s254:s3://openmmlab/datasets/pose/FreiHand/'),
+#     pipeline=[
+#         dict(
+#             type=KeypointConverter,
+#             num_keypoints=num_keypoints,
+#             mapping=[],
+#         ), *hand_pipeline
+#     ],
+# )
+
+# dataset_rhd = dict(
+#     type=Rhd2DDataset,
+#     data_root=data_root,
+#     data_mode=data_mode,
+#     ann_file='rhd/annotations/rhd_train.json',
+#     data_prefix=dict(img='pose/RHD/'),
+#     pipeline=[
+#         dict(
+#             type=KeypointConverter,
+#             num_keypoints=21,
+#             mapping=[
+#                 (0, 0),
+#                 (1, 4),
+#                 (2, 3),
+#                 (3, 2),
+#                 (4, 1),
+#                 (5, 8),
+#                 (6, 7),
+#                 (7, 6),
+#                 (8, 5),
+#                 (9, 12),
+#                 (10, 11),
+#                 (11, 10),
+#                 (12, 9),
+#                 (13, 16),
+#                 (14, 15),
+#                 (15, 14),
+#                 (16, 13),
+#                 (17, 20),
+#                 (18, 19),
+#                 (19, 18),
+#                 (20, 17),
+#             ]),
+#         dict(
+#             type='SingleHandConverter',
+#             num_keypoints=num_keypoints,
+#             left_hand_mapping=[(i, i + 91) for i in range(21)],
+#             right_hand_mapping=[(i, i + 112) for i in range(21)],
+#         ), *hand_pipeline
+#     ],
+# )
+interhand_left = [(21, 95), (22, 94), (23, 93), (24, 92), (25, 99), (26, 98),
+                  (27, 97), (28, 96), (29, 103), (30, 102), (31, 101),
+                  (32, 100), (33, 107), (34, 106), (35, 105), (36, 104),
+                  (37, 111), (38, 110), (39, 109), (40, 108), (41, 91)]
+interhand_right = [(i - 21, j + 21) for i, j in interhand_left]
+interhand_coco133 = interhand_right + interhand_left
+
+dataset_interhand2d = dict(
+    type='InterHand2DDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='interhand26m/annotations/all/InterHand2.6M_train_data.json',
+    camera_param_file='interhand26m/annotations/all/'
+    'InterHand2.6M_train_camera.json',
+    joint_file='interhand26m/annotations/all/'
+    'InterHand2.6M_train_joint_3d.json',
+    data_prefix=dict(img='interhand2.6m/images/train/'),
+    sample_interval=10,
+    pipeline=[
+        dict(
+            type='KeypointConverter',
+            num_keypoints=num_keypoints,
+            mapping=interhand_coco133,
+        ), *hand_pipeline
+    ],
+)
+
+dataset_hand = dict(
+    type='CombinedDataset',
+    metainfo=dict(from_file='configs/_base_/datasets/coco_wholebody.py'),
+    datasets=[dataset_interhand2d],
+    pipeline=[],
+    test_mode=False,
+)
+
+train_datasets = [dataset_wb, dataset_body, dataset_face, dataset_hand]
 
 # data loaders
 train_dataloader = dict(

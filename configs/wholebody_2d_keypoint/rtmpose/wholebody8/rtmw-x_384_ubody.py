@@ -664,27 +664,31 @@ train_dataloader = dict(
         test_mode=False,
     ))
 
-ubody_datasets = []
-for scene in ubody_scenes:
-    each = dict(
-        type='UBody2dDataset',
-        data_root=data_root,
-        data_mode=data_mode,
-        ann_file=f'Ubody/annotations/{scene}/val_annotations.json',
-        data_prefix=dict(img='pose/UBody/images/'),
-        pipeline=[],
-        # sample_interval=10
-    )
-    ubody_datasets.append(each)
+# ubody_datasets = []
+# for scene in ubody_scenes:
+#     each = dict(
+#         type='UBody2dDataset',
+#         data_root=data_root,
+#         data_mode=data_mode,
+#         ann_file=f'Ubody/annotations/{scene}/val_annotations.json',
+#         data_prefix=dict(img='pose/UBody/images/'),
+#         pipeline=[],
+#         # sample_interval=10
+#     )
+#     ubody_datasets.append(each)
 
-val_dataset_ubody = dict(
-    type='CombinedDataset',
-    metainfo=dict(from_file='configs/_base_/datasets/ubody2d.py'),
-    datasets=ubody_datasets,
-    pipeline=[],
-    test_mode=False,
-)
-
+# val_dataloader = dict(
+#     batch_size=val_batch_size,
+#     num_workers=4,
+#     persistent_workers=True,
+#     drop_last=False,
+#     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
+#     dataset=dict(
+#         type='CombinedDataset',
+#         metainfo=dict(from_file='configs/_base_/datasets/ubody2d.py'),
+#         datasets=ubody_datasets,
+#         pipeline=val_pipeline,
+#         test_mode=True))
 val_dataloader = dict(
     batch_size=val_batch_size,
     num_workers=4,
@@ -699,7 +703,6 @@ val_dataloader = dict(
         data_prefix=dict(img='pose/UBody/images/'),
         pipeline=val_pipeline,
         test_mode=True))
-
 test_dataloader = val_dataloader
 
 # hooks
@@ -720,7 +723,18 @@ custom_hooks = [
 ]
 
 # evaluators
+# val_evaluator = dict(
+#     type='MultiDatasetEvaluator',
+#     metrics=[
+#         dict(type='CocoWholeBodyMetric',
+#              use_area=False,
+#              ann_file='data/Ubody/annotations/val_annotations.json')
+#         for scene in ubody_scenes
+#     ],
+#     datasets=ubody_datasets)
 val_evaluator = dict(
     type='CocoWholeBodyMetric',
+    use_area=False,
     ann_file='data/Ubody/annotations/val_annotations.json')
+
 test_evaluator = val_evaluator

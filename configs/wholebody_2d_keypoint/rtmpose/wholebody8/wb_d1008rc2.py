@@ -200,15 +200,15 @@ train_pipeline_stage2 = [
         transforms=[
             dict(type=Blur, p=0.1),
             dict(type=MedianBlur, p=0.1),
-            dict(
-                type=CoarseDropout,
-                max_holes=1,
-                max_height=0.4,
-                max_width=0.4,
-                min_holes=1,
-                min_height=0.2,
-                min_width=0.2,
-                p=0.5),
+            # dict(
+            #     type=CoarseDropout,
+            #     max_holes=1,
+            #     max_height=0.4,
+            #     max_width=0.4,
+            #     min_holes=1,
+            #     min_height=0.2,
+            #     min_width=0.2,
+            #     p=0.5),
         ]),
     dict(
         type=GenerateTarget, encoder=codec, use_dataset_keypoint_weights=True),
@@ -385,7 +385,7 @@ dataset_humanart = dict(
     data_root=data_root,
     data_mode=data_mode,
     ann_file='HumanArt/annotations/training_humanart.json',
-    filter_cfg=dict(scenes=['real_human']),
+    # filter_cfg=dict(scenes=['real_human']),
     data_prefix=dict(img='pose/'),
     pipeline=[
         dict(
@@ -422,18 +422,17 @@ dataset_ubody = dict(
 
 face_pipeline = [
     dict(type=LoadImage, backend_args=backend_args),
-    dict(type=GetBBoxCenterScale),
+    dict(type=GetBBoxCenterScale, padding=1.25),
     dict(
         type=RandomBBoxTransform,
         shift_factor=0.,
-        scale_factor=[0.3, 0.5],
+        scale_factor=[1.5, 2.0],
         rotate_factor=0),
-    dict(type=TopdownAffine, input_size=codec['input_size']),
 ]
 
-wflw_coco133 = [(i * 2, 20 + i)
-                for i in range(17)] + [(33 + i, 41 + i) for i in range(5)] + [
-                    (42 + i, 46 + i) for i in range(5)
+wflw_coco133 = [(i * 2, 23 + i)
+                for i in range(17)] + [(33 + i, 40 + i) for i in range(5)] + [
+                    (42 + i, 45 + i) for i in range(5)
                 ] + [(51 + i, 50 + i)
                      for i in range(9)] + [(60, 59), (61, 60), (63, 61),
                                            (64, 62), (65, 63), (67, 64),
@@ -455,7 +454,7 @@ dataset_wflw = dict(
     ],
 )
 
-mapping_300w_coco133 = [(i, 20 + i) for i in range(68)]
+mapping_300w_coco133 = [(i, 23 + i) for i in range(68)]
 dataset_300w = dict(
     type=Face300WDataset,
     data_root=data_root,
@@ -470,10 +469,10 @@ dataset_300w = dict(
     ],
 )
 
-cofw_coco133 = [(0, 41), (2, 45), (4, 43), (1, 47), (3, 49), (6, 45), (8, 59),
+cofw_coco133 = [(0, 40), (2, 44), (4, 42), (1, 49), (3, 45), (6, 47), (8, 59),
                 (10, 62), (9, 68), (11, 65), (18, 54), (19, 58), (20, 53),
                 (21, 56), (22, 71), (23, 77), (24, 74), (25, 85), (26, 89),
-                (27, 80), (28, 28)]
+                (27, 80), (28, 31)]
 dataset_cofw = dict(
     type=COFWDataset,
     data_root=data_root,
@@ -488,9 +487,9 @@ dataset_cofw = dict(
     ],
 )
 
-lapa_coco133 = [(i * 2, 20 + i) for i in range(17)] + [
-    (33 + i, 41 + i) for i in range(5)
-] + [(42 + i, 46 + i) for i in range(5)] + [
+lapa_coco133 = [(i * 2, 23 + i) for i in range(17)] + [
+    (33 + i, 40 + i) for i in range(5)
+] + [(42 + i, 45 + i) for i in range(5)] + [
     (51 + i, 50 + i) for i in range(4)
 ] + [(58 + i, 54 + i) for i in range(5)] + [(66, 59), (67, 60), (69, 61),
                                             (70, 62), (71, 63), (73, 64),
@@ -554,9 +553,9 @@ hand_pipeline = [
     dict(
         type=RandomBBoxTransform,
         shift_factor=0.,
-        scale_factor=[0.2, 1.0],
+        scale_factor=[1.5, 2.0],
         rotate_factor=0),
-    dict(type=TopdownAffine, input_size=codec['input_size']),
+    # dict(type=TopdownAffine, input_size=codec['input_size']),
 ]
 # dataset_onehand10k = dict(
 #     type=OneHand10KDataset,
@@ -629,6 +628,12 @@ hand_pipeline = [
 #         ), *hand_pipeline
 #     ],
 # )
+interhand_left = [(21, 95), (22, 94), (23, 93), (24, 92), (25, 99), (26, 98),
+                  (27, 97), (28, 96), (29, 103), (30, 102), (31, 101),
+                  (32, 100), (33, 107), (34, 106), (35, 105), (36, 104),
+                  (37, 111), (38, 110), (39, 109), (40, 108), (41, 91)]
+interhand_right = [(i - 21, j + 21) for i, j in interhand_left]
+interhand_coco133 = interhand_right + interhand_left
 
 dataset_interhand2d = dict(
     type=InterHand2DDataset,
@@ -645,7 +650,7 @@ dataset_interhand2d = dict(
         dict(
             type=KeypointConverter,
             num_keypoints=num_keypoints,
-            mapping=[(i, i + 91) for i in range(42)],
+            mapping=interhand_coco133,
         ), *hand_pipeline
     ],
 )

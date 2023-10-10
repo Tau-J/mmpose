@@ -2,13 +2,13 @@ _base_ = ['../../../_base_/default_runtime.py']
 
 # common setting
 num_keypoints = 133
-input_size = (192, 256)
+input_size = (288, 384)
 
 # runtime
 max_epochs = 270
 stage2_num_epochs = 10
 base_lr = 5e-4
-train_batch_size = 704
+train_batch_size = 320
 val_batch_size = 32
 
 train_cfg = dict(max_epochs=max_epochs, val_interval=10)
@@ -46,8 +46,8 @@ auto_scale_lr = dict(base_batch_size=1024)
 # codec settings
 codec = dict(
     type='SimCCLabel',
-    input_size=(192, 256),
-    sigma=(4.9, 5.66),
+    input_size=input_size,
+    sigma=(6., 6.93),
     simcc_split_ratio=2.0,
     normalize=False,
     use_dark=False)
@@ -65,32 +65,22 @@ model = dict(
         type='CSPNeXt',
         arch='P5',
         expand_ratio=0.5,
-        deepen_factor=1.33,
-        widen_factor=1.25,
+        deepen_factor=1.,
+        widen_factor=1.,
+        out_indices=(4, ),
         channel_attention=True,
         norm_cfg=dict(type='BN'),
         act_cfg=dict(type='SiLU'),
-        init_cfg=dict(
-            type='Pretrained',
-            prefix='backbone.',
-            checkpoint='https://download.openmmlab.com/mmpose/v1/'
-            'wholebody_2d_keypoint/rtmpose/ubody/rtmpose-x_simcc-ucoco_pt-aic-coco_270e-256x192-05f5bcb7_20230822.pth'  # noqa
-        )),
-    neck=dict(
-        type='CSPNeXtPAFPN',
-        in_channels=[320, 640, 1280],
-        out_channels=None,
-        out_indices=(
-            1,
-            2,
-        ),
-        num_csp_blocks=2,
-        expand_ratio=0.5,
-        norm_cfg=dict(type='SyncBN'),
-        act_cfg=dict(type='SiLU', inplace=True)),
+        # init_cfg=dict(
+        #     type='Pretrained',
+        #     prefix='backbone.',
+        #     checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
+        #     'rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth'  # noqa
+        # )
+    ),
     head=dict(
-        type='RTMWHead',
-        in_channels=1280,
+        type='RTMCCHead',
+        in_channels=1024,
         out_channels=num_keypoints,
         input_size=input_size,
         in_featuremap_size=tuple([s // 32 for s in input_size]),
@@ -182,15 +172,15 @@ train_pipeline_stage2 = [
         transforms=[
             dict(type='Blur', p=0.1),
             dict(type='MedianBlur', p=0.1),
-            # dict(
-            #     type='CoarseDropout',
-            #     max_holes=1,
-            #     max_height=0.4,
-            #     max_width=0.4,
-            #     min_holes=1,
-            #     min_height=0.2,
-            #     min_width=0.2,
-            #     p=0.5),
+            dict(
+                type='CoarseDropout',
+                max_holes=1,
+                max_height=0.4,
+                max_width=0.4,
+                min_holes=1,
+                min_height=0.2,
+                min_width=0.2,
+                p=0.5),
         ]),
     dict(
         type='GenerateTarget',
@@ -369,7 +359,7 @@ dataset_humanart = dict(
     data_root=data_root,
     data_mode=data_mode,
     ann_file='HumanArt/annotations/training_humanart.json',
-    filter_cfg=dict(scenes=['real_human']),
+    # filter_cfg=dict(scenes=['real_human']),
     data_prefix=dict(img='pose/'),
     pipeline=[
         dict(
@@ -410,11 +400,12 @@ face_pipeline = [
     dict(
         type='RandomBBoxTransform',
         shift_factor=0.,
-        scale_factor=[1.5, 2.0],
+        scale_factor=[0.3, 0.5],
         rotate_factor=0),
+    dict(type='TopdownAffine', input_size=codec['input_size']),
 ]
 
-wflw_coco133 = [(i * 2, 23 + i)
+wflw_coco133 = [(i * 2, 20 + i)
                 for i in range(17)] + [(33 + i, 41 + i) for i in range(5)] + [
                     (42 + i, 46 + i) for i in range(5)
                 ] + [(51 + i, 50 + i)
@@ -438,7 +429,7 @@ dataset_wflw = dict(
     ],
 )
 
-mapping_300w_coco133 = [(i, 23 + i) for i in range(68)]
+mapping_300w_coco133 = [(i, 20 + i) for i in range(68)]
 dataset_300w = dict(
     type='Face300WDataset',
     data_root=data_root,
@@ -471,7 +462,7 @@ dataset_cofw = dict(
     ],
 )
 
-lapa_coco133 = [(i * 2, 23 + i) for i in range(17)] + [
+lapa_coco133 = [(i * 2, 20 + i) for i in range(17)] + [
     (33 + i, 41 + i) for i in range(5)
 ] + [(42 + i, 46 + i) for i in range(5)] + [
     (51 + i, 50 + i) for i in range(4)
@@ -537,87 +528,81 @@ hand_pipeline = [
     dict(
         type='RandomBBoxTransform',
         shift_factor=0.,
-        scale_factor=[1.5, 2.0],
+        scale_factor=[0.2, 1.0],
         rotate_factor=0),
-    # dict(type=TopdownAffine, input_size=codec['input_size']),
+    dict(type='TopdownAffine', input_size=codec['input_size']),
 ]
-# dataset_onehand10k = dict(
-#     type=OneHand10KDataset,
-#     data_root=data_root,
-#     data_mode=data_mode,
-#     ann_file='onehand10k/annotations/onehand10k_train.json',
-#     data_prefix=dict(img='pose/OneHand10K/'),
-#     pipeline=[
-#         dict(
-#             type=KeypointConverter,
-#             num_keypoints=num_keypoints,
-#             mapping=[],
-#         ), *hand_pipeline
-#     ],
-# )
+dataset_onehand10k = dict(
+    type='OneHand10KDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='onehand10k/annotations/onehand10k_train.json',
+    data_prefix=dict(img='pose/OneHand10K/'),
+    pipeline=[
+        dict(
+            type='KeypointConverter',
+            num_keypoints=num_keypoints,
+            mapping=[],
+        ), *hand_pipeline
+    ],
+)
 
-# dataset_freihand = dict(
-#     type=FreiHandDataset,
-#     # data_root=data_root,
-#     data_mode=data_mode,
-#     ann_file='data/freihand/annotations/freihand_train.json',
-#     data_prefix=dict(img='s254:s3://openmmlab/datasets/pose/FreiHand/'),
-#     pipeline=[
-#         dict(
-#             type=KeypointConverter,
-#             num_keypoints=num_keypoints,
-#             mapping=[],
-#         ), *hand_pipeline
-#     ],
-# )
+dataset_freihand = dict(
+    type='FreiHandDataset',
+    # data_root=data_root,
+    data_mode=data_mode,
+    ann_file='data/freihand/annotations/freihand_train.json',
+    data_prefix=dict(img='s254:s3://openmmlab/datasets/pose/FreiHand/'),
+    pipeline=[
+        dict(
+            type='KeypointConverter',
+            num_keypoints=num_keypoints,
+            mapping=[],
+        ), *hand_pipeline
+    ],
+)
 
-# dataset_rhd = dict(
-#     type=Rhd2DDataset,
-#     data_root=data_root,
-#     data_mode=data_mode,
-#     ann_file='rhd/annotations/rhd_train.json',
-#     data_prefix=dict(img='pose/RHD/'),
-#     pipeline=[
-#         dict(
-#             type=KeypointConverter,
-#             num_keypoints=21,
-#             mapping=[
-#                 (0, 0),
-#                 (1, 4),
-#                 (2, 3),
-#                 (3, 2),
-#                 (4, 1),
-#                 (5, 8),
-#                 (6, 7),
-#                 (7, 6),
-#                 (8, 5),
-#                 (9, 12),
-#                 (10, 11),
-#                 (11, 10),
-#                 (12, 9),
-#                 (13, 16),
-#                 (14, 15),
-#                 (15, 14),
-#                 (16, 13),
-#                 (17, 20),
-#                 (18, 19),
-#                 (19, 18),
-#                 (20, 17),
-#             ]),
-#         dict(
-#             type='SingleHandConverter',
-#             num_keypoints=num_keypoints,
-#             left_hand_mapping=[(i, i + 91) for i in range(21)],
-#             right_hand_mapping=[(i, i + 112) for i in range(21)],
-#         ), *hand_pipeline
-#     ],
-# )
-interhand_left = [(21, 95), (22, 94), (23, 93), (24, 92), (25, 99), (26, 98),
-                  (27, 97), (28, 96), (29, 103), (30, 102), (31, 101),
-                  (32, 100), (33, 107), (34, 106), (35, 105), (36, 104),
-                  (37, 111), (38, 110), (39, 109), (40, 108), (41, 91)]
-interhand_right = [(i - 21, j + 21) for i, j in interhand_left]
-interhand_coco133 = interhand_right + interhand_left
+dataset_rhd = dict(
+    type='Rhd2DDataset',
+    data_root=data_root,
+    data_mode=data_mode,
+    ann_file='rhd/annotations/rhd_train.json',
+    data_prefix=dict(img='pose/RHD/'),
+    pipeline=[
+        dict(
+            type='KeypointConverter',
+            num_keypoints=21,
+            mapping=[
+                (0, 0),
+                (1, 4),
+                (2, 3),
+                (3, 2),
+                (4, 1),
+                (5, 8),
+                (6, 7),
+                (7, 6),
+                (8, 5),
+                (9, 12),
+                (10, 11),
+                (11, 10),
+                (12, 9),
+                (13, 16),
+                (14, 15),
+                (15, 14),
+                (16, 13),
+                (17, 20),
+                (18, 19),
+                (19, 18),
+                (20, 17),
+            ]),
+        dict(
+            type='SingleHandConverter',
+            num_keypoints=num_keypoints,
+            left_hand_mapping=[(i, i + 91) for i in range(21)],
+            right_hand_mapping=[(i, i + 112) for i in range(21)],
+        ), *hand_pipeline
+    ],
+)
 
 dataset_interhand2d = dict(
     type='InterHand2DDataset',
@@ -634,7 +619,7 @@ dataset_interhand2d = dict(
         dict(
             type='KeypointConverter',
             num_keypoints=num_keypoints,
-            mapping=interhand_coco133,
+            mapping=[(i, i + 91) for i in range(42)],
         ), *hand_pipeline
     ],
 )
@@ -652,8 +637,8 @@ train_datasets = [dataset_wb, dataset_body, dataset_face, dataset_hand]
 # data loaders
 train_dataloader = dict(
     batch_size=train_batch_size,
-    num_workers=10,
-    pin_memory=True,
+    num_workers=4,
+    pin_memory=False,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
     # sampler=dict(
@@ -669,6 +654,31 @@ train_dataloader = dict(
         test_mode=False,
     ))
 
+# ubody_datasets = []
+# for scene in ubody_scenes:
+#     each = dict(
+#         type='UBody2dDataset',
+#         data_root=data_root,
+#         data_mode=data_mode,
+#         ann_file=f'Ubody/annotations/{scene}/val_annotations.json',
+#         data_prefix=dict(img='pose/UBody/images/'),
+#         pipeline=[],
+#         # sample_interval=10
+#     )
+#     ubody_datasets.append(each)
+
+# val_dataloader = dict(
+#     batch_size=val_batch_size,
+#     num_workers=4,
+#     persistent_workers=True,
+#     drop_last=False,
+#     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
+#     dataset=dict(
+#         type='CombinedDataset',
+#         metainfo=dict(from_file='configs/_base_/datasets/ubody2d.py'),
+#         datasets=ubody_datasets,
+#         pipeline=val_pipeline,
+#         test_mode=True))
 val_dataloader = dict(
     batch_size=val_batch_size,
     num_workers=4,
@@ -676,14 +686,13 @@ val_dataloader = dict(
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
     dataset=dict(
-        type='CocoWholeBodyDataset',
-        ann_file='data/coco/annotations/coco_wholebody_val_v1.0.json',
-        data_prefix=dict(img='data/detection/coco/val2017/'),
+        type='UBody2dDataset',
+        data_root=data_root,
+        data_mode=data_mode,
+        ann_file='Ubody/annotations/val_annotations.json',
+        data_prefix=dict(img='pose/UBody/images/'),
         pipeline=val_pipeline,
-        bbox_file='data/coco/person_detection_results/'
-        'COCO_val2017_detections_AP_H_56_person.json',
         test_mode=True))
-
 test_dataloader = val_dataloader
 
 # hooks
@@ -704,7 +713,18 @@ custom_hooks = [
 ]
 
 # evaluators
+# val_evaluator = dict(
+#     type='MultiDatasetEvaluator',
+#     metrics=[
+#         dict(type='CocoWholeBodyMetric',
+#              use_area=False,
+#              ann_file='data/Ubody/annotations/val_annotations.json')
+#         for scene in ubody_scenes
+#     ],
+#     datasets=ubody_datasets)
 val_evaluator = dict(
     type='CocoWholeBodyMetric',
-    ann_file='data/coco/annotations/coco_wholebody_val_v1.0.json')
+    use_area=False,
+    ann_file='data/Ubody/annotations/val_annotations.json')
+
 test_evaluator = val_evaluator

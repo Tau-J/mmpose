@@ -558,7 +558,12 @@ train_dataloader = dict(
         pipeline=train_pipeline,
         test_mode=False,
     ))
-
+interhand_left = [(21, 95), (22, 94), (23, 93), (24, 92), (25, 99), (26, 98),
+                  (27, 97), (28, 96), (29, 103), (30, 102), (31, 101),
+                  (32, 100), (33, 107), (34, 106), (35, 105), (36, 104),
+                  (37, 111), (38, 110), (39, 109), (40, 108), (41, 91)]
+interhand_right = [(i - 21, j + 21) for i, j in interhand_left]
+interhand_coco133 = interhand_right + interhand_left
 val_dataset_interhand2d = dict(
     type='InterHand2DDataset',
     data_root=data_root,
@@ -574,7 +579,7 @@ val_dataset_interhand2d = dict(
         dict(
             type='KeypointConverter',
             num_keypoints=num_keypoints,
-            mapping=[(i, i + 91) for i in range(42)],
+            mapping=interhand_coco133,
         ),
     ],
 )
