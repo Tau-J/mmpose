@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from functools import partial
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -234,3 +235,131 @@ class InfoNCELoss(nn.Module):
         targets = torch.arange(n, dtype=torch.long, device=features.device)
         loss = F.cross_entropy(logits, targets, reduction='sum')
         return loss * self.loss_weight
+
+
+@MODELS.register_module()
+class SoftMultiLabelLoss(nn.Module):
+    """scenario 1: H       2-class scenario 2: H+W     2-class scenario 3:
+
+    K*(H+W) 2-class.
+    """
+
+    def __init__(self, use_target_weight=True, mode: int = 1):
+        super(SoftMultiLabelLoss, self).__init__()
+        self.use_target_weight = use_target_weight
+        self.mode = mode
+
+    def criterion(self, y_pred, y_true):
+        """Criterion function."""
+        # N, W
+        INF = -torch.tensor(np.inf, dtype=y_pred.dtype, device=y_pred.device)
+        y_mask = torch.not_equal(y_pred, INF)
+        y_neg = torch.where(y_mask, y_pred, INF) + torch.log(1 - y_true)
+        y_pos = torch.where(y_mask, -y_pred, INF) + torch.log(y_true)
+        zeros = torch.zeros_like(y_pred[..., :1])
+        y_neg = torch.cat([y_neg, zeros], dim=-1)  # N, H+1
+        y_pos = torch.cat([y_pos, zeros], dim=-1)
+        neg_loss = torch.logsumexp(y_neg, dim=-1)  # N
+        pos_loss = torch.logsumexp(y_pos, dim=-1)
+        return neg_loss + pos_loss
+
+    def forward(self, pred_simcc, gt_simcc, target_weight):
+        """Forward function.
+
+        Args:
+            pred_simcc (Tuple[Tensor, Tensor]): Predicted SimCC vectors of
+                x-axis and y-axis.
+            gt_simcc (Tuple[Tensor, Tensor]): Target representations.
+            target_weight (torch.Tensor[N, K] or torch.Tensor[N]):
+                Weights across different labels.
+        """
+        num_joints = pred_simcc[0].size(1)
+        loss = 0
+
+        if self.use_target_weight:
+            weight = target_weight.reshape(-1)
+        else:
+            weight = 1.
+
+        if self.mode == 1:
+            # scenario 1: H       2-class
+            for pred, target in zip(pred_simcc, gt_simcc):
+                pred = pred.reshape(-1, pred.size(-1))  # NK, H
+                target = target.reshape(-1, target.size(-1))
+                loss = loss + self.criterion(pred, target).mul(weight).mean()
+        elif self.mode == 2:
+            # scenario 2: H+W     2-class
+            pred_x, pred_y = pred_simcc
+            gt_x, gt_y = gt_simcc
+            pred = torch.cat([pred_x, pred_y], dim=-1)  # N, K, H+W
+            target = torch.cat([gt_x, gt_y], dim=-1)
+            pred = pred.reshape(-1, pred.size(-1))  # NK, H+W
+            target = target.reshape(-1, target.size(-1))
+            loss = loss + self.criterion(pred, target).mul(weight).mean()
+        elif self.mode == 3:
+            # scenario 3: K*(H+W) 2-class
+            pred_x, pred_y = pred_simcc
+            gt_x, gt_y = gt_simcc
+            pred = torch.cat([pred_x, pred_y], dim=-1)  # N, K, H+W
+            target = torch.cat([gt_x, gt_y], dim=-1)
+            pred = pred.flatten(1)  # N, K(H+W)
+            target = target.flatten(1)
+            loss = loss + self.criterion(pred, target).mul(weight).mean()
+
+        return loss / num_joints
+
+
+@MODELS.register_module()
+class HardMultilabelLoss(nn.Module):
+    """scenario 1: 2 H-class scenario 2: K H-class."""
+
+    def __init__(self, use_target_weight=True, mode=1):
+        super(HardMultilabelLoss, self).__init__()
+        self.use_target_weight = use_target_weight
+        self.mode = mode
+
+    def criterion(pred, target):
+        # N, K, W
+        loss = 0.
+        for j in range(pred.size(2)):
+            tmp_i = 0.
+            for k in range(pred.size(2)):
+                if k == j:
+                    continue
+                up = -pred[:, :, j] + pred[:, :, k]  # N, K
+                tmp_i = tmp_i + target[:, :, j] * torch.exp(up)
+            tmp_i = tmp_i.sum(-1)
+        loss = loss + torch.log(1 + tmp_i)  # N
+        return loss
+
+    def forward(self, pred_simcc, gt_simcc, target_weight):
+        """Forward function.
+
+        Args:
+            pred_simcc (Tuple[Tensor, Tensor]): Predicted SimCC vectors of
+                x-axis and y-axis.
+            gt_simcc (Tuple[Tensor, Tensor]): Target representations.
+            target_weight (torch.Tensor[N, K] or torch.Tensor[N]):
+                Weights across different labels.
+        """
+        loss = 0
+
+        if self.use_target_weight:
+            weight = target_weight.unsqueeze(-1)
+        else:
+            weight = 1.
+
+        if self.mode == 1:
+            # scenario 1: 2 H-class
+            pred = torch.stack(pred_simcc, dim=2)  # N, K, 2, H
+            target = torch.stack(gt_simcc, dim=2)
+            H = pred.shape[-1]
+            pred = pred.rehsape(-1, 2, H)  # NK, 2, H
+            target = target.reshape(-1, 2, H)
+            loss = loss + self.criterion(pred, target).mul(weight).mean()
+        elif self.mode == 2:
+            # scenario 2: K H-class
+            for pred, target in zip(pred_simcc, gt_simcc):
+                loss = loss + self.criterion(pred, target).mul(weight).mean()
+
+        return loss
