@@ -240,6 +240,8 @@ class CocoWholeBodyMetric(CocoMetric):
             self.right_hand_num
         ])
 
+        info_str = []
+
         coco_eval = COCOeval(
             self.coco,
             coco_det,
@@ -250,6 +252,14 @@ class CocoWholeBodyMetric(CocoMetric):
         coco_eval.evaluate()
         coco_eval.accumulate()
         coco_eval.summarize()
+
+        stats_names = [
+            'Body-AP', 'Body-AP .5', 'Body-AP .75', 'Body-AP (M)',
+            'Body-AP (L)', 'Body-AR', 'Body-AR .5', 'Body-AR .75',
+            'Body-AR (M)', 'Body-AR (L)'
+        ]
+
+        info_str += list(zip(stats_names, coco_eval.stats))
 
         coco_eval = COCOeval(
             self.coco,
@@ -262,6 +272,14 @@ class CocoWholeBodyMetric(CocoMetric):
         coco_eval.accumulate()
         coco_eval.summarize()
 
+        stats_names = [
+            'Foot-AP', 'Foot-AP .5', 'Foot-AP .75', 'Foot-AP (M)',
+            'Foot-AP (L)', 'Foot-AR', 'Foot-AR .5', 'Foot-AR .75',
+            'Foot-AR (M)', 'Foot-AR (L)'
+        ]
+
+        info_str += list(zip(stats_names, coco_eval.stats))
+
         coco_eval = COCOeval(
             self.coco,
             coco_det,
@@ -272,6 +290,14 @@ class CocoWholeBodyMetric(CocoMetric):
         coco_eval.evaluate()
         coco_eval.accumulate()
         coco_eval.summarize()
+
+        stats_names = [
+            'Face-AP', 'Face-AP .5', 'Face-AP .75', 'Face-AP (M)',
+            'Face-AP (L)', 'Face-AR', 'Face-AR .5', 'Face-AR .75',
+            'Face-AR (M)', 'Face-AR (L)'
+        ]
+
+        info_str += list(zip(stats_names, coco_eval.stats))
 
         coco_eval = COCOeval(
             self.coco,
@@ -284,6 +310,14 @@ class CocoWholeBodyMetric(CocoMetric):
         coco_eval.accumulate()
         coco_eval.summarize()
 
+        stats_names = [
+            'LHand-AP', 'LHand-AP .5', 'LHand-AP .75', 'LHand-AP (M)',
+            'LHand-AP (L)', 'LHand-AR', 'LHand-AR .5', 'LHand-AR .75',
+            'LHand-AR (M)', 'LHand-AR (L)'
+        ]
+
+        info_str += list(zip(stats_names, coco_eval.stats))
+
         coco_eval = COCOeval(
             self.coco,
             coco_det,
@@ -294,6 +328,14 @@ class CocoWholeBodyMetric(CocoMetric):
         coco_eval.evaluate()
         coco_eval.accumulate()
         coco_eval.summarize()
+
+        stats_names = [
+            'RHand-AP', 'RHand-AP .5', 'RHand-AP .75', 'RHand-AP (M)',
+            'RHand-AP (L)', 'RHand-AR', 'RHand-AR .5', 'RHand-AR .75',
+            'RHand-AR (M)', 'RHand-AR (L)'
+        ]
+
+        info_str += list(zip(stats_names, coco_eval.stats))
 
         coco_eval = COCOeval(
             self.coco,
