@@ -321,18 +321,62 @@ class HardMultilabelLoss(nn.Module):
         self.use_target_weight = use_target_weight
         self.mode = mode
 
-    def criterion(pred, target):
+    # def criterion(self, pred, target):
+    #     # N, K, W
+    #     loss = 0.
+    #     for j in range(pred.size(2)):
+    #         tmp_i = 0.
+    #         for k in range(pred.size(2)):
+    #             if k == j:
+    #                 continue
+    #             up = -pred[:, :, j] + pred[:, :, k]  # N, K
+    #             tmp_i = tmp_i + target[:, :, j] * torch.exp(up)
+    #         tmp_i = tmp_i.sum(-1)
+    #         loss = loss + torch.log(1 + tmp_i)  # N
+    #     return loss
+    # def criterion(self, pred, target):
+    #     # N, K, W
+    #     loss = 0.
+    #     for j in range(pred.size(2)):
+    #         up = -pred[:, :, j:j+1] + pred  # N, K, W
+    #         tmp_i = target[:, :, j:j+1] * torch.exp(up)
+    #         tmp_i = tmp_i.sum(-1) - target[:, :, j]
+    #         loss = loss + torch.log(1 + tmp_i.sum(-1).clip_(0))  # N
+    #     return loss
+    # def criterion(self, pred, target):
+    #     # N, K, W
+    #     up = -pred.unsqueeze(-1) + pred.unsqueeze(-2)  # N, K, W, W
+    #     tmp_i = target * up.exp_().sum(-1)
+    #     tmp_i = tmp_i.sum(1) - target.sum(1)  # N, K, W
+    #     loss = torch.log_(1 + tmp_i).sum(-1)  # N
+    #     return loss
+    # def criterion(self, pred, target):
+    #     # N, K, W
+    #     tmp_i = 0.
+    #     for i in range(pred.size(-1)):
+    #         t = torch.exp(-pred[:, :, i:i+1] + pred)  # N, K, W
+    #         tmp_i = tmp_i + t * target[:, :, i:i+1]
+    #     tmp_i = tmp_i.sum(2) - target.sum(2)  # N, K, W
+    #     loss = torch.log_(1 + tmp_i).sum(-1)  # N
+    #     return loss
+    def criterion(self, pred, target):
+        # N, K, W
+        # up = torch.where(target.bool(), pred, torch.zeros_like(pred))
+        up = pred * target
+        up = -up.sum(-1, keepdim=True) + pred  # N, K, W
+        tmp_i = torch.exp(up) - target
+        loss = torch.log(1 + tmp_i.sum(-1)).sum(-1)  # N
+        return loss
+
+    def soft_criterion(self, pred, target):
+        target = F.softmax(target * 10., dim=-1)
         # N, K, W
         loss = 0.
         for j in range(pred.size(2)):
-            tmp_i = 0.
-            for k in range(pred.size(2)):
-                if k == j:
-                    continue
-                up = -pred[:, :, j] + pred[:, :, k]  # N, K
-                tmp_i = tmp_i + target[:, :, j] * torch.exp(up)
-            tmp_i = tmp_i.sum(-1)
-        loss = loss + torch.log(1 + tmp_i)  # N
+            s_i = pred.mean(-1)  # N, K
+            up = -pred[:, :, j] + s_i
+            tmp = target[:, :, j] * torch.exp(up)
+            loss = loss + torch.log(1 + tmp.sum(-1))  # N
         return loss
 
     def forward(self, pred_simcc, gt_simcc, target_weight):
@@ -357,19 +401,28 @@ class HardMultilabelLoss(nn.Module):
             pred = torch.stack(pred_simcc, dim=2)  # N, K, 2, H
             target = torch.stack(gt_simcc, dim=2)
             H = pred.shape[-1]
-            pred = pred.rehsape(-1, 2, H)  # NK, 2, H
+            pred = pred.reshape(-1, 2, H)  # NK, 2, H
             target = target.reshape(-1, 2, H)
-            loss = loss + self.criterion(pred, target).mul(weight).mean()
+            loss = self.criterion(pred, target).mul(weight).mean()
+            # weight = weight.reshape(-1, pred.size(1))
+            # for i in range(pred.size(1)):
+            #     w = weight[:, i].reshape(-1, 1, 1)  # N
+            #     loss = loss + self.criterion(pred[:, i] * w,
+            #                                  target[:, i] * w).mean()
         elif self.mode == 2:
             # scenario 2: K H-class
+            N, K, _ = pred_simcc[0].shape
+            weight = weight.reshape(N, K, 1)
             for pred, target in zip(pred_simcc, gt_simcc):
-                loss = loss + self.criterion(pred, target).mul(weight).mean()
+                loss = loss + self.criterion(pred * weight,
+                                             target * weight).mean()
         elif self.mode == 3:
             # scenario 3: 2K H-class
             N, K, _ = pred_simcc[0].shape
             weight = weight.reshape(N, K, 1)
-            pred = torch.cat(pred_simcc * weight, dim=1)  # N, 2K, H
-            target = torch.cat(gt_simcc * weight, dim=1)
-            loss = loss + self.criterion(pred, target).mean()
+            pred = torch.cat([p * weight for p in pred_simcc], dim=1)
+            # N, 2K, H
+            target = torch.cat([g * weight for g in gt_simcc], dim=1)
+            loss = loss + self.criterion(pred, target).mean() / K
 
         return loss

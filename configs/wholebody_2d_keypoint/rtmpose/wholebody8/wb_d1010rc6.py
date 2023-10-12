@@ -106,7 +106,7 @@ model = dict(
             act_fn='SiLU',
             use_rel_bias=False,
             pos_enc=False),
-        loss=dict(type='HardMultiLabelLoss', mode=3, use_target_weight=True),
+        loss=dict(type='HardMultilabelLoss', mode=3, use_target_weight=True),
         decoder=codec),
     test_cfg=dict(flip_test=True))
 
@@ -555,8 +555,9 @@ val_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
     dataset=dict(
         type='CocoWholeBodyDataset',
-        ann_file='data/coco/annotations/coco_wholebody_val_v1.0.json',
-        data_prefix=dict(img='data/detection/coco/val2017/'),
+        data_root=data_root,
+        ann_file='coco/annotations/coco_wholebody_val_v1.0.json',
+        data_prefix=dict(img='detection/coco/val2017/'),
         pipeline=val_pipeline,
         bbox_file='data/coco/person_detection_results/'
         'COCO_val2017_detections_AP_H_56_person.json',

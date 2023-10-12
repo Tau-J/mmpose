@@ -106,7 +106,7 @@ model = dict(
             act_fn='SiLU',
             use_rel_bias=False,
             pos_enc=False),
-        loss=dict(type='HardMultiLabelLoss', mode=2, use_target_weight=True),
+        loss=dict(type='HardMultilabelLoss', mode=2, use_target_weight=True),
         decoder=codec),
     test_cfg=dict(flip_test=True))
 
