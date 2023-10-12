@@ -353,6 +353,6 @@ class CocoWholeBodyMetric(CocoMetric):
             'AR .75', 'AR (M)', 'AR (L)'
         ]
 
-        info_str = list(zip(stats_names, coco_eval.stats))
+        info_str += list(zip(stats_names, coco_eval.stats))
 
         return info_str
