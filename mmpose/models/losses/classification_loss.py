@@ -368,6 +368,17 @@ class HardMultilabelLoss(nn.Module):
         loss = torch.log(1 + tmp_i.sum(-1)).sum(-1)  # N
         return loss
 
+    # def criterion(self, pred, target):
+    #     # N, K, W
+    #     # up = torch.where(target.bool(), pred, torch.zeros_like(pred))
+    #     up = pred * target
+    #     up = -up.sum(-1, keepdim=True)
+    #     factor = (1 + up).pow(2).squeeze()
+    #     up = up + pred  # N, K, W
+    #     tmp_i = torch.exp(up) - target
+    #     loss = (factor * torch.log(1 + tmp_i.sum(-1))).sum(-1)  # N
+    #     return loss
+
     def soft_criterion(self, pred, target):
         target = F.softmax(target * 10., dim=-1)
         # N, K, W
