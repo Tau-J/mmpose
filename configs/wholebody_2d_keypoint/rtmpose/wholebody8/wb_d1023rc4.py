@@ -39,7 +39,7 @@ input_size = (192, 256)
 max_epochs = 270
 stage2_num_epochs = 10
 base_lr = 5e-4
-train_batch_size = 704
+train_batch_size = 1024
 val_batch_size = 32
 
 train_cfg.update(max_epochs=max_epochs, val_interval=10)  # noqa
@@ -48,7 +48,7 @@ randomness = dict(seed=21)
 # optimizer
 optim_wrapper = dict(
     type=OptimWrapper,
-    optimizer=dict(type=AdamW, lr=base_lr, weight_decay=0.1),
+    optimizer=dict(type=AdamW, lr=base_lr, weight_decay=0.05),
     clip_grad=dict(max_norm=35, norm_type=2),
     paramwise_cfg=dict(
         norm_decay_mult=0, bias_decay_mult=0, bypass_duplicate=True))
@@ -91,20 +91,20 @@ model = dict(
         type=CSPNeXt,
         arch='P5',
         expand_ratio=0.5,
-        deepen_factor=1.33,
-        widen_factor=1.25,
+        deepen_factor=0.33,
+        widen_factor=0.5,
         channel_attention=True,
         norm_cfg=dict(type='BN'),
         act_cfg=dict(type=SiLU),
         init_cfg=dict(
             type=PretrainedInit,
             prefix='backbone.',
-            checkpoint='https://download.openmmlab.com/mmpose/v1/'
-            'wholebody_2d_keypoint/rtmpose/ubody/rtmpose-x_simcc-ucoco_pt-aic-coco_270e-256x192-05f5bcb7_20230822.pth'  # noqa
+            checkpoint='https://download.openmmlab.com/mmpose/v1/projects/'
+            'rtmposev1/rtmpose-s_simcc-ucoco_dw-ucoco_270e-256x192-3fd922c8_20230728.pth'  # noqa
         )),
     neck=dict(
         type=CSPNeXtPAFPN,
-        in_channels=[320, 640, 1280],
+        in_channels=[128, 256, 512],
         out_channels=None,
         out_indices=(
             1,
@@ -116,7 +116,7 @@ model = dict(
         act_cfg=dict(type=SiLU, inplace=True)),
     head=dict(
         type=RTMWHead,
-        in_channels=1280,
+        in_channels=512,
         out_channels=num_keypoints,
         input_size=input_size,
         in_featuremap_size=tuple([s // 32 for s in input_size]),

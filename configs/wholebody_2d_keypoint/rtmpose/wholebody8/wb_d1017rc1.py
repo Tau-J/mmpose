@@ -48,7 +48,7 @@ randomness = dict(seed=21)
 # optimizer
 optim_wrapper = dict(
     type=OptimWrapper,
-    optimizer=dict(type=AdamW, lr=base_lr, weight_decay=0.05),
+    optimizer=dict(type=AdamW, lr=base_lr, weight_decay=0.1),
     clip_grad=dict(max_norm=35, norm_type=2),
     paramwise_cfg=dict(
         norm_decay_mult=0, bias_decay_mult=0, bypass_duplicate=True))
