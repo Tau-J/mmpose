@@ -7,6 +7,6 @@ opencv-python
 openmim
 pillow
 scipy
-torch>=1.6
-torchvision
+torch==2.0.0
+torchvision==0.15.0
 xtcocotools>=1.12
