@@ -49,7 +49,8 @@ def process_one_image(args,
                       pose_estimator,
                       visualizer=None,
                       show_interval=0,
-                      draw_heatmap=False):
+                      draw_heatmap=False,
+                      kpt_thr=0.4):
     """Visualize predicted keypoints (and heatmaps) of one image."""
 
     # predict bbox
@@ -83,7 +84,7 @@ def process_one_image(args,
             skeleton_style=args.skeleton_style,
             show=args.show,
             wait_time=show_interval,
-            kpt_thr=args.kpt_thr)
+            kpt_thr=kpt_thr)
 
     # if there is no instance detected, return None
     return data_samples.get('pred_instances', None)
@@ -96,7 +97,8 @@ def predict(input,
             draw_heatmap=False,
             model_type='body',
             skeleton_style='mmpose',
-            input_type='image'):
+            input_type='image',
+            kpt_thr=0.4):
     """Visualize the demo images.
 
     Using mmdet to detect the human.
@@ -115,8 +117,8 @@ def predict(input,
     elif model_type == 'wholebody(rtmw)':
         det_config = 'projects/rtmpose/rtmdet/person/rtmdet_m_640-8xb32_coco-person.py'  # noqa
         det_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmdet_m_8xb32-100e_coco-obj365-person-235e8209.pth'  # noqa
-        pose_config = 'projects/rtmpose/rtmpose/wholebody_2d_keypoint/rtmw-x_8xb320-270e_cocktail13-384x288.py'  # noqa
-        pose_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmw/rtmw-x-384-190-3cd4ac3b_20231030.pth'  # noqa
+        pose_config = 'projects/rtmpose/rtmpose/wholebody_2d_keypoint/rtmw-l_8xb320-270e_cocktail14-384x288'  # noqa
+        pose_checkpoint = '(https://download.openmmlab.com/mmpose/v1/projects/rtmw/rtmw-dw-x-l_simcc-cocktail14_270e-384x288-20231122.pth'  # noqa
     else:
         model_type = 'body'
         det_config = 'projects/rtmpose/rtmdet/person/rtmdet_m_640-8xb32_coco-person.py'  # noqa
@@ -158,11 +160,11 @@ def predict(input,
         type=float,
         default=0.3,
         help='IoU threshold for bounding box NMS')
-    parser.add_argument(
-        '--kpt-thr',
-        type=float,
-        default=0.4,
-        help='Visualizing keypoint thresholds')
+    # parser.add_argument(
+    #     '--kpt-thr',
+    #     type=float,
+    #     default=0.4,
+    #     help='Visualizing keypoint thresholds')
     parser.add_argument(
         '--draw-heatmap',
         action='store_true',
@@ -246,7 +248,8 @@ def predict(input,
             detector,
             pose_estimator,
             visualizer,
-            draw_heatmap=draw_heatmap)
+            draw_heatmap=draw_heatmap,
+            kpt_thr=kpt_thr)
         return visualizer.get_image()
 
     elif input_type == 'video':
@@ -256,7 +259,7 @@ def predict(input,
             pose_estimator.dataset_meta,
             radius=args.radius,
             line_width=args.thickness,
-            kpt_thr=args.kpt_thr)
+            kpt_thr=kpt_thr)
 
         if draw_heatmap:
             # init Localvisualizer
@@ -294,10 +297,12 @@ def predict(input,
                     pose_estimator,
                     local_visualizer,
                     0.001,
-                    draw_heatmap=True)
+                    draw_heatmap=True,
+                    kpt_thr=kpt_thr)
             else:
                 pred_instances = process_one_image(args, frame, detector,
-                                                   pose_estimator)
+                                                   pose_estimator,
+                                                    kpt_thr=kpt_thr)
                 # visualization
                 visualizer.draw_pose(frame, pred_instances)
                 # cv2.imshow('MMPose Demo [Press ESC to Exit]', frame)
@@ -337,6 +342,7 @@ def predict(input,
 #     examples=['tests/data/coco/000000000785.jpg']).launch()
 news1 = '2023-8-1: We have supported [DWPose](https://arxiv.org/pdf/2307.15880.pdf) as the default `wholebody` model.'  # noqa
 news2 = '2023-9-25: We release an alpha version of RTMW model, the technical report will be released soon.'  # noqa
+news3 = '2023-12-11: Update RTMW models, the online version is the RTMW-l with 70.1 mAP on COCO-Wholebody.'  # noqa
 with gr.Blocks() as demo:
 
     with gr.Tab('Upload-Image'):
@@ -347,10 +353,12 @@ with gr.Blocks() as demo:
             ['body', 'face', 'wholebody(rtmw)', 'wholebody(dwpose)'],
             label='Keypoint Type',
             info='Body / Face / Wholebody')
+        kpt_thr = 4. if model_type == 'wholebody(rtmw)' else 0.4
         # skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
         #                          label='Skeleton Style',
         #                          info='mmpose style/ openpose style')
         gr.Markdown('## News')
+        gr.Markdown(news3)
         gr.Markdown(news2)
         gr.Markdown(news1)
         gr.Markdown('## Output')
@@ -358,7 +366,7 @@ with gr.Blocks() as demo:
         gr.Examples(['./tests/data/coco/000000000785.jpg'], input_img)
         input_type = 'image'
         button.click(
-            partial(predict, input_type=input_type),
+            partial(predict, input_type=input_type, kpt_thr=kpt_thr),
             [input_img, hm, model_type], out_image)
 
     with gr.Tab('Webcam-Image'):
@@ -369,6 +377,7 @@ with gr.Blocks() as demo:
             ['body', 'face', 'wholebody(rtmw)', 'wholebody(dwpose)'],
             label='Keypoint Type',
             info='Body / Face / Wholebody')
+        kpt_thr = 4. if model_type == 'wholebody(rtmw)' else 0.4
         # skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
         #                          label='Skeleton Style',
         #                          info='mmpose style/ openpose style')
@@ -380,7 +389,7 @@ with gr.Blocks() as demo:
 
         input_type = 'image'
         button.click(
-            partial(predict, input_type=input_type),
+            partial(predict, input_type=input_type, kpt_thr=kpt_thr),
             [input_img, hm, model_type], out_image)
 
     with gr.Tab('Upload-Video'):
@@ -391,6 +400,7 @@ with gr.Blocks() as demo:
             ['body', 'face', 'wholebody(rtmw)', 'wholebody(dwpose)'],
             label='Keypoint Type',
             info='Body / Face / Wholebody')
+        kpt_thr = 4. if model_type == 'wholebody(rtmw)' else 0.4
         # skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
         #                          label='Skeleton Style',
         #                          info='mmpose style/ openpose style')
@@ -402,7 +412,7 @@ with gr.Blocks() as demo:
 
         input_type = 'video'
         button.click(
-            partial(predict, input_type=input_type),
+            partial(predict, input_type=input_type, kpt_thr=kpt_thr),
             [input_video, hm, model_type], out_video)
 
     with gr.Tab('Webcam-Video'):
@@ -413,6 +423,7 @@ with gr.Blocks() as demo:
             ['body', 'face', 'wholebody(rtmw)', 'wholebody(dwpose)'],
             label='Keypoint Type',
             info='Body / Face / Wholebody')
+        kpt_thr = 4. if model_type == 'wholebody(rtmw)' else 0.4
         # skeleton_style = gr.Dropdown(['mmpose', 'openpose'],
         #                          label='Skeleton Style',
         #                          info='mmpose style/ openpose style')
@@ -424,7 +435,7 @@ with gr.Blocks() as demo:
 
         input_type = 'video'
         button.click(
-            partial(predict, input_type=input_type),
+            partial(predict, input_type=input_type, kpt_thr=kpt_thr),
             [input_video, hm, model_type], out_video)
 
 gr.close_all()
