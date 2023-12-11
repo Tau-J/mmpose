@@ -118,7 +118,7 @@ def predict(input,
         det_config = 'projects/rtmpose/rtmdet/person/rtmdet_m_640-8xb32_coco-person.py'  # noqa
         det_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmdet_m_8xb32-100e_coco-obj365-person-235e8209.pth'  # noqa
         pose_config = 'projects/rtmpose/rtmpose/wholebody_2d_keypoint/rtmw-l_8xb320-270e_cocktail14-384x288'  # noqa
-        pose_checkpoint = '(https://download.openmmlab.com/mmpose/v1/projects/rtmw/rtmw-dw-x-l_simcc-cocktail14_270e-384x288-20231122.pth'  # noqa
+        pose_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmw/rtmw-dw-x-l_simcc-cocktail14_270e-384x288-20231122.pth'  # noqa
     else:
         model_type = 'body'
         det_config = 'projects/rtmpose/rtmdet/person/rtmdet_m_640-8xb32_coco-person.py'  # noqa
